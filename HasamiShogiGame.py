@@ -24,25 +24,35 @@ class HasamiShogiBoard:
         col_string = str(col_index + 1)
         return row_string + col_string
 
+    def get_board(self):
+        """Returns the current game board as a list of row lists."""
+        return self._board
+
     def get_square(self, square_string):
         """Returns the value at the specified square. Takes row-column string."""
         row, column = self.convert_str_to_index(square_string)
-        return self._board[row][column]
+        return self.get_board()[row][column]
+
+    def get_square_by_index(self, row, column):
+        """Returns the value at the specified square coordinates."""
+        return self.get_board()[row][column]
 
     def set_square(self, square_string, square_value):
         """Sets the square at the position in the given row-col string to the given value."""
         row, column = self.convert_str_to_index(square_string)
-        self._board[row][column] = square_value
-
-    def get_board(self):
-        """Returns the current game board as a list of row lists."""
-        return self._board
+        self.get_board()[row][column] = square_value
 
     def print_board(self):
         """Prints out the current board."""
         print('  ' + ' '.join(self._column_labels))
         for row in range(9):
-            print(self._row_labels[row] + ' ' + ' '.join(self._board[row]))
+            output_row = self._row_labels[row] + " "
+            for square in self.get_board()[row]:
+                if square == "NONE":
+                    output_row += '. '
+                else:
+                    output_row += square[0] + ' '
+            print(output_row[0:-1])
 
     def get_range(self, square_string1, square_string2):
         """Returns a list representing squares from square 1 to square 2, if a column or row."""
@@ -97,13 +107,21 @@ class HasamiShogiGame:
         """Returns the number of captured pieces of the given color, RED or BLACK."""
         return self._captured_pieces[player_color]
 
+    def add_captured_pieces(self, player_color, amount):
+        """Adds the given amount to the overall count of the given player's captured pieces."""
+        self._captured_pieces[player_color] += amount
+
     def get_square_occupant(self, square_string):
         """Returns the color of the piece on the given square, or NONE if empty."""
-        return self._game_board.get_square(square_string)
+        return self.get_game_board().get_square(square_string)
+
+    def get_square_occupant_by_index(self, row, column):
+        """Returns the color of the piece on the given square, or NONE if empty."""
+        return self.get_game_board().get_square_by_index(row, column)
 
     def set_square_occupant(self, square_string, square_value):
         """Sets the specified square of the game board to the specified value."""
-        self._game_board.set_square(square_string, square_value)
+        self.get_game_board().set_square(square_string, square_value)
 
     def is_move_legal(self, moved_from, moving_to):
         """Checks if the attempted move is legal. Returns True or False accordingly."""
@@ -114,45 +132,78 @@ class HasamiShogiGame:
                 return False
             if moved_from[0] != moving_to[0] or moved_from[1] != moving_to[1]:      # Illegal direction.
                 return False
+            for space in self.get_game_board().get_range(moved_from, moving_to)[1:-1]:
+                if space != "NONE":
+                    return False
+            return True
         except IndexError:
             return False
 
+    def check_linear_capture(self, moved_to, direction):
+        """Checks the newly-moved piece for horizontal (1) or vertical (0) captures, depending on given direction."""
+        square_coordinates = self.get_game_board().convert_str_to_index(moved_to)
+        square_to_check = list(square_coordinates)
+        color = ["BLACK", "RED"]
+        color.remove(self.get_active_player())
+        color = color[0]
+        captured_squares = []
 
+        if square_to_check[direction] + 1 < 9:
+            square_to_check[direction] += 1
+            while square_to_check[direction] + 1 < 9 and self.get_square_occupant_by_index(*square_to_check) == color:
+                captured_squares.append(tuple(square_to_check))
+                square_to_check[direction] += 1
+            if self.get_square_occupant_by_index(*square_to_check) == self.get_active_player():
+                self.add_captured_pieces(color, len(captured_squares))
+                for coords in captured_squares:
+                    square_string = self.get_game_board().convert_index_to_str(*coords)
+                    self.set_square_occupant(square_string, "NONE")
+
+    def check_corner_capture(self, moved_to):
+        pass
 
     def did_move_capture(self, moved_to):
         """Checks if the move just made caused a capture. Returns True or False accordingly."""
-        pass
+        corner_spaces = {'a2', 'a8', 'b1', 'b9', 'h1', 'h9', 'i2', 'i8'}
+        self.check_linear_capture(moved_to, 0)
+        self.check_linear_capture(moved_to, 1)
+        if moved_to in corner_spaces:
+            self.check_corner_capture(moved_to)
 
     def did_move_win(self):
         """Checks if opponent has one or no pieces remaining."""
-        pass
+        win_states = {"BLACK": "RED_WON", "RED": "BLACK_WON"}
+        current_player = self.get_active_player()
+        if self.get_num_captured_pieces(current_player) > 7:
+            self.set_game_state(win_states[current_player])
 
     def execute_move(self, moved_from, moving_to):
         """Moves the piece to the new square."""
-        pass
+        piece_color = self.get_square_occupant(moved_from)
+        self.set_square_occupant(moved_from, "NONE")
+        self.set_square_occupant(moving_to, piece_color)
 
-    def execute_capture(self, moved_to):
-        """Removes the captured pieces and updates the captured amounts."""
 
     def make_move(self, moved_from, moving_to):
         """If allowed, makes the given move, updates the game state, and returns True. Returns False if not possible"""
         if self.is_move_legal(moved_from, moving_to):
-            self.execute_move()
-            if self.did_move_capture(moving_to):
-                self.execute_capture(moving_to)
-                if self.did_move_win():
-                    pass
+            self.execute_move(moved_from, moving_to)
+            self.did_move_capture(moving_to)
+            self.did_move_win()
             return True
         return False
 
 
 def main():
-    new_board = HasamiShogiBoard()
-    new_board.print_board()
-    print(new_board.convert_str_to_index('c5'))
-    print(new_board.get_square('i6'))
-    print(new_board.get_square('f5'))
-    print(new_board.get_range('i1', 'a1'))
+    new_game = HasamiShogiGame()
+    while new_game.get_game_state() == "UNFINISHED":
+        new_game.get_game_board().print_board()
+        move_from = input("Piece to move: ")
+        move_to = input("Move to: ")
+        new_game.make_move(move_from, move_to)
+    new_game.get_game_board().print_board()
+    print(new_game.get_game_state())
+
 
 
 if __name__ == '__main__':
