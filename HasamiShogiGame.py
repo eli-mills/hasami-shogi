@@ -5,7 +5,7 @@
 class HasamiShogiBoard:
     """Defines the template for a game board. Used by HasamiShogiGame."""
     def __init__(self):
-        """Initializes a new board object. Begins as a completely empty board."""
+        """Initializes a new board object. Defines row and column labels. Initializes RED and BLACK spaces."""
         self._column_labels = tuple(str(number) for number in range(1, 10))
         self._row_labels = ('a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i')
         self._board = [['NONE']*9]*9
@@ -13,7 +13,7 @@ class HasamiShogiBoard:
         self._board[8] = ['BLACK']*9
 
     def convert_str_to_index(self, square_string):
-        """Takes a row-column string and returns the proper list coordinates as a tuple."""
+        """Takes a square string and returns the proper list coordinates as a tuple."""
         row = self._row_labels.index(square_string[0].lower())
         column = int(square_string[1]) - 1
         return row, column
@@ -25,7 +25,7 @@ class HasamiShogiBoard:
         return row_string + col_string
 
     def get_board(self):
-        """Returns the current game board as a list of row lists."""
+        """Returns the current game board as a list of lists of strings. Each sub-list is a row."""
         return self._board
 
     def get_square(self, square_string):
@@ -43,7 +43,7 @@ class HasamiShogiBoard:
         self.get_board()[row][column] = square_value
 
     def print_board(self):
-        """Prints out the current board."""
+        """Prints out the current board, row by row with labels, R for RED, B for BLACK, and . for NONE."""
         print('  ' + ' '.join(self._column_labels))
         for row in range(9):
             output_row = self._row_labels[row] + " "
@@ -93,7 +93,7 @@ class HasamiShogiGame:
         return self._active_player
 
     def toggle_active_player(self):
-        """Switches the active player."""
+        """Switches the active player from RED to BLACK or vice versa."""
         if self.get_active_player() == "BLACK":
             self._active_player = "RED"
         else:
@@ -160,6 +160,7 @@ class HasamiShogiGame:
                     self.set_square_occupant(square_string, "NONE")
 
     def check_corner_capture(self, moved_to):
+        """Checks the newly-moved piece for a corner capture condition."""
         pass
 
     def did_move_capture(self, moved_to):
@@ -178,11 +179,10 @@ class HasamiShogiGame:
             self.set_game_state(win_states[current_player])
 
     def execute_move(self, moved_from, moving_to):
-        """Moves the piece to the new square."""
+        """Moves the given piece to the new square."""
         piece_color = self.get_square_occupant(moved_from)
         self.set_square_occupant(moved_from, "NONE")
         self.set_square_occupant(moving_to, piece_color)
-
 
     def make_move(self, moved_from, moving_to):
         """If allowed, makes the given move, updates the game state, and returns True. Returns False if not possible"""
