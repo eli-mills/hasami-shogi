@@ -60,28 +60,6 @@ class GameBoard:
         return output_range if row_from <= row_to and col_from <= col_to else output_range[::-1]
 
 
-
-    def get_range(self, square_string_from, square_string_to):
-        """Returns a list of all squares from square 1 to square 2 (inclusive). Assumes indices in range."""
-        coords_from = self.string_to_index(square_string_from)
-        coords_to = self.string_to_index(square_string_to)
-        direction = 1
-        if coords_from[1] == coords_to[1]:
-            direction -= 1                                   # Return column section if not row.
-        coords_list = list(coords_from)
-        output_values = []
-        search_start = min(coords_from[direction], coords_to[direction])
-        search_end = max(coords_from[direction], coords_to[direction])
-        for index in range(search_start, search_end + 1):
-            current_square = self.index_to_string(*coords_list)
-            output_values.append(self.get_square(current_square))
-            if coords_from[direction] <= coords_to[direction]:
-                coords_list[direction] += 1
-            else:
-                coords_list[direction] -= 1
-        return output_values
-
-
 class HasamiShogiGame:
     """Defines the methods for a game of Hasami Shogi."""
     def __init__(self):
@@ -148,8 +126,8 @@ class HasamiShogiGame:
 
         if moving_from[0] != moving_to[0] and moving_from[1] != moving_to[1]:         # Not pure vertical or horizontal
             return False
-        move_path = self.get_game_board().get_range(moving_from, moving_to)
-        return all([x == "NONE" for x in move_path[1:]])                              # Check for clear path.
+        move_path = self.get_game_board().build_square_string_range(moving_from, moving_to)
+        return all([self.get_square_occupant(x) == "NONE" for x in move_path[1:]])    # Check for clear path.
 
     def find_captured_squares(self, from_square, to_square):
         """Finds capture pattern in given square string range. Returns captured squares if found, else False."""
