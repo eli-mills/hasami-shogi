@@ -32,6 +32,10 @@ class GameBoard:
         """Converts the given row/column string to row/column indices as a tuple, indexed at 0."""
         return self._row_labels.index(square_string[0]), self._col_labels.index(square_string[1])
 
+    def index_to_string(self, row, column):
+        """Returns a square string generated from the given row and column index (indexed at 0)."""
+        return self._row_labels[row] + self._col_labels[column]
+
     def get_square(self, square_string):
         """Given a square string, returns the value at that square."""
         row, column = self.string_to_index(square_string)
@@ -40,8 +44,27 @@ class GameBoard:
     def set_square(self, square_string, square_value):
         """Sets the value of the given square to the given value."""
         row, column = self.string_to_index(square_string)
-        print(self.get_board_list()[row][column])
         self.get_board_list()[row][column] = square_value
+
+    def get_range(self, square_string_from, square_string_to):
+        """Returns a list of all squares from square 1 to square 2 (inclusive). Assumes indices in range."""
+        coords_from = self.string_to_index(square_string_from)
+        coords_to = self.string_to_index(square_string_to)
+        direction = 1
+        if coords_from[1] == coords_to[1]:
+            direction -= 1                                   # Return column section if not row.
+        coords_list = list(coords_from)
+        output_values = []
+        search_start = min(coords_from[direction], coords_to[direction])
+        search_end = max(coords_from[direction], coords_to[direction])
+        for index in range(search_start, search_end + 1):
+            current_square = self.index_to_string(*coords_list)
+            output_values.append(self.get_square(current_square))
+            if coords_from[direction] <= coords_to[direction]:
+                coords_list[direction] += 1
+            else:
+                coords_list[direction] -= 1
+        return output_values
 
 
 class HasamiShogiGame:
@@ -91,13 +114,43 @@ class HasamiShogiGame:
         self.get_game_board().set_square(moving_to, piece_moving)
         self.get_game_board().set_square(moving_from, "NONE")
 
+    def is_move_legal(self, moving_from, moving_to):
+        """Checks if move from first square to second is legal. Returns True if so, False if not."""
+        allowed_rows = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i']
+        allowed_cols = ['1', '2', '3', '4', '5', '6', '7', '8', '9']
+        if moving_from[0] not in allowed_rows or moving_to[0] not in allowed_rows:    # Row out of range
+            return False
+        if moving_from[1] not in allowed_cols or moving_to[1] not in allowed_cols:    # Column out of range
+            return False
+
+        if self.get_square_occupant(moving_from) != self.get_active_player():         # Wrong color
+            return False
+
+        if moving_from[0] != moving_to[0] and moving_from[1] != moving_to[1]:         # Not pure vertical or horizontal
+            return False
+        move_path = self.get_game_board().get_range(moving_from, moving_to)
+        return all([x == "NONE" for x in move_path[1:]]) # Check for clear path.
+
+
+
+    def make_move(self, moving_from, moving_to):
+        """Moves from first square to second and returns True if legal, then updates game variables accordingly."""
+        if not self.is_move_legal(moving_from, moving_to):
+            return False
+        self.execute_move(moving_from, moving_to)
+        self.toggle_active_player()
+        return True
+
+
 def main():
     new_game = HasamiShogiGame()
-    new_game.execute_move("i1", "b1")
-    new_game.get_game_board().print_board()
-
-
-
+    while new_game.get_game_state() == "UNFINISHED":
+        new_game.get_game_board().print_board()
+        print('\n'*5)
+        print(new_game.get_active_player() + "'s Move \n")
+        player_move = input("Enter move: ")[:4]
+        print('\n'*20)
+        print(new_game.make_move(player_move[:2], player_move[2:]))
 
 
 
