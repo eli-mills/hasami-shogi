@@ -126,6 +126,10 @@ class HasamiShogiGame:
 
         if moving_from[0] != moving_to[0] and moving_from[1] != moving_to[1]:         # Not pure vertical or horizontal
             return False
+
+        if moving_from == moving_to:                                                  # Same square
+            return False
+
         move_path = self.get_game_board().build_square_string_range(moving_from, moving_to)
         return all([self.get_square_occupant(x) == "NONE" for x in move_path[1:]])    # Check for clear path.
 
@@ -184,14 +188,21 @@ class HasamiShogiGame:
         closest_corner = self.find_closest_corner(moved_to)
 
         if closest_corner in capture_scenarios:
-            moved_to_index = capture_scenarios[closest_corner].index(moved_to)
-            capturing_end = capture_scenarios[closest_corner][moved_to_index - 1]
-            moved_to_color = self.get_square_occupant(moved_to)
-            captured_color = self.get_square_occupant(closest_corner)
-            capturing_end_color = self.get_square_occupant(capturing_end)
-            if moved_to_color == capturing_end_color and captured_color == self._inactive_player:
-                self.set_square_occupant(closest_corner, "NONE")
-                self.add_num_captured_pieces(self._inactive_player, 1)
+            if moved_to in capture_scenarios[closest_corner]:
+                moved_to_index = capture_scenarios[closest_corner].index(moved_to)
+                capturing_end = capture_scenarios[closest_corner][moved_to_index - 1]
+                moved_to_color = self.get_square_occupant(moved_to)
+                captured_color = self.get_square_occupant(closest_corner)
+                capturing_end_color = self.get_square_occupant(capturing_end)
+                if moved_to_color == capturing_end_color and captured_color == self._inactive_player:
+                    self.set_square_occupant(closest_corner, "NONE")
+                    self.add_num_captured_pieces(self._inactive_player, 1)
+
+    def check_win(self):
+        if self.get_num_captured_pieces("RED") > 7:
+            self.set_game_state("BLACK_WON")
+        elif self.get_num_captured_pieces("BLACK") > 7:
+            self.set_game_state("RED_WON")
 
     def make_move(self, moving_from, moving_to):
         """Moves from first square to second and returns True if legal, then updates game variables accordingly."""
@@ -200,6 +211,7 @@ class HasamiShogiGame:
         self.execute_move(moving_from, moving_to)
         self.check_linear_captures(moving_to)
         self.check_corner_capture(moving_to)
+        self.check_win()
         self.toggle_active_player()
         return True
 
@@ -208,23 +220,20 @@ def play_game():
     new_game = HasamiShogiGame()
     while new_game.get_game_state() == "UNFINISHED":
         new_game.get_game_board().print_board()
-        print('\n' * 5)
-        print(new_game.get_active_player() + "'s Move \n")
+        print('*' * 100 + '\n')
+        print(new_game.get_active_player() + "'s Move")
+        print("Captured pieces:")
+        print("BLACK:", new_game.get_num_captured_pieces("BLACK"), "RED:", new_game.get_num_captured_pieces("RED"))
+        print('\n')
         player_move = input("Enter move: ")[:4]
         print('\n' * 20)
         print(new_game.make_move(player_move[:2], player_move[2:]))
+    print(new_game.get_game_state())
 
 
 def main():
     new_game = HasamiShogiGame()
-    new_game.make_move("i5", "d5")
-    new_game.make_move("a4", "d4")
-    new_game.make_move("i1", "d1")
-    new_game.make_move("a3", "d3")
-    new_game.make_move("i2", "d2")
-    new_game.get_game_board().print_board()
-    print(new_game.check_linear_captures("d2"))
-    new_game.get_game_board().print_board()
+    print(new_game.is_move_legal("i1", "i1"))
 
 if __name__ == "__main__":
     main()
