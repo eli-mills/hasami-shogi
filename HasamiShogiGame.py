@@ -144,25 +144,62 @@ class HasamiShogiGame:
             if square_value != captured_color:
                 return False
 
-    def check_linear_captures(self, moving_to):
+    def check_linear_captures(self, moved_to):
         """Searches four directions around latest move, captures pieces, and updates capture counts. Returns False if no capture."""
-        left_limit = moving_to[0] + '1'
-        right_limit = moving_to[0] + '9'
-        top_limit = 'a' + moving_to[1]
-        bottom_limit = 'i' + moving_to[1]
+        left_limit = moved_to[0] + '1'
+        right_limit = moved_to[0] + '9'
+        top_limit = 'a' + moved_to[1]
+        bottom_limit = 'i' + moved_to[1]
         search_directions = [left_limit, right_limit, top_limit, bottom_limit]
-        captured_lists = [self.find_captured_squares(moving_to, limit) for limit in search_directions]
+        captured_lists = [self.find_captured_squares(moved_to, limit) for limit in search_directions]
         captured_squares = [square for sublist in captured_lists if sublist for square in sublist]
         self.add_num_captured_pieces(self._inactive_player, len(captured_squares))
         for captured in captured_squares:
             self.set_square_occupant(captured, "NONE")
         return any(captured_lists)
 
+    def find_closest_corner(self, moved_to):
+        """Finds the closest corner to the new square to check for corner capture."""
+        closest_corner = ""
+        square_row, square_column = self.get_game_board().string_to_index(moved_to)
+        if square_row <= 1:
+            closest_corner += "a"
+        if square_row >= 7:
+            closest_corner += "i"
+        if square_column <= 1:
+            closest_corner += "1"
+        if square_column >= 7:
+            closest_corner += "9"
+        return closest_corner
+
+    def check_corner_capture(self, moved_to):
+        """Checks for a capture in the corner. Removes enemy piece in corner. Returns True if successful, else False."""
+        capture_scenarios = {
+            "a1": ["a2", "b1"],
+            "a9": ["a8", "b9"],
+            "i1": ["h1", "i2"],
+            "i9": ["h9", "i8"]
+        }
+
+        closest_corner = self.find_closest_corner(moved_to)
+
+        if closest_corner in capture_scenarios:
+            moved_to_index = capture_scenarios[closest_corner].index(moved_to)
+            capturing_end = capture_scenarios[closest_corner][moved_to_index - 1]
+            moved_to_color = self.get_square_occupant(moved_to)
+            captured_color = self.get_square_occupant(closest_corner)
+            capturing_end_color = self.get_square_occupant(capturing_end)
+            if moved_to_color == capturing_end_color and captured_color == self._inactive_player:
+                self.set_square_occupant(closest_corner, "NONE")
+                self.add_num_captured_pieces(self._inactive_player, 1)
+
     def make_move(self, moving_from, moving_to):
         """Moves from first square to second and returns True if legal, then updates game variables accordingly."""
         if not self.is_move_legal(moving_from, moving_to):
             return False
         self.execute_move(moving_from, moving_to)
+        self.check_linear_captures(moving_to)
+        self.check_corner_capture(moving_to)
         self.toggle_active_player()
         return True
 
