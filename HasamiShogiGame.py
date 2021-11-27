@@ -29,11 +29,11 @@ class GameBoard:
             print(output_string[:-1])
 
     def string_to_index(self, square_string):
-        """Converts the given row/column string to row/column indices as a tuple, indexed at 0."""
+        """Converts row/column string to row/column indices as a tuple, indexed at 0. Assumes valid input."""
         return self._row_labels.index(square_string[0]), self._col_labels.index(square_string[1])
 
     def index_to_string(self, row, column):
-        """Returns a square string generated from the given row and column index (indexed at 0)."""
+        """Converts row/column index (indexed at 0) to square string. Assumes valid input."""
         return self._row_labels[row] + self._col_labels[column]
 
     def get_square(self, square_string):
@@ -47,7 +47,7 @@ class GameBoard:
         self.get_board_list()[row][column] = square_value
 
     def build_square_string_range(self, square_string_from, square_string_to):
-        """Returns a list of square strings from the first square to the second. Range cannot be diagonal."""
+        """Returns list of square strings from first square to second. Range cannot be diagonal. Assumes valid input."""
         row_from, col_from = self._row_labels.index(square_string_from[0]), int(square_string_from[1])-1
         row_to, col_to = self._row_labels.index(square_string_to[0]), int(square_string_to[1])-1
         row_min, row_max = min(row_to, row_from), max(row_to, row_from)
