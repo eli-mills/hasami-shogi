@@ -186,4 +186,3 @@ class TestBuildSquareStringRange(unittest.TestCase):
         new_board = GameBoard()
         test = new_board.build_square_string_range("e4", "e4")
         self.assertEqual(["e4"], test)
-
