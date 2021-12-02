@@ -68,8 +68,9 @@ class TestInit(unittest.TestCase):
         self.assertEqual("RED", test1_red)
         self.assertEqual("HELLO", test2)
 
-class TestMakeMove(unittest.TestCase):
-    """Defines different game scenarios to ensure all paths work."""
+
+class TestWrongMakeMove(unittest.TestCase):
+    """Defines tests for cases in which the wrong move is made."""
     def test_none_to_none(self):
         """Asserts that make_move returns False to move NONE to NONE and the gameboard is unchanged."""
         new_game = HasamiShogiGame()
@@ -171,4 +172,65 @@ class TestMakeMove(unittest.TestCase):
         self.assertFalse(test_move_black)
         self.assertEqual(exp_board, test_board)
         self.assertEqual("BLACK", test_player)
+
+
+class TestNormalGames(unittest.TestCase):
+    def template(self, move_list, exp_returns, exp_board_set, exp_player, exp_black_captures, exp_red_captures,
+                 setup=None):
+        game = HasamiShogiGame()
+        sim_game = HasamiShogiGame()
+        set_board(sim_game, exp_board_set)
+        exp_board = list(sim_game.get_game_board().get_board_list())
+
+        if setup:
+            set_board(game, setup)
+
+        test_returns = run_moves(game, move_list)
+        test_board = list(game.get_game_board().get_board_list())
+        test_player = game.get_active_player()
+        test_black_captures = game.get_num_captured_pieces("BLACK")
+        test_red_captures = game.get_num_captured_pieces("RED")
+
+        self.assertEqual(exp_returns, test_returns)
+        self.assertEqual(exp_board, test_board)
+        self.assertEqual(exp_player, test_player)
+        self.assertEqual(exp_black_captures, test_black_captures)
+        self.assertEqual(exp_red_captures, test_red_captures)
+
+    def test_first_five_moves(self):
+        """Asserts that five normal moves correclty executed."""
+        moves = ["i5f5", "a7f7", "i1d1", "a9h9", "i3g3"]
+        board_set = ["a7NONE", "a9NONE", "d1BLACK", "f5BLACK", "f7RED",
+                     "h9RED", "i1NONE", "i5NONE", "g3BLACK", "i3NONE"]
+        self.template(moves, [True]*5, board_set, "RED", 0, 0)
+
+    def test_horizontal_cap(self):
+        """Asserts that horizontal captures behave as expected."""
+        moves_black_single = ["i5e5", "a4e4", "i8e8", "a6e6"]
+        exp_black_single = ["a4NONE", "a6NONE", "e4RED", "e6RED", "e8BLACK", "i5NONE", "i8NONE"]
+
+        moves_red_single = ["i7f7", "a6f6", "i5f5"]
+        exp_red_single = ["a6NONE", "f5BLACK", "f7BLACK", "i5NONE", "i7NONE"]
+
+        moves_black_double = ["i5e5", "a4e4", "i6e6", "a7e7"]
+        exp_black_double = ["a4NONE", "a7NONE", "e4RED", "e7RED", "i5NONE", "i6NONE"]
+
+        moves_red_double = ["i4e4", "a5e5", "i2f2", "a6e6", "i7e7"]
+        exp_red_double = ["a5NONE", "a6NONE", "e4BLACK", "e7BLACK", "f2BLACK", "i2NONE", "i4NONE", "i7NONE"]
+
+        setup_black_multi = ["f2RED", "f3BLACK", "f4BLACK", "f5BLACK"]
+        moves_black_multi = ["i6f6", "a7f7"]
+        exp_black_multi = ["a7NONE", "f2RED", "f7RED", "i6NONE"]
+
+        setup_red_multi = ["d3RED", "d4RED", "d5RED", "d6RED", "d7RED"]
+        moves_red_multi = ["i2d2", "a8d8", "i9d9"]
+        exp_red_multi = ["a8NONE", "d2BLACK", "d9BLACK", "i2NONE", "i9NONE"]
+
+        self.template(moves_black_single, [True]*4, exp_black_single, "BLACK", 1, 0)
+        self.template(moves_red_single, [True]*3, exp_red_single, "RED", 0, 1)
+        self.template(moves_black_double, [True]*4, exp_black_double, "BLACK", 2, 0)
+        self.template(moves_red_double, [True]*5, exp_red_double, "RED", 0, 2)
+        self.template(moves_black_multi, [True]*2, exp_black_multi, "BLACK", 4, 0, setup_black_multi)
+        self.template(moves_red_multi, [True]*3, exp_red_multi, "RED", 0, 6, setup_red_multi)
+
 
