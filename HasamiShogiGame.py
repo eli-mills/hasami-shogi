@@ -114,6 +114,9 @@ class HasamiShogiGame:
 
     def is_move_legal(self, moving_from, moving_to):
         """Checks if move from first square to second is legal. Returns True if so, False if not."""
+        if self.get_game_state() != "UNFINISHED":                                     # Game is finished
+            return False
+
         allowed_rows = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i']
         allowed_cols = ['1', '2', '3', '4', '5', '6', '7', '8', '9']
         if moving_from[0] not in allowed_rows or moving_to[0] not in allowed_rows:    # Row out of range

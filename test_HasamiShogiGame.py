@@ -3,7 +3,14 @@ from HasamiShogiGame import HasamiShogiGame
 
 
 def run_moves(game, move_list):
+    """Takes game object and list of 4-string moves."""
     return [game.make_move(move[:2], move[2:]) for move in move_list]
+
+
+def set_board(game, square_val_list):
+    """Takes game object and list of square-player strings with no spaces."""
+    for square_val in square_val_list:
+        game.set_square_occupant(square_val[:2], square_val[2:])
 
 
 class TestInit(unittest.TestCase):
@@ -60,3 +67,108 @@ class TestInit(unittest.TestCase):
         self.assertEqual("NONE", test1_none)
         self.assertEqual("RED", test1_red)
         self.assertEqual("HELLO", test2)
+
+class TestMakeMove(unittest.TestCase):
+    """Defines different game scenarios to ensure all paths work."""
+    def test_none_to_none(self):
+        """Asserts that make_move returns False to move NONE to NONE and the gameboard is unchanged."""
+        new_game = HasamiShogiGame()
+        exp_board = list(new_game.get_game_board().get_board_list())
+        none_to_none_moves = ["d5b5", "e3e9", "b2g2", "c8c2"]
+
+        test_none_to_none = run_moves(new_game, none_to_none_moves)
+        test_board = list(new_game.get_game_board().get_board_list())
+        test_player = new_game.get_active_player()
+
+        self.assertEqual([False]*4, test_none_to_none)
+        self.assertEqual(exp_board, test_board)
+        self.assertEqual("BLACK", test_player)
+
+    def test_none_to_inactive(self):
+        """Asserts that moving NONE to the inactive player returns False."""
+        new_game = HasamiShogiGame()
+        new_game.set_square_occupant("c5", "RED")
+        new_game.set_square_occupant("g5", "RED")
+        new_game.set_square_occupant("e2", "RED")
+        new_game.set_square_occupant("e8", "RED")
+        exp_board = list(new_game.get_game_board().get_board_list())
+        none_to_red_moves = ["e5c5", "e5g5", "e5e2", "e5e8"]
+
+        test_none_to_red = run_moves(new_game, none_to_red_moves)
+        test_board = list(new_game.get_game_board().get_board_list())
+        test_player = new_game.get_active_player()
+        test_red_cap = new_game.get_num_captured_pieces("RED")
+
+        self.assertEqual([False]*4, test_none_to_red)
+        self.assertEqual(exp_board, test_board)
+        self.assertEqual("BLACK", test_player)
+        self.assertEqual(0, test_red_cap)
+
+    def test_none_to_active(self):
+        """Asserts that moving NONE to the active player returns False."""
+        new_game = HasamiShogiGame()
+        new_game.set_square_occupant("c5", "BLACK")
+        new_game.set_square_occupant("g5", "BLACK")
+        new_game.set_square_occupant("e2", "BLACK")
+        new_game.set_square_occupant("e8", "BLACK")
+        exp_board = list(new_game.get_game_board().get_board_list())
+        none_to_black_moves = ["e5c5", "e5g5", "e5e2", "e5e8"]
+
+        test_none_to_black = run_moves(new_game, none_to_black_moves)
+        test_board = list(new_game.get_game_board().get_board_list())
+        test_player = new_game.get_active_player()
+        test_red_cap = new_game.get_num_captured_pieces("BLACK")
+
+        self.assertEqual([False]*4, test_none_to_black)
+        self.assertEqual(exp_board, test_board)
+        self.assertEqual("BLACK", test_player)
+        self.assertEqual(0, test_red_cap)
+
+    def test_non_linear(self):
+        """Asserts that a non-vertical/horizontal move returns False.."""
+        new_game = HasamiShogiGame()
+        set_board(new_game, ["e5BLACK"])
+        exp_board = list(new_game.get_game_board().get_board_list())
+        non_linear_moves = ["e5b2", "e5b8", "e5h8", "e5h2",
+                            "e5a1", "e5a9", "e5i1", "e5i9"]
+
+        test_non_linear = run_moves(new_game, non_linear_moves)
+        test_board = list(new_game.get_game_board().get_board_list())
+        test_player = new_game.get_active_player()
+
+        self.assertEqual([False] * 8, test_non_linear)
+        self.assertEqual(exp_board, test_board)
+        self.assertEqual("BLACK", test_player)
+
+    def test_move_inactive(self):
+        """Asserts that an attempt to move the inactive player returns False."""
+        new_game = HasamiShogiGame()
+        set_board(new_game, ["e5RED"])
+        exp_board = list(new_game.get_game_board().get_board_list())
+        inactive_moves = ["e5b5", "e5e9", "e5h5", "e5e1", "e5a5",
+                          "e5i5", "a5f5", "a1b1", "a1a2", "a9a8"]
+
+        test_inactive_move = run_moves(new_game, inactive_moves)
+        test_board = list(new_game.get_game_board().get_board_list())
+        test_player = new_game.get_active_player()
+
+        self.assertEqual([False]*10, test_inactive_move)
+        self.assertEqual(exp_board, test_board)
+        self.assertEqual("BLACK", test_player)
+
+    def test_move_after_win(self):
+        """Asserts that an attempted move returns False if game finished."""
+        new_game = HasamiShogiGame()
+        exp_board = list(new_game.get_game_board().get_board_list())
+        new_game.set_game_state("BLACK_WON")
+
+        test_move_red = new_game.make_move("a4", "f4")
+        test_move_black = new_game.make_move("i8", "c8")
+        test_board = list(new_game.get_game_board().get_board_list())
+        test_player = new_game.get_active_player()
+
+        self.assertFalse(test_move_red)
+        self.assertFalse(test_move_black)
+        self.assertEqual(exp_board, test_board)
+        self.assertEqual("BLACK", test_player)
+
