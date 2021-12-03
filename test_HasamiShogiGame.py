@@ -280,12 +280,34 @@ class TestNormalGames(unittest.TestCase):
         }
         self.template(moves, [True]*4, exp_board, "BLACK", 2, 2, board_setup)
 
-    def test_double_cap(self):
-        """Asserts that double captures work as intended."""
-        pass
+    def test_double_cap_linear(self):
+        """Asserts that linear double captures work as intended."""
+        board_setup_up_right = {"BLACK": ["c4", "d4", "e4", "f5", "f6", "e7"], "RED": ["b4", "f8", "f2"]}
+        moves_up_right = ["e7f7", "f2f4"]
+        exp_board_up_right = {"RED": ["b4", "f4", "f8"]}
+        self.template(moves_up_right, [True]*2, exp_board_up_right, "BLACK", 6, 0, board_setup_up_right)
+
+        board_setup_up_left = {"BLACK": ["c7", "h2"], "RED": ["d7", "e7", "f7", "g7", "h3", "h4", "h5", "h6"]}
+        moves_up_left = ["i7h7"]
+        exp_board_up_left = {"BLACK": ["c7", "h7", "h2"], "NONE": ["i7"]}
+        self.template(moves_up_left, [True], exp_board_up_left, "RED", 0, 8, board_setup_up_left)
+
+        board_setup_down_left = {"RED": ["c3", "f6", "b6"], "BLACK": ["c4", "c5", "d7", "e6"]}
+        moves_down_left = ["d7d6", "b6c6"]
+        exp_board_down_left = {"RED": ["c3", "c6", "f6"]}
+        self.template(moves_down_left, [True]*2, exp_board_down_left, "BLACK", 4, 0, board_setup_down_left)
+
+        board_setup_down_right = {"RED": ["d5", "e4"], "BLACK": ["d3", "d6", "f4"]}
+        moves_down_right = ["d3d4"]
+        exp_board_down_right = {"BLACK": ["d4", "d6", "f4"]}
+        self.template(moves_down_right, [True], exp_board_down_right, "RED", 0, 2, board_setup_down_right)
 
     def test_no_cap(self):
         """Asserts that moving into a capture position does not trigger a capture on the player that moved."""
+        pass
+
+    def test_no_double_cap(self):
+        """Asserts that double cap formation does not double capture if the moving piece is only part of one branch."""
         pass
 
     def test_black_wins(self):
