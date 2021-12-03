@@ -215,22 +215,50 @@ class TestNormalGames(unittest.TestCase):
         moves_black_double = ["i5e5", "a4e4", "i6e6", "a7e7"]
         exp_black_double = ["a4NONE", "a7NONE", "e4RED", "e7RED", "i5NONE", "i6NONE"]
 
-        moves_red_double = ["i4e4", "a5e5", "i2f2", "a6e6", "i7e7"]
+        moves_red_double = ["i2f2", "a5e5", "i7e7", "a6e6", "i4e4"]
         exp_red_double = ["a5NONE", "a6NONE", "e4BLACK", "e7BLACK", "f2BLACK", "i2NONE", "i4NONE", "i7NONE"]
 
-        setup_black_multi = ["f2RED", "f3BLACK", "f4BLACK", "f5BLACK"]
-        moves_black_multi = ["i6f6", "a7f7"]
-        exp_black_multi = ["a7NONE", "f2RED", "f7RED", "i6NONE"]
+        setup_black_multi = ["f7RED", "f3BLACK", "f4BLACK", "f5BLACK"]
+        moves_black_multi = ["i6f6", "a2f2"]
+        exp_black_multi = ["a2NONE", "f2RED", "f7RED", "i6NONE"]
 
         setup_red_multi = ["d3RED", "d4RED", "d5RED", "d6RED", "d7RED"]
         moves_red_multi = ["i2d2", "a8d8", "i9d9"]
         exp_red_multi = ["a8NONE", "d2BLACK", "d9BLACK", "i2NONE", "i9NONE"]
 
-        self.template(moves_black_single, [True]*4, exp_black_single, "BLACK", 1, 0)
-        self.template(moves_red_single, [True]*3, exp_red_single, "RED", 0, 1)
-        self.template(moves_black_double, [True]*4, exp_black_double, "BLACK", 2, 0)
-        self.template(moves_red_double, [True]*5, exp_red_double, "RED", 0, 2)
-        self.template(moves_black_multi, [True]*2, exp_black_multi, "BLACK", 4, 0, setup_black_multi)
-        self.template(moves_red_multi, [True]*3, exp_red_multi, "RED", 0, 6, setup_red_multi)
+        self.template(moves_black_single, [True] * 4, exp_black_single, "BLACK", 1, 0)
+        self.template(moves_red_single, [True] * 3, exp_red_single, "RED", 0, 1)
+        self.template(moves_black_double, [True] * 4, exp_black_double, "BLACK", 2, 0)
+        self.template(moves_red_double, [True] * 5, exp_red_double, "RED", 0, 2)
+        self.template(moves_black_multi, [True] * 2, exp_black_multi, "BLACK", 4, 0, setup_black_multi)
+        self.template(moves_red_multi, [True] * 3, exp_red_multi, "RED", 0, 6, setup_red_multi)
 
+    def test_vertical_cap(self):
+        """Asserts that vertical captures behave as expected."""
+        moves_black_single = ["i5e5", "a5d5", "i8e8", "a4f4", "i9e9", "f4f5"]
+        exp_black_single = ["a4NONE", "a5NONE", "d5RED", "e8BLACK", "e9BLACK", "f5RED", "i5NONE", "i8NONE", "i9NONE"]
+
+        moves_red_single = ["i7g7", "a7f7", "i2e2", "a8a7", "e2e7"]
+        exp_red_single = ["a8NONE", "e7BLACK", "g7BLACK", "i2NONE", "i7NONE"]
+
+        moves_black_double = ["i3c3", "a5e5", "i8d8", "e5e3", "d8d3", "a3b3"]
+        exp_black_double = ["a3NONE", "a5NONE", "b3RED", "e3RED", "i3NONE", "i8NONE"]
+
+        moves_red_double = ["i4d4", "a2e2", "i9g9", "a6f6", "i8i9", "e2e4", "i7i8", "f6f4", "g9g4"]
+        exp_red_double = ["a2NONE", "a6NONE", "d4BLACK", "g4BLACK", "i4NONE", "i7NONE"]
+
+        setup_black_multi = ["d9BLACK", "e9BLACK", "f9BLACK", "g9BLACK", "h9BLACK", "i9RED", "c2RED"]
+        moves_black_multi = ["i1f1", "c2c9"]
+        exp_black_multi = ["i1NONE", "c9RED", "i9RED", "f1BLACK"]
+
+        setup_red_multi = ["b2BLACK", "c2RED", "d2RED", "e2RED", "f2RED"]
+        moves_red_multi = ["i2g2"]
+        exp_red_multi = ["i2NONE", "g2BLACK", "b2BLACK"]
+
+        self.template(moves_black_single, [True]*6, exp_black_single, "BLACK", 1, 0)
+        self.template(moves_red_single, [True]*5, exp_red_single, "RED", 0, 1)
+        self.template(moves_black_double, [True]*6, exp_black_double, "BLACK", 2, 0)
+        self.template(moves_red_double, [True]*9, exp_red_double, "RED", 0, 2)
+        self.template(moves_black_multi, [True]*2, exp_black_multi, "BLACK", 5, 0, setup_black_multi)
+        self.template(moves_red_multi, [True], exp_red_multi, "RED", 0, 4, setup_red_multi)
 
