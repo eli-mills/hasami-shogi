@@ -265,5 +265,34 @@ class TestNormalGames(unittest.TestCase):
         self.template(moves_black_multi, [True]*2, exp_black_multi, "BLACK", 5, 0, setup_black_multi)
         self.template(moves_red_multi, [True], exp_red_multi, "RED", 0, 4, setup_red_multi)
 
+    def test_corner_cap(self):
+        """Asserts that corner captures work properly."""
+        board_setup = {
+            "NONE": ["i2", "i8"],
+            "RED": ["d9", "h1", "i3", "h9", "i9"],
+            "BLACK": ["a2", "a9", "b3", "g8", "h9"]
+        }
+        moves = ["b3b1", "d9b9", "g8i8", "i3i2"]
+        exp_board = {
+            "NONE": ["a1", "a9", "i1", "i9", "i3"],
+            "RED": ["b9", "h1", "i2"],
+            "BLACK": ["a2", "b1", "h9"]
+        }
+        self.template(moves, [True]*4, exp_board, "BLACK", 2, 2, board_setup)
 
+    def test_double_cap(self):
+        """Asserts that double captures work as intended."""
+        pass
+
+    def test_no_cap(self):
+        """Asserts that moving into a capture position does not trigger a capture on the player that moved."""
+        pass
+
+    def test_black_wins(self):
+        """Asserts that capturing all or all but one red pieces updates to BLACK_WON."""
+        pass
+
+    def test_red_wins(self):
+        """Asserts that capturing all or all but one black pieces updates to RED_WON."""
+        pass
 
