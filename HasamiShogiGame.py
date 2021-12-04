@@ -202,6 +202,7 @@ class HasamiShogiGame:
                     self.add_num_captured_pieces(self._inactive_player, 1)
 
     def check_win(self):
+        """Checks if the number of captured pieces of either color is 8 or 9."""
         if self.get_num_captured_pieces("RED") > 7:
             self.set_game_state("BLACK_WON")
         elif self.get_num_captured_pieces("BLACK") > 7:

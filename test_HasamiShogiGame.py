@@ -177,7 +177,7 @@ class TestWrongMakeMove(unittest.TestCase):
 
 class TestNormalGames(unittest.TestCase):
     def template(self, move_list, exp_returns, exp_board_set, exp_player, exp_black_captures, exp_red_captures,
-                 setup=None):
+                 exp_state, setup=None):
         game = HasamiShogiGame()
         sim_game = HasamiShogiGame()
         set_board(sim_game, exp_board_set)
@@ -191,12 +191,14 @@ class TestNormalGames(unittest.TestCase):
         test_player = game.get_active_player()
         test_black_captures = game.get_num_captured_pieces("BLACK")
         test_red_captures = game.get_num_captured_pieces("RED")
+        test_state = game.get_game_state()
 
         self.assertEqual(exp_returns, test_returns)
         self.assertEqual(exp_board, test_board)
         self.assertEqual(exp_player, test_player)
         self.assertEqual(exp_black_captures, test_black_captures)
         self.assertEqual(exp_red_captures, test_red_captures)
+        self.assertEqual(exp_state, test_state)
 
     def test_first_five_moves(self):
         """Asserts that five normal moves correclty executed."""
@@ -205,7 +207,7 @@ class TestNormalGames(unittest.TestCase):
                      "RED": ["f7", "h9"],
                      "BLACK": ["d1", "f5", "g3"]
                      }
-        self.template(moves, [True]*5, board_set, "RED", 0, 0)
+        self.template(moves, [True]*5, board_set, "RED", 0, 0, "UNFINISHED")
 
     def test_horizontal_cap(self):
         """Asserts that horizontal captures behave as expected."""
@@ -229,12 +231,12 @@ class TestNormalGames(unittest.TestCase):
         moves_red_multi = ["i2d2", "a8d8", "i9d9"]
         exp_red_multi = {"NONE": ["a8", "i2", "i9"], "BLACK": ["d2", "d9"]}
 
-        self.template(moves_black_single, [True] * 4, exp_black_single, "BLACK", 1, 0)
-        self.template(moves_red_single, [True] * 3, exp_red_single, "RED", 0, 1)
-        self.template(moves_black_double, [True] * 4, exp_black_double, "BLACK", 2, 0)
-        self.template(moves_red_double, [True] * 5, exp_red_double, "RED", 0, 2)
-        self.template(moves_black_multi, [True] * 2, exp_black_multi, "BLACK", 4, 0, setup_black_multi)
-        self.template(moves_red_multi, [True] * 3, exp_red_multi, "RED", 0, 6, setup_red_multi)
+        self.template(moves_black_single, [True] * 4, exp_black_single, "BLACK", 1, 0, "UNFINISHED")
+        self.template(moves_red_single, [True] * 3, exp_red_single, "RED", 0, 1, "UNFINISHED")
+        self.template(moves_black_double, [True] * 4, exp_black_double, "BLACK", 2, 0, "UNFINISHED")
+        self.template(moves_red_double, [True] * 5, exp_red_double, "RED", 0, 2, "UNFINISHED")
+        self.template(moves_black_multi, [True] * 2, exp_black_multi, "BLACK", 4, 0, "UNFINISHED", setup_black_multi)
+        self.template(moves_red_multi, [True] * 3, exp_red_multi, "RED", 0, 6, "UNFINISHED", setup_red_multi)
 
     def test_vertical_cap(self):
         """Asserts that vertical captures behave as expected."""
@@ -258,12 +260,12 @@ class TestNormalGames(unittest.TestCase):
         moves_red_multi = ["i2g2"]
         exp_red_multi = {"NONE": ["i2"], "BLACK": ["g2", "b2"]}
 
-        self.template(moves_black_single, [True]*6, exp_black_single, "BLACK", 1, 0)
-        self.template(moves_red_single, [True]*5, exp_red_single, "RED", 0, 1)
-        self.template(moves_black_double, [True]*6, exp_black_double, "BLACK", 2, 0)
-        self.template(moves_red_double, [True]*9, exp_red_double, "RED", 0, 2)
-        self.template(moves_black_multi, [True]*2, exp_black_multi, "BLACK", 5, 0, setup_black_multi)
-        self.template(moves_red_multi, [True], exp_red_multi, "RED", 0, 4, setup_red_multi)
+        self.template(moves_black_single, [True]*6, exp_black_single, "BLACK", 1, 0, "UNFINISHED")
+        self.template(moves_red_single, [True]*5, exp_red_single, "RED", 0, 1, "UNFINISHED")
+        self.template(moves_black_double, [True]*6, exp_black_double, "BLACK", 2, 0, "UNFINISHED")
+        self.template(moves_red_double, [True]*9, exp_red_double, "RED", 0, 2, "UNFINISHED")
+        self.template(moves_black_multi, [True]*2, exp_black_multi, "BLACK", 5, 0, "UNFINISHED", setup_black_multi)
+        self.template(moves_red_multi, [True], exp_red_multi, "RED", 0, 4, "UNFINISHED", setup_red_multi)
 
     def test_corner_cap(self):
         """Asserts that corner captures work properly."""
@@ -278,51 +280,51 @@ class TestNormalGames(unittest.TestCase):
             "RED": ["b9", "h1", "i2"],
             "BLACK": ["a2", "b1", "h9"]
         }
-        self.template(moves, [True]*4, exp_board, "BLACK", 2, 2, board_setup)
+        self.template(moves, [True]*4, exp_board, "BLACK", 2, 2, "UNFINISHED", board_setup)
 
     def test_double_cap_linear(self):
         """Asserts that linear double captures work as intended."""
         board_setup_up_right = {"BLACK": ["c4", "d4", "e4", "f5", "f6", "e7"], "RED": ["b4", "f8", "f2"]}
         moves_up_right = ["e7f7", "f2f4"]
         exp_board_up_right = {"RED": ["b4", "f4", "f8"]}
-        self.template(moves_up_right, [True]*2, exp_board_up_right, "BLACK", 6, 0, board_setup_up_right)
+        self.template(moves_up_right, [True]*2, exp_board_up_right, "BLACK", 6, 0, "UNFINISHED", board_setup_up_right)
 
-        board_setup_up_left = {"BLACK": ["c7", "h2"], "RED": ["d7", "e7", "f7", "g7", "h3", "h4", "h5", "h6"]}
+        board_setup_up_left = {"BLACK": ["c7", "h3"], "RED": ["d7", "e7", "f7", "g7", "h4", "h5", "h6"]}
         moves_up_left = ["i7h7"]
-        exp_board_up_left = {"BLACK": ["c7", "h7", "h2"], "NONE": ["i7"]}
-        self.template(moves_up_left, [True], exp_board_up_left, "RED", 0, 8, board_setup_up_left)
+        exp_board_up_left = {"BLACK": ["c7", "h7", "h3"], "NONE": ["i7"]}
+        self.template(moves_up_left, [True], exp_board_up_left, "RED", 0, 7, "UNFINISHED", board_setup_up_left)
 
         board_setup_down_left = {"RED": ["c3", "f6", "b6"], "BLACK": ["c4", "c5", "d7", "e6"]}
         moves_down_left = ["d7d6", "b6c6"]
         exp_board_down_left = {"RED": ["c3", "c6", "f6"]}
-        self.template(moves_down_left, [True]*2, exp_board_down_left, "BLACK", 4, 0, board_setup_down_left)
+        self.template(moves_down_left, [True]*2, exp_board_down_left, "BLACK", 4, 0, "UNFINISHED", board_setup_down_left)
 
         board_setup_down_right = {"RED": ["d5", "e4"], "BLACK": ["d3", "d6", "f4"]}
         moves_down_right = ["d3d4"]
         exp_board_down_right = {"BLACK": ["d4", "d6", "f4"]}
-        self.template(moves_down_right, [True], exp_board_down_right, "RED", 0, 2, board_setup_down_right)
+        self.template(moves_down_right, [True], exp_board_down_right, "RED", 0, 2, "UNFINISHED", board_setup_down_right)
 
     def test_double_cap_corner(self):
         """Asserts that a double capture involving a corner behaves as intended."""
         board_setup_bot_right = {"RED": ["i8", "h7", "d9"], "BLACK": ["e9", "f8", "g9"]}
         moves_bot_right = ["f8f9", "h7h9"]
         exp_board_bot_right = {"RED": ["d9", "h9", "i8"], "NONE": ["i9"]}
-        self.template(moves_bot_right, [True]*2, exp_board_bot_right, "BLACK", 4, 0, board_setup_bot_right)
+        self.template(moves_bot_right, [True]*2, exp_board_bot_right, "BLACK", 4, 0, "UNFINISHED", board_setup_bot_right)
 
         board_setup_top_right = {"RED": ["c9", "d9"], "BLACK": ["a8", "b7", "e9"]}
         moves_top_right = ["b7b9"]
         exp_board_top_right = {"BLACK": ["a8", "b9", "e9"], "NONE": ["a9"]}
-        self.template(moves_top_right, [True], exp_board_top_right, "RED", 0, 3, board_setup_top_right)
+        self.template(moves_top_right, [True], exp_board_top_right, "RED", 0, 3, "UNFINISHED", board_setup_top_right)
 
         board_setup_top_left = {"RED": ["b2", "d1"], "BLACK": ["a1", "c2"]}
         moves_top_left = ["c2c1", "b2b1"]
         exp_board_top_left = {"NONE": ["a1"], "RED": ["b1", "d1"]}
-        self.template(moves_top_left, [True]*2, exp_board_top_left, "BLACK", 2, 0, board_setup_top_left)
+        self.template(moves_top_left, [True]*2, exp_board_top_left, "BLACK", 2, 0, "UNFINISHED", board_setup_top_left)
 
         board_setup_bot_left = {"RED": ["b1", "c1", "d1", "e1", "f1", "g1", "i1"], "BLACK": ["a1", "h9"]}
         moves_bot_left = ["h9h1"]
         exp_board_bot_left = {"BLACK": ["a1", "h1"], "NONE": ["i1"]}
-        self.template(moves_bot_left, [True], exp_board_bot_left, "RED", 0, 7, board_setup_bot_left)
+        self.template(moves_bot_left, [True], exp_board_bot_left, "RED", 0, 7, "UNFINISHED", board_setup_bot_left)
 
     def test_no_cap(self):
         """Asserts that moving into a capture position does not trigger a capture on the player that moved."""
@@ -332,7 +334,7 @@ class TestNormalGames(unittest.TestCase):
             "BLACK": ["f3", "f5"],
             "RED": ["e3", "f4"]
         }
-        self.template(moves_hor_single, [True]*4, exp_board_hor_single, "BLACK", 0, 0)
+        self.template(moves_hor_single, [True]*4, exp_board_hor_single, "BLACK", 0, 0, "UNFINISHED")
 
         moves_ver_single = ["i2e2", "a5d5", "e2e3", "a6f6", "e3e4", "f6f5", "e4e5"]
         exp_board_ver_single = {
@@ -340,7 +342,7 @@ class TestNormalGames(unittest.TestCase):
             "BLACK": ["e5"],
             "RED": ["d5", "f5"]
         }
-        self.template(moves_ver_single, [True]*7, exp_board_ver_single, "RED", 0, 0)
+        self.template(moves_ver_single, [True]*7, exp_board_ver_single, "RED", 0, 0, "UNFINISHED")
 
         board_setup_hor_multi = {
             "RED": ["d8", "e5", "e6", "e7"],
@@ -351,7 +353,7 @@ class TestNormalGames(unittest.TestCase):
             "RED": ["e5", "e6", "e7", "e8"],
             "BLACK": ["e4", "e9"]
         }
-        self.template(moves_hor_multi, [True]*2, exp_board_hor_multi, "BLACK", 0, 0, board_setup_hor_multi)
+        self.template(moves_hor_multi, [True]*2, exp_board_hor_multi, "BLACK", 0, 0, "UNFINISHED", board_setup_hor_multi)
 
         board_setup_ver_multi = {
             "RED": ["c9", "h9"],
@@ -362,35 +364,86 @@ class TestNormalGames(unittest.TestCase):
             "RED": ["c9", "h9"],
             "BLACK": ["d9", "e9", "f9", "g9"]
         }
-        self.template(moves_ver_multi, [True], exp_board_ver_multi, "RED", 0, 0, board_setup_ver_multi)
+        self.template(moves_ver_multi, [True], exp_board_ver_multi, "RED", 0, 0, "UNFINISHED", board_setup_ver_multi)
 
     def test_no_double_cap(self):
         """Asserts that double cap formation does not double capture if the moving piece is only part of one branch."""
         board_setup_up_right1 = {"BLACK": ["c4", "d4", "e4", "f5", "f6", "e7"], "RED": ["b4", "f9", "f4"]}
         moves_up_right1 = ["e7f7", "f9f8"]
         exp_board_up_right1 = {"RED": ["b4", "f4", "f8"], "BLACK": ["c4", "d4", "e4"]}
-        self.template(moves_up_right1, [True]*2, exp_board_up_right1, "BLACK", 3, 0, board_setup_up_right1)
+        self.template(moves_up_right1, [True]*2, exp_board_up_right1, "BLACK", 3, 0, "UNFINISHED", board_setup_up_right1)
 
         board_setup_up_right2 = {"BLACK": ["c4", "d4", "e4", "f5", "f6", "e7"], "RED": ["b3", "f8", "f4"]}
         moves_up_right2 = ["e7f7", "b3b4"]
         exp_board_up_right2 = {"RED": ["b4", "f4", "f8"], "BLACK": ["f5", "f6", "f7"]}
-        self.template(moves_up_right2, [True] * 2, exp_board_up_right2, "BLACK", 3, 0, board_setup_up_right2)
+        self.template(moves_up_right2, [True] * 2, exp_board_up_right2, "BLACK", 3, 0, "UNFINISHED", board_setup_up_right2)
 
         board_setup_down_left1 = {"BLACK": ["d3", "f6", "c6"], "RED": ["c4", "c5", "d6", "e6"]}
         moves_down_left1 = ["d3c3"]
         exp_board_down_left1 = {"BLACK": ["c3", "c6", "f6"], "RED": {"d6", "e6"}}
-        self.template(moves_down_left1, [True], exp_board_down_left1, "RED", 0, 2, board_setup_down_left1)
+        self.template(moves_down_left1, [True], exp_board_down_left1, "RED", 0, 2, "UNFINISHED", board_setup_down_left1)
 
         board_setup_down_left2 = {"BLACK": ["c3", "c6", "f5"], "RED": ["c4", "c5", "d6", "e6"]}
         moves_down_left2 = ["f5f6"]
         exp_board_down_left2 = {"BLACK": ["c3", "c6", "f6"], "RED": {"c4", "c5"}}
-        self.template(moves_down_left2, [True], exp_board_down_left2, "RED", 0, 2, board_setup_down_left2)
+        self.template(moves_down_left2, [True], exp_board_down_left2, "RED", 0, 2, "UNFINISHED", board_setup_down_left2)
 
-    def test_black_wins(self):
-        """Asserts that capturing all or all but one red pieces updates to BLACK_WON."""
-        pass
 
-    def test_red_wins(self):
-        """Asserts that capturing all or all but one black pieces updates to RED_WON."""
-        pass
+class TestWinCases(TestNormalGames):
+    def test_hor_cap_single_win(self):
+        """Asserts that a single horizontal capture triggers a win."""
+        moves = [
+            "i1e1", "a2e2", "i3e3", "a4e4", "i5e5", "a6e6", "i7e7", "a8e8",
+            "i9e9", "a1a2", "e1a1", "a5a4", "e5a5", "a7a6", "e7a7"
+        ]
+        exp_board = {
+            "NONE": ["a2", "a3", "a4", "a6", "a8", "i1", "i3", "i5", "i7", "i9"],
+            "BLACK": ["a1", "a5", "a7", "e9", "e3"],
+            "RED": ["a9"]
+        }
+        self.template(moves, [True]*15, exp_board, "RED", 0, 8, "BLACK_WON")
+
+    def test_ver_cap_single_win(self):
+        """Asserts that a single vertical capture triggers a win."""
+        moves = [
+            "i1b1", "a9c9", "i2d2", "a8e8", "i3f3", "a7g7",         # Setup
+            "b1b5", "c9c5", "d2d5", "e8e5", "f3f5", "g7g5",         # First round of captures
+            "i9b9", "c5c4", "i8d8", "e5e4", "i7f7", "g5g4",         # Setup
+            "b9b5", "c4c5", "d8d5", "e4e5", "f7f5", "g4g5",         # Second round of captures
+            "i6b6", "c5c6", "i4b4", "c6c4"                          # Last round of captures
+        ]
+        exp_board = {
+            "NONE": ["a7", "a8", "a9", "i1", "i2", "i3", "i4", "i6", "i7", "i8", "i9"],
+            "RED": ["c4", "e5", "g5"]
+        }
+        self.template(moves, [True]*28, exp_board, "BLACK", 8, 0, "RED_WON")
+
+    def test_hor_cap_multi_win(self):
+        """Asserts that a horizontal move where multiple pieces are captured triggers a win."""
+        board_setup = {
+            "BLACK": ["e2", "d3", "f2", "g3", "g4", "g5", "g6", "g7", "g8"],
+            "RED": ["d1", "g1"]
+        }
+        moves = ["e2d2", "a4d4", "f2g2", "a9g9"]
+        exp_board = {
+            "NONE": ["a4", "a9"],
+            "RED": ["d1", "d4", "g1", "g9"],
+        }
+        self.template(moves, [True]*4, exp_board, "BLACK", 9, 0, "RED_WON", board_setup)
+
+    def test_double_cap_win(self):
+        """Asserts that a win on a double capture works."""
+        board_setup = {
+            "BLACK": ["a2", "d1", "g1", "f9", "b3"],
+            "RED": ["c2", "f2", "f3", "f4", "f5", "f6", "f7", "f8"]
+        }
+        moves = ["g1f1", "c2c1", "b3b1"]
+        exp_board = {
+            "BLACK": ["a2", "b1", "f1", "f9", "d1"],
+            "NONE": ["a1"]
+        }
+        self.template(moves, [True]*3, exp_board, "RED", 0, 9, "BLACK_WON", board_setup)
+
+
+
 
