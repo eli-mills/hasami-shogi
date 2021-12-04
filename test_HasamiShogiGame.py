@@ -326,7 +326,43 @@ class TestNormalGames(unittest.TestCase):
 
     def test_no_cap(self):
         """Asserts that moving into a capture position does not trigger a capture on the player that moved."""
-        pass
+        moves_hor_single = ["i3f3", "a3e3", "i5f5", "a4f4"]
+        exp_board_hor_single = {
+            "NONE": ["a3", "a4", "i3", "i5"],
+            "BLACK": ["f3", "f5"],
+            "RED": ["e3", "f4"]
+        }
+        self.template(moves_hor_single, [True]*4, exp_board_hor_single, "BLACK", 0, 0)
+
+        moves_ver_single = ["i2e2", "a5d5", "e2e3", "a6f6", "e3e4", "f6f5", "e4e5"]
+        exp_board_ver_single = {
+            "NONE": ["a5", "a6", "i2"],
+            "BLACK": ["e5"],
+            "RED": ["d5", "f5"]
+        }
+        self.template(moves_ver_single, [True]*7, exp_board_ver_single, "RED", 0, 0)
+
+        board_setup_hor_multi = {
+            "RED": ["d8", "e5", "e6", "e7"],
+            "BLACK": ["e4", "f9"]
+        }
+        moves_hor_multi = ["f9e9", "d8e8"]
+        exp_board_hor_multi = {
+            "RED": ["e5", "e6", "e7", "e8"],
+            "BLACK": ["e4", "e9"]
+        }
+        self.template(moves_hor_multi, [True]*2, exp_board_hor_multi, "BLACK", 0, 0, board_setup_hor_multi)
+
+        board_setup_ver_multi = {
+            "RED": ["c9", "h9"],
+            "BLACK": ["d9", "e9", "f7", "g9"]
+        }
+        moves_ver_multi = ["f7f9"]
+        exp_board_ver_multi = {
+            "RED": ["c9", "h9"],
+            "BLACK": ["d9", "e9", "f9", "g9"]
+        }
+        self.template(moves_ver_multi, [True], exp_board_ver_multi, "RED", 0, 0, board_setup_ver_multi)
 
     def test_no_double_cap(self):
         """Asserts that double cap formation does not double capture if the moving piece is only part of one branch."""
