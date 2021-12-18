@@ -42,6 +42,29 @@ class VisualGame():
         self.draw_headings()
         self.draw_squares()
 
+    def check_in_board_bounds(self, gcoord):
+        """Returns True if given coordinate is within the game board bounds."""
+        x, y = gcoord
+        return board_margin < x < board_margin + board_size and board_margin < y < board_margin + board_size
+
+    def render_selection(self, gcoord):
+        """Generates a green outline around the selected square."""
+        x, y = gcoord
+        selection_rect = (
+                ((x - board_margin) // square_size) * square_size + board_margin,
+                ((y - board_margin) // square_size) * square_size + board_margin,
+                square_size,
+                square_size)
+
+        pygame.draw.rect(screen, green, selection_rect, 2)
+
+    def gcoord_to_square_string(self, gcoord):
+        """Converts the given game coordinates into the appropriate square string."""
+        x, y = gcoord
+        if self.check_in_board_bounds(gcoord):
+            text_pos = row_labels[(y - board_margin) // square_size] + col_labels[(x - board_margin) // square_size]
+            return text_pos
+
     def game_loop_visual(self):
         """Plays a game of Hasami Shogi rendered visually with PyGame."""
         new_game = HasamiShogiGame()
@@ -55,9 +78,9 @@ class VisualGame():
                     click_pos = event.pos
             self.render_board()
             if click_pos:
-                if board_margin < click_pos[0] < board_margin + board_size and board_margin < click_pos[1] < board_margin + board_size:
-                    text_pos = row_labels[(click_pos[1]-board_margin)//square_size] + col_labels[(click_pos[0] - board_margin)//square_size]
-                    pygame.draw.rect(screen, green, ((click_pos[0]//square_size-1)*square_size+board_margin, (click_pos[1]//square_size-1)*square_size+board_margin, square_size, square_size), 2)
+                if self.check_in_board_bounds(click_pos):
+                    text_pos = self.gcoord_to_square_string(click_pos)
+                    self.render_selection(click_pos)
             text_pos_render = game_font.render(text_pos, False, heading_color)
             screen.blit(text_pos_render, (screen_size-50, screen_size//2))
             pygame.display.flip()
