@@ -55,7 +55,9 @@ class VisualGame():
                     click_pos = event.pos
             self.render_board()
             if click_pos:
-                text_pos = row_labels[(click_pos[1]-board_margin)//square_size] + col_labels[(click_pos[0] - board_margin)//square_size]
+                if board_margin < click_pos[0] < board_margin + board_size and board_margin < click_pos[1] < board_margin + board_size:
+                    text_pos = row_labels[(click_pos[1]-board_margin)//square_size] + col_labels[(click_pos[0] - board_margin)//square_size]
+                    pygame.draw.rect(screen, green, ((click_pos[0]//square_size-1)*square_size+board_margin, (click_pos[1]//square_size-1)*square_size+board_margin, square_size, square_size), 2)
             text_pos_render = game_font.render(text_pos, False, heading_color)
             screen.blit(text_pos_render, (screen_size-50, screen_size//2))
             pygame.display.flip()
