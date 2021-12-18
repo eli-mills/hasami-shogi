@@ -8,7 +8,8 @@ class VisualGame():
     """Contains methods and data members used to visually render a game of Hasami Shogi."""
     def __init__(self):
         """Initialize an instance of a visual Hasami Shogi game."""
-        pass
+        self._selected_square = None
+        self._game = HasamiShogiGame()
 
     def draw_screen(self):
         """Renders the background screen for the game."""
@@ -47,16 +48,16 @@ class VisualGame():
         x, y = gcoord
         return board_margin < x < board_margin + board_size and board_margin < y < board_margin + board_size
 
-    def render_selection(self, gcoord):
+    def render_selection(self):
         """Generates a green outline around the selected square."""
-        x, y = gcoord
-        selection_rect = (
-                ((x - board_margin) // square_size) * square_size + board_margin,
-                ((y - board_margin) // square_size) * square_size + board_margin,
-                square_size,
-                square_size)
-
-        pygame.draw.rect(screen, green, selection_rect, 2)
+        if self._selected_square:
+            x, y = self.square_string_to_gcoord(self._selected_square)
+            selection_rect = (
+                    ((x - board_margin) // square_size) * square_size + board_margin,
+                    ((y - board_margin) // square_size) * square_size + board_margin,
+                    square_size,
+                    square_size)
+            pygame.draw.rect(screen, green, selection_rect, 2)
 
     def gcoord_to_square_string(self, gcoord):
         """Converts the given game coordinates into the appropriate square string."""
@@ -65,25 +66,45 @@ class VisualGame():
             text_pos = row_labels[(y - board_margin) // square_size] + col_labels[(x - board_margin) // square_size]
             return text_pos
 
+    def square_string_to_gcoord(self, square_string):
+        """Converts the given square string into a game coordinate."""
+        row, col = square_string[0], square_string[1]
+        y = board_margin + row_labels.index(row)*square_size
+        x = board_margin + col_labels.index(col)*square_size
+        return x, y
+
+    def click_handler(self, gcoord):
+        """Defines steps to take when the player clicks a square with the given game coordinates."""
+        if not self.check_in_board_bounds(gcoord):
+            return
+        text_pos = self.gcoord_to_square_string(gcoord)
+        if not self._selected_square:
+            self._selected_square = text_pos
+        elif self._selected_square == text_pos:
+            self._selected_square = None        # Reset selection
+        else:
+            self._game.make_move(self._selected_square, text_pos)
+            # self._game.get_game_board().print_board()
+            self._selected_square = None
+
+    def event_handler(self):
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                sys.exit()
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                self.click_handler(event.pos)  # Return value to be used for tracking previous click.
+
+
     def game_loop_visual(self):
         """Plays a game of Hasami Shogi rendered visually with PyGame."""
         new_game = HasamiShogiGame()
-        text_pos = ""
-        click_pos = None
+        click = None
         while 1:
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    sys.exit()
-                if event.type == pygame.MOUSEBUTTONDOWN:
-                    click_pos = event.pos
             self.render_board()
-            if click_pos:
-                if self.check_in_board_bounds(click_pos):
-                    text_pos = self.gcoord_to_square_string(click_pos)
-                    self.render_selection(click_pos)
-            text_pos_render = game_font.render(text_pos, False, heading_color)
-            screen.blit(text_pos_render, (screen_size-50, screen_size//2))
+            self.event_handler()
+            self.render_selection()
             pygame.display.flip()
+
 
 
 def main():
