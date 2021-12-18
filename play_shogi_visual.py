@@ -3,6 +3,7 @@ from visual_constants import *
 import pygame
 import sys
 
+
 class VisualGame():
     """Contains methods and data members used to visually render a game of Hasami Shogi."""
     def __init__(self):
@@ -27,8 +28,12 @@ class VisualGame():
         for row in range(rows):
             for col in range(cols):
                 pygame.draw.rect(screen,
-                                 border_color,
-                                 (board_margin + col*square_size, board_margin + row*square_size, square_size, square_size),
+                                 border_color, (
+                                     board_margin + col*square_size,
+                                     board_margin + row*square_size,
+                                     square_size,
+                                     square_size
+                                 ),
                                  1)
 
     def render_board(self):
@@ -40,11 +45,19 @@ class VisualGame():
     def game_loop_visual(self):
         """Plays a game of Hasami Shogi rendered visually with PyGame."""
         new_game = HasamiShogiGame()
+        text_pos = ""
+        click_pos = None
         while 1:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     sys.exit()
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    click_pos = event.pos
             self.render_board()
+            if click_pos:
+                text_pos = row_labels[(click_pos[1]-board_margin)//square_size] + col_labels[(click_pos[0] - board_margin)//square_size]
+            text_pos_render = game_font.render(text_pos, False, heading_color)
+            screen.blit(text_pos_render, (screen_size-50, screen_size//2))
             pygame.display.flip()
 
 

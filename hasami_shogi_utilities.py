@@ -1,5 +1,20 @@
 from HasamiShogiGame import HasamiShogiGame
 
+# LABELS (USED BY VISUAL CONSTANTS)
+row_labels = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i']
+col_labels = ['1', '2', '3', '4', '5', '6', '7', '8', '9']
+
+def run_moves(game, move_list):
+    """Takes game object and list of 4-string moves."""
+    return [game.make_move(move[:2], move[2:]) for move in move_list]
+
+
+def return_valid_moves(game, square):
+    """Returns all valid moves for the given square."""
+    if game.get_square_occupant(square) == game.get_active_player():
+        pass
+
+
 class Player():
     """Defines the methods for a player of Hasami Shogi."""
     def __init__(self, game, color, starting_pieces=None, starting_moves=None):

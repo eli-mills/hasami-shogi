@@ -1,5 +1,5 @@
 import pygame
-
+from hasami_shogi_utilities import row_labels, col_labels
 pygame.font.init()
 
 # SIZES
@@ -28,5 +28,5 @@ game_font = pygame.font.SysFont("Arial", 32)
 
 # HEADINGS AND TITLES
 pygame.display.set_caption("Hasami Shogi")
-row_headings = [game_font.render(x, False, heading_color) for x in ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i']]
-col_headings = [game_font.render(x, False, heading_color) for x in ['1', '2', '3', '4', '5', '6', '7', '8', '9']]
+row_headings = [game_font.render(x, False, heading_color) for x in row_labels]
+col_headings = [game_font.render(x, False, heading_color) for x in col_labels]
