@@ -50,6 +50,40 @@ class VisualGame():
                 elif square_color == "BLACK":
                     pygame.draw.circle(screen, black, center, 25)
 
+    def draw_game_stats(self):
+        """Creates and positions the game stats, including pieces captured, player turn, and game status."""
+        capture_caption = stat_font.render("Pieces Captured:", False, heading_color)
+        player_caption = stat_font.render("Current Player:", False, heading_color)
+        red_text = stat_font.render("RED", False, red)
+        black_text = stat_font.render("BLACK", False, black)
+        red_caps = stat_font.render(str(self._game.get_num_captured_pieces("RED")), False, red)
+        black_caps = stat_font.render(str(self._game.get_num_captured_pieces("BLACK")), False, black)
+
+        if self._game.get_active_player() == "RED":
+            current_player = red_text
+        else:
+            current_player = black_text
+
+        game_state = self._game.get_game_state()
+
+        if game_state != "UNFINISHED":
+            if game_state == "RED_WON":
+                width, height = victory_font.size("RED WON!")
+                victory_coords = screen_size//2 - width//2, screen_size//2 - height//2
+                screen.blit(victory_font.render("RED WON!", False, red, grey), victory_coords)
+            else:
+                width, height = victory_font.size("BLACK WON!")
+                victory_coords = screen_size // 2 - width // 2, screen_size // 2 - height // 2
+                screen.blit(victory_font.render("BLACK WON!", False, black, grey), victory_coords)
+
+        screen.blit(capture_caption, (capture_align_1, stat_height_1))
+        screen.blit(player_caption, (player_align, stat_height_1))
+        screen.blit(red_text, (capture_align_1, stat_height_2))
+        screen.blit(black_text, (capture_align_1, stat_height_3))
+        screen.blit(red_caps, (capture_align_2, stat_height_2))
+        screen.blit(black_caps, (capture_align_2, stat_height_3))
+        screen.blit(current_player, (player_align, stat_height_2))
+
     def render_selection(self):
         """Generates a green outline around the selected square."""
         if self._selected_square:
@@ -67,6 +101,7 @@ class VisualGame():
         self.draw_headings()
         self.draw_squares()
         self.draw_pieces()
+        self.draw_game_stats()
         self.render_selection()
 
     def check_in_board_bounds(self, gcoord):
@@ -94,12 +129,13 @@ class VisualGame():
             return
         text_pos = self.gcoord_to_square_string(gcoord)
         if not self._selected_square:
+            if self._game.get_square_occupant(text_pos) != self._game.get_active_player():
+                return
             self._selected_square = text_pos
         elif self._selected_square == text_pos:
             self._selected_square = None        # Reset selection
         else:
             self._game.make_move(self._selected_square, text_pos)
-            # self._game.get_game_board().print_board()
             self._selected_square = None
 
     def event_handler(self):
