@@ -17,6 +17,7 @@ grey = 100, 100, 100
 dark_brown = 40, 25, 10
 tan = 200, 175, 150
 green = 100, 255, 0
+red = 255, 0, 0
 
 # BOARD APPEARANCE SETTINGS
 screen_color = tan

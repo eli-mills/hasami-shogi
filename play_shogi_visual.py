@@ -37,16 +37,18 @@ class VisualGame():
                                  ),
                                  1)
 
-    def render_board(self):
-        """Draws a blank board."""
-        self.draw_screen()
-        self.draw_headings()
-        self.draw_squares()
-
-    def check_in_board_bounds(self, gcoord):
-        """Returns True if given coordinate is within the game board bounds."""
-        x, y = gcoord
-        return board_margin < x < board_margin + board_size and board_margin < y < board_margin + board_size
+    def draw_pieces(self):
+        """Loops through all board squares and draws the appropriate pieces."""
+        for row in row_labels:
+            for col in col_labels:
+                square_string = row + col
+                x, y = self.square_string_to_gcoord(square_string)
+                center = x + square_size//2, y + square_size//2
+                square_color = self._game.get_square_occupant(square_string)
+                if square_color == "RED":
+                    pygame.draw.circle(screen, red, center, 25)
+                elif square_color == "BLACK":
+                    pygame.draw.circle(screen, black, center, 25)
 
     def render_selection(self):
         """Generates a green outline around the selected square."""
@@ -58,6 +60,19 @@ class VisualGame():
                     square_size,
                     square_size)
             pygame.draw.rect(screen, green, selection_rect, 2)
+
+    def render_board(self):
+        """Draws a blank board."""
+        self.draw_screen()
+        self.draw_headings()
+        self.draw_squares()
+        self.draw_pieces()
+        self.render_selection()
+
+    def check_in_board_bounds(self, gcoord):
+        """Returns True if given coordinate is within the game board bounds."""
+        x, y = gcoord
+        return board_margin < x < board_margin + board_size and board_margin < y < board_margin + board_size
 
     def gcoord_to_square_string(self, gcoord):
         """Converts the given game coordinates into the appropriate square string."""
@@ -94,7 +109,6 @@ class VisualGame():
             if event.type == pygame.MOUSEBUTTONDOWN:
                 self.click_handler(event.pos)  # Return value to be used for tracking previous click.
 
-
     def game_loop_visual(self):
         """Plays a game of Hasami Shogi rendered visually with PyGame."""
         new_game = HasamiShogiGame()
@@ -102,7 +116,6 @@ class VisualGame():
         while 1:
             self.render_board()
             self.event_handler()
-            self.render_selection()
             pygame.display.flip()
 
 
