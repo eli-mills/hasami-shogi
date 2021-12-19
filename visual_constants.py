@@ -8,7 +8,8 @@ screen_size = 800
 board_size = 630
 square_size = board_size // rows
 board_margin = (screen_size - board_size) // 2
-screen = pygame.display.set_mode((screen_size, screen_size))
+piece_size = square_size//3
+dot_size = square_size//6
 
 # COLORS
 black = 0, 0, 0
@@ -40,3 +41,7 @@ stat_height_3 = board_margin + board_size + 3*board_margin//4
 capture_align_1 = board_margin + board_size//8
 capture_align_2 = board_margin + board_size//2
 player_align = board_margin + 3*board_size//4
+capture_caption = stat_font.render("Pieces Captured:", False, heading_color)
+player_caption = stat_font.render("Current Player:", False, heading_color)
+red_text = stat_font.render("RED", False, red)
+black_text = stat_font.render("BLACK", False, black)

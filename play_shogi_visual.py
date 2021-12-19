@@ -1,5 +1,6 @@
 from HasamiShogiGame import HasamiShogiGame
 from visual_constants import *
+from hasami_shogi_utilities import *
 import pygame
 import sys
 
@@ -10,25 +11,28 @@ class VisualGame():
         """Initialize an instance of a visual Hasami Shogi game."""
         self._selected_square = None
         self._game = HasamiShogiGame()
+        self._player_red = Player(self._game, "RED")
+        self._player_black = Player(self._game, "BLACK")
+        self._screen = pygame.display.set_mode((screen_size, screen_size))
 
     def draw_screen(self):
         """Renders the background screen for the game."""
-        screen.fill(screen_color)
-        screen.blit(board_bg, board_rect, (0, 0, board_size, board_size))
+        self._screen.fill(screen_color)
+        self._screen.blit(board_bg, board_rect, (0, 0, board_size, board_size))
 
     def draw_headings(self):
         """Renders the game headings."""
         for i, col_heading in enumerate(col_headings):
-            screen.blit(col_heading, (board_margin + i*square_size + square_size//3, board_margin//2))
+            self._screen.blit(col_heading, (board_margin + i*square_size + square_size//3, board_margin//2))
 
         for i, row_heading in enumerate(row_headings):
-            screen.blit(row_heading, (board_margin//2,board_margin + i*square_size + square_size//3))
+            self._screen.blit(row_heading, (board_margin//2,board_margin + i*square_size + square_size//3))
 
     def draw_squares(self):
         """Draws all squares for the board."""
         for row in range(rows):
             for col in range(cols):
-                pygame.draw.rect(screen,
+                pygame.draw.rect(self._screen,
                                  border_color, (
                                      board_margin + col*square_size,
                                      board_margin + row*square_size,
@@ -46,16 +50,12 @@ class VisualGame():
                 center = x + square_size//2, y + square_size//2
                 square_color = self._game.get_square_occupant(square_string)
                 if square_color == "RED":
-                    pygame.draw.circle(screen, red, center, 25)
+                    pygame.draw.circle(self._screen, red, center, piece_size)
                 elif square_color == "BLACK":
-                    pygame.draw.circle(screen, black, center, 25)
+                    pygame.draw.circle(self._screen, black, center, piece_size)
 
     def draw_game_stats(self):
         """Creates and positions the game stats, including pieces captured, player turn, and game status."""
-        capture_caption = stat_font.render("Pieces Captured:", False, heading_color)
-        player_caption = stat_font.render("Current Player:", False, heading_color)
-        red_text = stat_font.render("RED", False, red)
-        black_text = stat_font.render("BLACK", False, black)
         red_caps = stat_font.render(str(self._game.get_num_captured_pieces("RED")), False, red)
         black_caps = stat_font.render(str(self._game.get_num_captured_pieces("BLACK")), False, black)
 
@@ -70,21 +70,21 @@ class VisualGame():
             if game_state == "RED_WON":
                 width, height = victory_font.size("RED WON!")
                 victory_coords = screen_size//2 - width//2, screen_size//2 - height//2
-                screen.blit(victory_font.render("RED WON!", False, red, grey), victory_coords)
+                self._screen.blit(victory_font.render("RED WON!", False, red, grey), victory_coords)
             else:
                 width, height = victory_font.size("BLACK WON!")
                 victory_coords = screen_size // 2 - width // 2, screen_size // 2 - height // 2
-                screen.blit(victory_font.render("BLACK WON!", False, black, grey), victory_coords)
+                self._screen.blit(victory_font.render("BLACK WON!", False, black, grey), victory_coords)
 
-        screen.blit(capture_caption, (capture_align_1, stat_height_1))
-        screen.blit(player_caption, (player_align, stat_height_1))
-        screen.blit(red_text, (capture_align_1, stat_height_2))
-        screen.blit(black_text, (capture_align_1, stat_height_3))
-        screen.blit(red_caps, (capture_align_2, stat_height_2))
-        screen.blit(black_caps, (capture_align_2, stat_height_3))
-        screen.blit(current_player, (player_align, stat_height_2))
+        self._screen.blit(capture_caption, (capture_align_1, stat_height_1))
+        self._screen.blit(player_caption, (player_align, stat_height_1))
+        self._screen.blit(red_text, (capture_align_1, stat_height_2))
+        self._screen.blit(black_text, (capture_align_1, stat_height_3))
+        self._screen.blit(red_caps, (capture_align_2, stat_height_2))
+        self._screen.blit(black_caps, (capture_align_2, stat_height_3))
+        self._screen.blit(current_player, (player_align, stat_height_2))
 
-    def render_selection(self):
+    def draw_selection(self):
         """Generates a green outline around the selected square."""
         if self._selected_square:
             x, y = self.square_string_to_gcoord(self._selected_square)
@@ -92,8 +92,18 @@ class VisualGame():
                     ((x - board_margin) // square_size) * square_size + board_margin,
                     ((y - board_margin) // square_size) * square_size + board_margin,
                     square_size,
-                    square_size)
-            pygame.draw.rect(screen, green, selection_rect, 2)
+                    square_size
+            )
+            pygame.draw.rect(self._screen, green, selection_rect, 2)
+
+    def draw_possible_moves(self):
+        """Draws all possible moves for the selected square."""
+        if self._selected_square:
+            possible_moves = return_valid_moves(self._game, self._selected_square)
+            for square in possible_moves:
+                x, y = self.square_string_to_gcoord(square)
+                center = x + square_size//2, y + square_size//2
+                pygame.draw.circle(self._screen, grey, center, dot_size)
 
     def render_board(self):
         """Draws a blank board."""
@@ -102,7 +112,8 @@ class VisualGame():
         self.draw_squares()
         self.draw_pieces()
         self.draw_game_stats()
-        self.render_selection()
+        self.draw_selection()
+        self.draw_possible_moves()
 
     def check_in_board_bounds(self, gcoord):
         """Returns True if given coordinate is within the game board bounds."""
@@ -153,7 +164,6 @@ class VisualGame():
             self.render_board()
             self.event_handler()
             pygame.display.flip()
-
 
 
 def main():
