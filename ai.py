@@ -27,7 +27,7 @@ class AIPlayer(Player):
         """Checks a game board and returns a heuristic representing how advantageous it is for the AI."""
         if not game:
             game = self._game
-        material_points = game.get_num_captured_pieces(self.get_opposing_color()) - game.get_num_captured_pieces(self.get_color())
+        material_points = game.get_num_captured_pieces("RED") - game.get_num_captured_pieces("BLACK")
         return material_points
 
     def possible_heuristics(self):
@@ -38,19 +38,64 @@ class AIPlayer(Player):
             for move in possible_moves:
                 move_log_copy = list(self.get_move_log())
                 move_log_copy.append(move[:2]+move[2:])
-                # print(move_log_copy)
                 sim_game, sim_black, sim_red = self.simulate_game(move_log_copy)
                 sim_player = self.get_matching_player(sim_black, sim_red)
                 score = sim_player.get_heuristic()
                 output.append([move, score])
-                # if move == "a2e2":
-                #     sim_game.get_game_board().print_board()
-        return sorted(output, key=lambda l: l[1], reverse=True)
+        return output
 
-    def minimax(self, depth, moves):
+    def compare_moves(self, movescore1, movescore2, find_max):
+        """Returns the largest or smallest value of the two [move, score] lists depending if find_max True."""
+        if find_max:
+            return movescore1 if movescore1[1] >= movescore2[1] else movescore2
+        else:
+            return movescore1 if movescore1[1] <= movescore2[1] else movescore2
+
+    def find_best_move(self, move_list, find_max):
+        """Given a list of [move, score] lists, finds the maximum or minimum depending on find_max."""
+        best_move = move_list[0]
+        for move in move_list:
+            if find_max and move[1] > best_move[1]:
+                best_move = move
+            elif not find_max and move[1] < best_move[1]:
+                best_move = move
+        return best_move
+
+    def find_all_available_moves(self):
+        """Returns a list of all possible moves given the current game state."""
+        output = []
+        for piece in self.get_pieces():
+            available_moves = return_valid_moves(self._game, piece)
+            for move in available_moves:
+                output.append(move)
+        return output
+
+    def minimax(self, moves, depth, max_player=None, first_time=True):
         """Player uses to choose which move is best. Searches all possible moves up to depth."""
-        if self._game.get_game_state != "UNFINISHED":
-            return
+        sim_game, sim_max, sim_min = self.simulate_game(moves)
+        print(moves)
+        print(sim_max.get_pieces())
+        if depth == 0 or sim_game.get_game_state() != "UNFINISHED":
+            return [moves[-1], self.get_heuristic(sim_game)]
+        if first_time:
+            max_player = (self.get_color() == "BLACK")
+
+        if max_player:
+            max_eval = [None, -9999]
+            for possible_move in sim_max.find_all_available_moves():
+                new_moves = list(moves)
+                new_moves.append(possible_move)
+                eval = self.minimax(new_moves, depth-1, False, False)
+                max_eval = self.compare_moves(max_eval, eval, True)
+            return max_eval
+        else:
+            min_eval = [None, 9999]
+            for possible_move in sim_min.find_all_available_moves():
+                new_moves = list(moves)
+                new_moves.append(possible_move)
+                eval = self.minimax(new_moves, depth-1, True, False)
+                min_eval = self.compare_moves(min_eval, eval, False)
+            return min_eval
 
 
 
@@ -63,8 +108,7 @@ def main():
     player_black.make_move("i3", "e3")
     player_red.make_move("a4", "e4")
     player_black.make_move("i8", "e8")
-    new_game.get_game_board().print_board()
-    print(player_red.possible_heuristics())
+    print(player_red.minimax(player_red.get_move_log(), 2))
 
 
 if __name__ == '__main__':

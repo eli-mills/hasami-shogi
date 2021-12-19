@@ -10,6 +10,11 @@ def run_moves(game, move_list):
     return [game.make_move(move[:2], move[2:]) for move in move_list]
 
 
+def index_to_string(row, column):
+    """Converts row/column index (indexed at 0) to square string. Assumes valid input."""
+    return row_labels[row] + col_labels[column]
+
+
 def build_square_string_range(square_string_from, square_string_to):
     """Returns list of square strings from first square to second. Range cannot be diagonal. Assumes valid input."""
     # 1. Convert square strings to indices.
@@ -66,6 +71,10 @@ class Player:
         """Checks the game status and updates whether the Player is the active player."""
         self._is_active = (self._game.get_active_player() == self._color)
 
+    def get_game(self):
+        """Returns the current game."""
+        return self._game
+
     def get_color(self):
         """Returns the player's color."""
         return self._color
@@ -106,8 +115,17 @@ class Player:
         """Returns true if square is in player's list."""
         return square in self.get_pieces()
 
+    def remove_captured_pieces(self):
+        """Finds and removes the captured squares from the opponent's list."""
+        old_set = set(self._opposing_player.get_pieces())
+        for piece in old_set:
+            if self._game.get_square_occupant(piece) == "NONE":
+                self._opposing_player.remove_pieces([piece])
+
+
     def make_move(self, start, destination):
         """Makes the given move in the game and updates piece locations in log and opponent's log."""
+        prev_captures = self._game.get_num_captured_pieces(self._opposing_color)
         if self._game.make_move(start, destination):
             if self._is_active:
                 self.move_piece(start, destination)
@@ -116,21 +134,20 @@ class Player:
             if self._opposing_player:
                 self._opposing_player.add_to_move_log(start+destination)
                 self._opposing_player.update_active()
+            if prev_captures != self._game.get_num_captured_pieces(self._opposing_color):   # Pieces were captured
+                self.remove_captured_pieces()
 
 
 def main():
     new_game = HasamiShogiGame()
     player_red = Player(new_game, "RED", )
     player_black = Player(new_game, "BLACK")
-    print(return_valid_moves(new_game, "i7"))
-    player_black.make_move("i7", "f7", player_red)
-    player_red.make_move("a2", "d2", player_black)
+    player_red.set_opposing_player(player_black)
+    player_black.make_move("i5", "e5")
+    player_red.make_move("a4", "e4")
+    player_black.make_move("i3", "e3")
     new_game.get_game_board().print_board()
-    print(return_valid_moves(new_game, "f7"))
-    print(player_black.get_pieces())
     print(player_red.get_pieces())
-    print(player_black.get_move_log())
-    print(player_red.get_move_log())
 
 
 
