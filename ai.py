@@ -70,13 +70,14 @@ class AIPlayer(Player):
                 output.append(move)
         return output
 
-    def minimax(self, moves, depth, max_player=None, first_time=True):
+    def minimax(self, moves, depth, max_player=None, first_time=True, level=0):
         """Player uses to choose which move is best. Searches all possible moves up to depth."""
         sim_game, sim_max, sim_min = self.simulate_game(moves)
-        print(moves)
-        print(sim_max.get_pieces())
         if depth == 0 or sim_game.get_game_state() != "UNFINISHED":
-            return [moves[-1], self.get_heuristic(sim_game)]
+            if level%2 == 0: # Opposite player moved last.
+                return [moves[-2], self.get_heuristic(sim_game)]
+            else:
+                return [moves[-1], self.get_heuristic(sim_game)]
         if first_time:
             max_player = (self.get_color() == "BLACK")
 
@@ -85,7 +86,7 @@ class AIPlayer(Player):
             for possible_move in sim_max.find_all_available_moves():
                 new_moves = list(moves)
                 new_moves.append(possible_move)
-                eval = self.minimax(new_moves, depth-1, False, False)
+                eval = self.minimax(new_moves, depth-1, False, False, level+1)
                 max_eval = self.compare_moves(max_eval, eval, True)
             return max_eval
         else:
@@ -93,7 +94,7 @@ class AIPlayer(Player):
             for possible_move in sim_min.find_all_available_moves():
                 new_moves = list(moves)
                 new_moves.append(possible_move)
-                eval = self.minimax(new_moves, depth-1, True, False)
+                eval = self.minimax(new_moves, depth-1, True, False, level+1)
                 min_eval = self.compare_moves(min_eval, eval, False)
             return min_eval
 
@@ -108,7 +109,8 @@ def main():
     player_black.make_move("i3", "e3")
     player_red.make_move("a4", "e4")
     player_black.make_move("i8", "e8")
-    print(player_red.minimax(player_red.get_move_log(), 2))
+    new_game.get_game_board().print_board()
+    print(player_red.minimax(player_red.get_move_log(), 1))
 
 
 if __name__ == '__main__':

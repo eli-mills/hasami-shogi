@@ -122,7 +122,6 @@ class Player:
             if self._game.get_square_occupant(piece) == "NONE":
                 self._opposing_player.remove_pieces([piece])
 
-
     def make_move(self, start, destination):
         """Makes the given move in the game and updates piece locations in log and opponent's log."""
         prev_captures = self._game.get_num_captured_pieces(self._opposing_color)
