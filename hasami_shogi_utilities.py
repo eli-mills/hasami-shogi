@@ -40,7 +40,7 @@ def return_valid_moves(game, square_string):
         for direction in [north, east, south, west]:
             for square in direction[1:]:
                 if game.get_square_occupant(square) == "NONE":
-                    valid_moves.append(square)
+                    valid_moves.append(square_string + square)
                 else:
                     break
         return valid_moves
@@ -48,28 +48,46 @@ def return_valid_moves(game, square_string):
 
 class Player:
     """Defines the methods for a player of Hasami Shogi."""
-    def __init__(self, game, color, starting_pieces=None, starting_moves=None):
+    def __init__(self, game, color):
         """Initializes a player for Hasami Shogi."""
         self._game = game
         self._color = color
-        if starting_pieces:
-            self._pieces = starting_pieces
-        else:
-            self._pieces = {
-                "RED": {'a1', 'a2', 'a3', 'a4', 'a5', 'a6', 'a7', 'a8', 'a9'},
-                "BLACK": {'i1', 'i2', 'i3', 'i4', 'i5', 'i6', 'i7', 'i8', 'i9'}
-            }[color]
-        if starting_moves:
-            self._move_log = starting_moves
-            self.simulate_game(starting_moves)
-        else:
-            self._move_log = []
+        self._pieces = {
+            "RED": {'a1', 'a2', 'a3', 'a4', 'a5', 'a6', 'a7', 'a8', 'a9'},
+            "BLACK": {'i1', 'i2', 'i3', 'i4', 'i5', 'i6', 'i7', 'i8', 'i9'}
+        }[color]
+        self._opposing_player = None
+        self._move_log = []
+        self._is_active = False
+        self.update_active()
 
-    def simulate_game(self, starting_moves):
-        """Simulates a game given a list of moves (4-character string, rcrc)."""
-        if starting_moves:
-            for move in starting_moves:
-                self._game.make_move(move[:2], move[2:])
+    def update_active(self):
+        """Checks the game status and updates whether the Player is the active player."""
+        self._is_active = (self._game.get_active_player() == self._color)
+
+    def get_color(self):
+        """Returns the player's color."""
+        return self._color
+
+    def set_opposing_player(self, player):
+        """Stores the given opposing player accordingly."""
+        self._opposing_player = player
+        player._opposing_player = self
+
+    def simulate_game(self, moves):
+        """Simulates a game given a list of moves (4-character string, rcrc). Assumes all moves are valid."""
+        if self._color == "BLACK":
+            black_player = self
+            red_player = self._opposing_player
+        else:
+            black_player = self._opposing_player
+            red_player = self
+
+        for move_num, move in enumerate(moves):
+            if move_num%2 == 0:
+                black_player.make_move(move[:2], move[2:])
+            else:
+                red_player.make_move(move[:2], move[2:])
 
     def get_pieces(self):
         """Returns all the current player's pieces as a set."""
@@ -97,12 +115,16 @@ class Player:
         """Returns true if square is in player's list."""
         return square in self.get_pieces()
 
-    def make_move(self, start, destination, other_player):
+    def make_move(self, start, destination):
         """Makes the given move in the game and updates piece locations in log and opponent's log."""
         if self._game.make_move(start, destination):
-            self.move_piece(start, destination)
+            if self._is_active:
+                self.move_piece(start, destination)
             self.add_to_move_log(start+destination)
-            other_player.add_to_move_log(start+destination)
+            self.update_active()
+            if self._opposing_player:
+                self._opposing_player.add_to_move_log(start+destination)
+                self._opposing_player.update_active()
 
 
 def main():

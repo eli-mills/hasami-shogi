@@ -13,6 +13,7 @@ class VisualGame():
         self._game = HasamiShogiGame()
         self._player_red = Player(self._game, "RED")
         self._player_black = Player(self._game, "BLACK")
+        self._player_red.set_opposing_player(self._player_black)
         self._screen = pygame.display.set_mode((screen_size, screen_size))
 
     def draw_screen(self):
@@ -101,7 +102,7 @@ class VisualGame():
         if self._selected_square:
             possible_moves = return_valid_moves(self._game, self._selected_square)
             for square in possible_moves:
-                x, y = self.square_string_to_gcoord(square)
+                x, y = self.square_string_to_gcoord(square[2:])
                 center = x + square_size//2, y + square_size//2
                 pygame.draw.circle(self._screen, grey, center, dot_size)
 
@@ -138,15 +139,17 @@ class VisualGame():
         """Defines steps to take when the player clicks a square with the given game coordinates."""
         if not self.check_in_board_bounds(gcoord):
             return
-        text_pos = self.gcoord_to_square_string(gcoord)
+        square_string = self.gcoord_to_square_string(gcoord)
         if not self._selected_square:
-            if self._game.get_square_occupant(text_pos) != self._game.get_active_player():
+            if self._game.get_square_occupant(square_string) != self._game.get_active_player():
                 return
-            self._selected_square = text_pos
-        elif self._selected_square == text_pos:
+            self._selected_square = square_string
+        elif self._selected_square == square_string:
             self._selected_square = None        # Reset selection
+        elif self._game.get_square_occupant(square_string) == self._game.get_square_occupant(self._selected_square):
+            self._selected_square = square_string
         else:
-            self._game.make_move(self._selected_square, text_pos)
+            self._game.make_move(self._selected_square, square_string)
             self._selected_square = None
 
     def event_handler(self):
@@ -158,8 +161,6 @@ class VisualGame():
 
     def game_loop_visual(self):
         """Plays a game of Hasami Shogi rendered visually with PyGame."""
-        new_game = HasamiShogiGame()
-        click = None
         while 1:
             self.render_board()
             self.event_handler()
