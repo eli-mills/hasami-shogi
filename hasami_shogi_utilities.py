@@ -52,6 +52,7 @@ class Player:
         """Initializes a player for Hasami Shogi."""
         self._game = game
         self._color = color
+        self._opposing_color = {"RED": "BLACK", "BLACK": "RED"}[color]
         self._pieces = {
             "RED": {'a1', 'a2', 'a3', 'a4', 'a5', 'a6', 'a7', 'a8', 'a9'},
             "BLACK": {'i1', 'i2', 'i3', 'i4', 'i5', 'i6', 'i7', 'i8', 'i9'}
@@ -69,25 +70,15 @@ class Player:
         """Returns the player's color."""
         return self._color
 
+    def get_opposing_color(self):
+        """Returns the opposing player's color."""
+        return self._opposing_color
+
     def set_opposing_player(self, player):
         """Stores the given opposing player accordingly."""
-        self._opposing_player = player
-        player._opposing_player = self
-
-    def simulate_game(self, moves):
-        """Simulates a game given a list of moves (4-character string, rcrc). Assumes all moves are valid."""
-        if self._color == "BLACK":
-            black_player = self
-            red_player = self._opposing_player
-        else:
-            black_player = self._opposing_player
-            red_player = self
-
-        for move_num, move in enumerate(moves):
-            if move_num%2 == 0:
-                black_player.make_move(move[:2], move[2:])
-            else:
-                red_player.make_move(move[:2], move[2:])
+        if player.get_color() == self._opposing_color:
+            self._opposing_player = player
+            player._opposing_player = self
 
     def get_pieces(self):
         """Returns all the current player's pieces as a set."""
