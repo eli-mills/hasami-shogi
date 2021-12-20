@@ -70,32 +70,38 @@ class AIPlayer(Player):
                 output.append(move)
         return output
 
-    def minimax(self, moves, depth, max_player=None, first_time=True, level=0):
+    def minimax(self, moves, depth, max_player=None, first_time=True):
         """Player uses to choose which move is best. Searches all possible moves up to depth."""
+        #print("Entering minimax", max_player, depth, moves[-1])
+        self.call_count += 1
         sim_game, sim_max, sim_min = self.simulate_game(moves)
         if depth == 0 or sim_game.get_game_state() != "UNFINISHED":
-            if level%2 == 0: # Opposite player moved last.
-                return [moves[-2], self.get_heuristic(sim_game)]
-            else:
-                return [moves[-1], self.get_heuristic(sim_game)]
+            return None, self.get_heuristic(sim_game)
+
         if first_time:
             max_player = (self.get_color() == "BLACK")
 
         if max_player:
-            max_eval = [None, -9999]
+            max_eval = None, -9999
             for possible_move in sim_max.find_all_available_moves():
                 new_moves = list(moves)
                 new_moves.append(possible_move)
-                eval = self.minimax(new_moves, depth-1, False, False, level+1)
-                max_eval = self.compare_moves(max_eval, eval, True)
+                eval = self.minimax(new_moves, depth-1, False, False)
+                #print(eval)
+                #print(max_eval)
+                if eval[1] > max_eval[1]:
+                    max_eval = possible_move, eval[1]
             return max_eval
         else:
-            min_eval = [None, 9999]
+            min_eval = None, 9999
             for possible_move in sim_min.find_all_available_moves():
                 new_moves = list(moves)
                 new_moves.append(possible_move)
-                eval = self.minimax(new_moves, depth-1, True, False, level+1)
-                min_eval = self.compare_moves(min_eval, eval, False)
+                eval = self.minimax(new_moves, depth-1, True, False)
+                # print(eval)
+                # print(min_eval)
+                if eval[1] < min_eval[1]:
+                    min_eval = possible_move, eval[1]
             return min_eval
 
 
@@ -110,7 +116,7 @@ def main():
     player_red.make_move("a4", "e4")
     player_black.make_move("i8", "e8")
     new_game.get_game_board().print_board()
-    print(player_red.minimax(player_red.get_move_log(), 1))
+    print(player_red.minimax(player_red.get_move_log(), 3))
 
 
 if __name__ == '__main__':

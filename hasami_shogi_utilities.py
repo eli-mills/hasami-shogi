@@ -66,6 +66,7 @@ class Player:
         self._move_log = []
         self._is_active = False
         self.update_active()
+        self.call_count = 0
 
     def update_active(self):
         """Checks the game status and updates whether the Player is the active player."""
