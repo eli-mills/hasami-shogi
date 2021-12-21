@@ -182,7 +182,7 @@ class VisualGame():
         else:
             while 1:
                 if self._ai_player.get_active():
-                    next_move = self._ai_player.minimax(2)[0]
+                    next_move = self._ai_player.minimax(3)[0]
                     self._ai_player.make_move(next_move[:2], next_move[2:])
                     self.render_board()
                     pygame.display.flip()

@@ -28,12 +28,23 @@ class AIPlayer(Player):
         """Returns which of the two players matches the current Player's color. Assumes at least one match."""
         return player1 if player1.get_color() == self.get_color() else player2
 
-    def get_heuristic(self, game=None):
+    def get_heuristic(self, game=None, player=None):
         """Checks a game board and returns a heuristic representing how advantageous it is for the AI."""
         if not game:
             game = self._game
+        color_mod = {"RED": -1, "BLACK": 1}[player.get_color()]
         material_points = game.get_num_captured_pieces("RED") - game.get_num_captured_pieces("BLACK")
-        return material_points
+        material_points *= 50
+        center_points = 0
+        for piece in player.get_pieces():
+            if piece[0] in 'def' and piece[1] in '456':
+                center_points += 30
+            elif piece[0] in 'def':
+                center_points += 5
+            elif piece[0] in 'cg':
+                center_points += 3
+        center_points *= color_mod
+        return material_points + center_points
 
     # def find_all_available_moves(self):
     #     """Evaluates all possible moves and their appropriate heuristics."""
@@ -91,7 +102,7 @@ class AIPlayer(Player):
         sim_board = tuple((tuple(x) for x in tuple(sim_game.get_game_board().get_board_list())))
 
         if depth == 0 or sim_game.get_game_state() != "UNFINISHED":
-            return None, self.get_heuristic(sim_game)
+            return (None, self.get_heuristic(sim_game, sim_max)) if max_player else (None, self.get_heuristic(sim_game, sim_min))
 
         if max_player:
             max_eval = None, -9999
@@ -123,7 +134,7 @@ class AIPlayer(Player):
             else:
                 possible_move_list = sim_min.find_all_available_moves()
                 memo[(sim_board, "RED")] = possible_move_list
-            for possible_move in sim_min.find_all_available_moves():
+            for possible_move in possible_move_list:
                 new_moves = list(moves)
                 new_moves.append(possible_move)
                 eval = self.minimax(depth-1, new_moves, True, False, alpha, beta, memo)
