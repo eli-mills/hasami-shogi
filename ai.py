@@ -70,7 +70,7 @@ class AIPlayer(Player):
                 output.append(move)
         return output
 
-    def minimax(self, moves, depth, max_player=None, first_time=True):
+    def minimax(self, moves, depth, max_player=None, first_time=True, alpha=None, beta=None):
         """Player uses to choose which move is best. Searches all possible moves up to depth."""
         #print("Entering minimax", max_player, depth, moves[-1])
         self.call_count += 1
@@ -80,28 +80,38 @@ class AIPlayer(Player):
 
         if first_time:
             max_player = (self.get_color() == "BLACK")
+            alpha = None, -9999
+            beta = None, 9999
 
         if max_player:
             max_eval = None, -9999
             for possible_move in sim_max.find_all_available_moves():
                 new_moves = list(moves)
                 new_moves.append(possible_move)
-                eval = self.minimax(new_moves, depth-1, False, False)
+                eval = self.minimax(new_moves, depth-1, False, False, alpha, beta)
                 #print(eval)
                 #print(max_eval)
                 if eval[1] > max_eval[1]:
                     max_eval = possible_move, eval[1]
+                if max_eval[1] > alpha[1]:
+                    alpha = possible_move, max_eval[1]
+                if beta[1] <= alpha[1]:
+                    break
             return max_eval
         else:
             min_eval = None, 9999
             for possible_move in sim_min.find_all_available_moves():
                 new_moves = list(moves)
                 new_moves.append(possible_move)
-                eval = self.minimax(new_moves, depth-1, True, False)
+                eval = self.minimax(new_moves, depth-1, True, False, alpha, beta)
                 # print(eval)
                 # print(min_eval)
                 if eval[1] < min_eval[1]:
                     min_eval = possible_move, eval[1]
+                if min_eval[1] < beta[1]:
+                    beta = possible_move, min_eval[1]
+                if beta[1] <= alpha[1]:
+                    break
             return min_eval
 
 
