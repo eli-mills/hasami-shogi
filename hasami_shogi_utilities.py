@@ -72,6 +72,10 @@ class Player:
         """Checks the game status and updates whether the Player is the active player."""
         self._is_active = (self._game.get_active_player() == self._color)
 
+    def get_active(self):
+        """Returns True if current player is active."""
+        return self._is_active
+
     def get_game(self):
         """Returns the current game."""
         return self._game

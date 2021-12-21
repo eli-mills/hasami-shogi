@@ -1,19 +1,29 @@
 from HasamiShogiGame import HasamiShogiGame
 from visual_constants import *
 from hasami_shogi_utilities import *
+from ai import *
 import pygame
 import sys
 
 
 class VisualGame():
     """Contains methods and data members used to visually render a game of Hasami Shogi."""
-    def __init__(self):
+    def __init__(self, ai=False, player_color=None):
         """Initialize an instance of a visual Hasami Shogi game."""
         self._selected_square = None
         self._game = HasamiShogiGame()
         self._player_red = Player(self._game, "RED")
         self._player_black = Player(self._game, "BLACK")
-        self._player_red.set_opposing_player(self._player_black)
+        self._ai = ai
+        if ai:
+            if player_color == "RED":
+                self._ai_player = AIPlayer(self._game, "BLACK")
+                self._player_red.set_opposing_player(self._ai_player)
+            elif player_color == "BLACK":
+                self._ai_player = AIPlayer(self._game, "RED")
+                self._player_black.set_opposing_player(self._ai_player)
+        else:
+            self._player_red.set_opposing_player(self._player_black)
         self._screen = pygame.display.set_mode((screen_size, screen_size))
 
     def draw_screen(self):
@@ -149,7 +159,10 @@ class VisualGame():
         elif self._game.get_square_occupant(square_string) == self._game.get_square_occupant(self._selected_square):
             self._selected_square = square_string
         else:
-            self._game.make_move(self._selected_square, square_string)
+            if self._player_black.get_active():
+                self._player_black.make_move(self._selected_square, square_string)
+            elif self._player_red.get_active():
+                self._player_red.make_move(self._selected_square, square_string)
             self._selected_square = None
 
     def event_handler(self):
@@ -161,14 +174,27 @@ class VisualGame():
 
     def game_loop_visual(self):
         """Plays a game of Hasami Shogi rendered visually with PyGame."""
-        while 1:
-            self.render_board()
-            self.event_handler()
-            pygame.display.flip()
+        if not self._ai:
+            while 1:
+                self.render_board()
+                self.event_handler()
+                pygame.display.flip()
+        else:
+            while 1:
+                if self._ai_player.get_active():
+                    next_move = self._ai_player.minimax(2)[0]
+                    self._ai_player.make_move(next_move[:2], next_move[2:])
+                    self.render_board()
+                    pygame.display.flip()
+                else:
+                    self.render_board()
+                    self.event_handler()
+                    self.render_board()
+                    pygame.display.flip()
 
 
 def main():
-    vis_game = VisualGame()
+    vis_game = VisualGame(True, "BLACK")
     vis_game.game_loop_visual()
 
 

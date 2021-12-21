@@ -78,23 +78,20 @@ class AIPlayer(Player):
                 best_move = move
         return best_move
 
-
-
-    def minimax(self, moves, depth, max_player=None, first_time=True, alpha=None, beta=None, memo=None):
+    def minimax(self, depth, moves=None, max_player=None, first_time=True, alpha=None, beta=None, memo=None):
         """Player uses to choose which move is best. Searches all possible moves up to depth."""
-        #print("Entering minimax", max_player, depth, moves[-1])
-        self.call_count += 1
-        sim_game, sim_max, sim_min = self.simulate_game(moves)
-        sim_board = tuple((tuple(x) for x in tuple(sim_game.get_game_board().get_board_list())))
-
-        if depth == 0 or sim_game.get_game_state() != "UNFINISHED":
-            return None, self.get_heuristic(sim_game)
-
         if first_time:
             max_player = (self.get_color() == "BLACK")
             alpha = None, -9999
             beta = None, 9999
             memo = {}
+            moves = self.get_move_log()
+
+        sim_game, sim_max, sim_min = self.simulate_game(moves)
+        sim_board = tuple((tuple(x) for x in tuple(sim_game.get_game_board().get_board_list())))
+
+        if depth == 0 or sim_game.get_game_state() != "UNFINISHED":
+            return None, self.get_heuristic(sim_game)
 
         if max_player:
             max_eval = None, -9999
@@ -108,9 +105,7 @@ class AIPlayer(Player):
             for possible_move in possible_move_list:
                 new_moves = list(moves)
                 new_moves.append(possible_move)
-                eval = self.minimax(new_moves, depth-1, False, False, alpha, beta, memo)
-                #print(eval)
-                #print(max_eval)
+                eval = self.minimax(depth-1, new_moves, False, False, alpha, beta, memo)
                 if eval[1] > max_eval[1]:
                     max_eval = possible_move, eval[1]
                 if max_eval[1] > alpha[1]:
@@ -131,9 +126,7 @@ class AIPlayer(Player):
             for possible_move in sim_min.find_all_available_moves():
                 new_moves = list(moves)
                 new_moves.append(possible_move)
-                eval = self.minimax(new_moves, depth-1, True, False, alpha, beta, memo)
-                # print(eval)
-                # print(min_eval)
+                eval = self.minimax(depth-1, new_moves, True, False, alpha, beta, memo)
                 if eval[1] < min_eval[1]:
                     min_eval = possible_move, eval[1]
                 if min_eval[1] < beta[1]:
@@ -154,7 +147,7 @@ def main():
     player_red.make_move("a4", "e4")
     player_black.make_move("i8", "e8")
     new_game.get_game_board().print_board()
-    print(player_red.minimax(player_red.get_move_log(), 3))
+    print(player_red.minimax(3))
 
 
 if __name__ == '__main__':
