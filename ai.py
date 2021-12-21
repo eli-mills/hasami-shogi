@@ -5,6 +5,11 @@ from hasami_shogi_utilities import *
 class AIPlayer(Player):
     """Defines the methods for an AI Hasami Shogi player. Inherits from regular Player class."""
 
+    # def __init__(self, *args, **kwargs):
+    #     """Inherits from Player."""
+    #     super().__init__(*args, **kwargs)
+    #     self._simulation_memo = {}
+
     def simulate_game(self, moves):
         """Simulates a game given a list of moves (4-character string, rcrc). Assumes all moves are valid.
         Returns the simulated game, the black player, and the red player in order."""
@@ -30,18 +35,30 @@ class AIPlayer(Player):
         material_points = game.get_num_captured_pieces("RED") - game.get_num_captured_pieces("BLACK")
         return material_points
 
-    def possible_heuristics(self):
-        """Evaluates all possible moves and their appropriate heuristics."""
+    # def find_all_available_moves(self):
+    #     """Evaluates all possible moves and their appropriate heuristics."""
+    #     output = []
+    #     for piece in self.get_pieces():
+    #         possible_moves = return_valid_moves(self._game, piece)
+    #         for move in possible_moves:
+    #             move_log_copy = list(self.get_move_log())
+    #             move_log_copy.append(move[:2]+move[2:])
+    #             sim_game, sim_black, sim_red = self.simulate_game(move_log_copy)
+    #             score = sim_black.get_heuristic()
+    #             output.append([move, score])
+    #     if self.get_color() == "BLACK":
+    #         output = sorted(output, key=lambda x: x[1], reverse=True)
+    #     else:
+    #         output = sorted(output, key=lambda x: x[1])
+    #     return tuple((x[0] for x in output))
+
+    def find_all_available_moves(self):
+        """Returns a list of all possible moves given the current game state."""
         output = []
         for piece in self.get_pieces():
-            possible_moves = return_valid_moves(self._game, piece)
-            for move in possible_moves:
-                move_log_copy = list(self.get_move_log())
-                move_log_copy.append(move[:2]+move[2:])
-                sim_game, sim_black, sim_red = self.simulate_game(move_log_copy)
-                sim_player = self.get_matching_player(sim_black, sim_red)
-                score = sim_player.get_heuristic()
-                output.append([move, score])
+            available_moves = return_valid_moves(self._game, piece)
+            for move in available_moves:
+                output.append(move)
         return output
 
     def compare_moves(self, movescore1, movescore2, find_max):
@@ -61,20 +78,15 @@ class AIPlayer(Player):
                 best_move = move
         return best_move
 
-    def find_all_available_moves(self):
-        """Returns a list of all possible moves given the current game state."""
-        output = []
-        for piece in self.get_pieces():
-            available_moves = return_valid_moves(self._game, piece)
-            for move in available_moves:
-                output.append(move)
-        return output
 
-    def minimax(self, moves, depth, max_player=None, first_time=True, alpha=None, beta=None):
+
+    def minimax(self, moves, depth, max_player=None, first_time=True, alpha=None, beta=None, memo=None):
         """Player uses to choose which move is best. Searches all possible moves up to depth."""
         #print("Entering minimax", max_player, depth, moves[-1])
         self.call_count += 1
         sim_game, sim_max, sim_min = self.simulate_game(moves)
+        sim_board = tuple((tuple(x) for x in tuple(sim_game.get_game_board().get_board_list())))
+
         if depth == 0 or sim_game.get_game_state() != "UNFINISHED":
             return None, self.get_heuristic(sim_game)
 
@@ -82,13 +94,21 @@ class AIPlayer(Player):
             max_player = (self.get_color() == "BLACK")
             alpha = None, -9999
             beta = None, 9999
+            memo = {}
 
         if max_player:
             max_eval = None, -9999
-            for possible_move in sim_max.find_all_available_moves():
+            if (sim_board, depth) in memo:
+                return memo[(sim_board, depth)]
+            if (sim_board, "BLACK") in memo:
+                possible_move_list = memo[(sim_board, "BLACK")]
+            else:
+                possible_move_list = sim_max.find_all_available_moves()
+                memo[(sim_board, "BLACK")] = possible_move_list
+            for possible_move in possible_move_list:
                 new_moves = list(moves)
                 new_moves.append(possible_move)
-                eval = self.minimax(new_moves, depth-1, False, False, alpha, beta)
+                eval = self.minimax(new_moves, depth-1, False, False, alpha, beta, memo)
                 #print(eval)
                 #print(max_eval)
                 if eval[1] > max_eval[1]:
@@ -97,13 +117,21 @@ class AIPlayer(Player):
                     alpha = possible_move, max_eval[1]
                 if beta[1] <= alpha[1]:
                     break
+            memo[(sim_board, depth)] = max_eval
             return max_eval
         else:
+            if (sim_board, depth) in memo:
+                return memo[(sim_board, depth)]
             min_eval = None, 9999
+            if (sim_board, "RED") in memo:
+                possible_move_list = memo[(sim_board, "RED")]
+            else:
+                possible_move_list = sim_min.find_all_available_moves()
+                memo[(sim_board, "RED")] = possible_move_list
             for possible_move in sim_min.find_all_available_moves():
                 new_moves = list(moves)
                 new_moves.append(possible_move)
-                eval = self.minimax(new_moves, depth-1, True, False, alpha, beta)
+                eval = self.minimax(new_moves, depth-1, True, False, alpha, beta, memo)
                 # print(eval)
                 # print(min_eval)
                 if eval[1] < min_eval[1]:
@@ -112,8 +140,8 @@ class AIPlayer(Player):
                     beta = possible_move, min_eval[1]
                 if beta[1] <= alpha[1]:
                     break
+            memo[(sim_board, depth)] = min_eval
             return min_eval
-
 
 
 def main():
