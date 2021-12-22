@@ -28,22 +28,22 @@ class AIPlayer(Player):
         """Returns which of the two players matches the current Player's color. Assumes at least one match."""
         return player1 if player1.get_color() == self.get_color() else player2
 
-    def get_heuristic(self, game=None, player=None):
+    def get_heuristic(self, game=None):
         """Checks a game board and returns a heuristic representing how advantageous it is for the AI."""
         if not game:
             game = self._game
-        color_mod = {"RED": -1, "BLACK": 1}[player.get_color()]
         material_points = game.get_num_captured_pieces("RED") - game.get_num_captured_pieces("BLACK")
         material_points *= 50
         center_points = 0
-        for piece in player.get_pieces():
-            if piece[0] in 'def' and piece[1] in '456':
-                center_points += 30
-            elif piece[0] in 'def':
-                center_points += 5
-            elif piece[0] in 'cg':
-                center_points += 3
-        center_points *= color_mod
+        for pl_factor, player in enumerate(["RED", "BLACK"]):
+            pl_factor = 2*pl_factor - 1
+            for piece in get_game_pieces(game)[player]:
+                if piece[0] in 'def' and piece[1] in '456':
+                    center_points += 30 * pl_factor
+                elif piece[0] in 'def':
+                    center_points += 5 * pl_factor
+                elif piece[0] in 'cg':
+                    center_points += 3 * pl_factor
         return material_points + center_points
 
     # def find_all_available_moves(self):
@@ -72,23 +72,6 @@ class AIPlayer(Player):
                 output.append(move)
         return output
 
-    def compare_moves(self, movescore1, movescore2, find_max):
-        """Returns the largest or smallest value of the two [move, score] lists depending if find_max True."""
-        if find_max:
-            return movescore1 if movescore1[1] >= movescore2[1] else movescore2
-        else:
-            return movescore1 if movescore1[1] <= movescore2[1] else movescore2
-
-    def find_best_move(self, move_list, find_max):
-        """Given a list of [move, score] lists, finds the maximum or minimum depending on find_max."""
-        best_move = move_list[0]
-        for move in move_list:
-            if find_max and move[1] > best_move[1]:
-                best_move = move
-            elif not find_max and move[1] < best_move[1]:
-                best_move = move
-        return best_move
-
     def minimax(self, depth, moves=None, max_player=None, first_time=True, alpha=None, beta=None, memo=None):
         """Player uses to choose which move is best. Searches all possible moves up to depth."""
         if first_time:
@@ -99,10 +82,10 @@ class AIPlayer(Player):
             moves = self.get_move_log()
 
         sim_game, sim_max, sim_min = self.simulate_game(moves)
-        sim_board = tuple((tuple(x) for x in tuple(sim_game.get_game_board().get_board_list())))
+        sim_board = tuple(get_game_pieces(sim_game)["RED"]), tuple(get_game_pieces(sim_game)["BLACK"])
 
         if depth == 0 or sim_game.get_game_state() != "UNFINISHED":
-            return (None, self.get_heuristic(sim_game, sim_max)) if max_player else (None, self.get_heuristic(sim_game, sim_min))
+            return (None, self.get_heuristic(sim_game)) if max_player else (None, self.get_heuristic(sim_game))
 
         if max_player:
             max_eval = None, -9999

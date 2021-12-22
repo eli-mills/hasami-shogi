@@ -15,6 +15,16 @@ def index_to_string(row, column):
     return row_labels[row] + col_labels[column]
 
 
+def get_game_pieces(game):
+    """Given a game, returns a color: [square_string_list] dictionary."""
+    output = {"RED": set(), "BLACK": set()}
+    for row in row_labels:
+        for col in col_labels:
+            square_occupant = game.get_square_occupant(row+col)
+            if square_occupant in output:
+                output[square_occupant].add(row+col)
+    return output
+
 def build_square_string_range(square_string_from, square_string_to):
     """Returns list of square strings from first square to second. Range cannot be diagonal. Assumes valid input."""
     # 1. Convert square strings to indices.
@@ -151,7 +161,7 @@ def main():
     player_red.make_move("a4", "e4")
     player_black.make_move("i3", "e3")
     new_game.get_game_board().print_board()
-    print(player_red.get_pieces())
+    print(get_game_pieces(new_game))
 
 
 
