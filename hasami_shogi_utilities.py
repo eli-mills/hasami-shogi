@@ -147,8 +147,8 @@ class Player:
 
     def move_piece(self, start, end):
         """Removes start square from piece list and adds end square."""
-        print(self._color, self._pieces)
-        print("Moving", start, "to", end)
+        # print(self._color, self._pieces)
+        # print("Moving", start, "to", end)
         self._pieces.remove(start)
         self._pieces.add(end)
 

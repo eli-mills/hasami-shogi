@@ -17,10 +17,12 @@ class VisualGame():
         self._ai = ai
         if ai:
             if player_color == "RED":
-                self._ai_player = AIPlayer(self._game, "BLACK")
+                self._player_black = AIPlayer(self._game, "BLACK")
+                self._ai_player = self._player_black
                 self._player_red.set_opposing_player(self._ai_player)
             elif player_color == "BLACK":
-                self._ai_player = AIPlayer(self._game, "RED")
+                self._player_red = AIPlayer(self._game, "RED")
+                self._ai_player = self._player_red
                 self._player_black.set_opposing_player(self._ai_player)
         else:
             self._player_red.set_opposing_player(self._player_black)
@@ -165,6 +167,11 @@ class VisualGame():
                 self._player_red.make_move(self._selected_square, square_string)
             self._selected_square = None
 
+    def check_for_quit(self):
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                sys.exit()
+
     def event_handler(self):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -181,22 +188,18 @@ class VisualGame():
                 pygame.display.flip()
         else:
             while 1:
+                self.render_board()
+                pygame.display.flip()
                 if self._ai_player.get_active():
-                    self.render_board()
-                    pygame.display.flip()
+                    self.check_for_quit()
                     next_move = self._ai_player.minimax(3)[0]
                     self._ai_player.make_move(next_move[:2], next_move[2:])
-                    self.render_board()
-                    pygame.display.flip()
                 else:
-                    self.render_board()
                     self.event_handler()
-                    self.render_board()
-                    pygame.display.flip()
 
 
 def main():
-    vis_game = VisualGame(True, "RED")
+    vis_game = VisualGame(True, "BLACK")
     vis_game.game_loop_visual()
 
 

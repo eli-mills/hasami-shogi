@@ -150,18 +150,22 @@ class AIPlayer(Player):
 
 def main():
     new_game = HasamiShogiGame()
-    player_red = AIPlayer(new_game, "RED")
-    # player_black = Player(new_game, "BLACK")
-    # player_red.set_opposing_player(player_black)
-    #
-    # player_black.make_move("i3", "e3")
-    # player_red.make_move("a4", "e4")
-    # player_black.make_move("i8", "e8")
-    # new_game.get_game_board().print_board()
-    # print(player_red.minimax(3))
-    for row in row_labels:
-        for col in col_labels:
-            print(row+col, player_red.get_center_heuristic(row+col))
+    player_black = AIPlayer(new_game, "BLACK")
+    player_red = Player(new_game, "RED")
+    player_red.set_opposing_player(player_black)
+    while new_game.get_game_state() == "UNFINISHED":
+        print(new_game.get_active_player(), "'s turn.")
+        print("BLACK's pieces:", player_black.get_pieces())
+        print("RED's, pieces:", player_red.get_pieces())
+        new_game.get_game_board().print_board()
+        if new_game.get_active_player() == "BLACK":
+            print("AI is thinking.")
+            ai_move = player_black.minimax(3)[0]
+            player_black.make_move(ai_move[:2], ai_move[2:])
+        else:
+            player_move = input("Enter a 4-char move.\n")
+            player_red.make_move(player_move[:2], player_move[2:])
+
 
 if __name__ == '__main__':
     main()
