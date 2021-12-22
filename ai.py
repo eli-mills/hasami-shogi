@@ -28,23 +28,40 @@ class AIPlayer(Player):
         """Returns which of the two players matches the current Player's color. Assumes at least one match."""
         return player1 if player1.get_color() == self.get_color() else player2
 
+    def get_center_heuristic(self, square_string):
+        """Takes a square string and returns a point value based on how close it is to the center of the board."""
+        row, col = string_to_index(square_string)
+        return (8-row)*(row)*(8-col)*(col)
+
     def get_heuristic(self, game=None):
         """Checks a game board and returns a heuristic representing how advantageous it is for the AI."""
+        # Constants:
+        factor_vic = 9999
+        factor_mat = 100
+        factor_pos = 50
+        factor_cen = 1/4
+        factor_color_dict = {"BLACK": {"opp": "RED", "fac": 1}, "RED": {"opp": "BLACK", "fac": -1}}
+
         if not game:
             game = self._game
+
+        # Material Heuristic
         material_points = game.get_num_captured_pieces("RED") - game.get_num_captured_pieces("BLACK")
-        material_points *= 50
+        material_points *= factor_mat
+
         center_points = 0
-        for pl_factor, player in enumerate(["RED", "BLACK"]):
-            pl_factor = 2*pl_factor - 1
+        position_points = 0
+        for player in "RED", "BLACK":
+            opponent = factor_color_dict[player]["opp"]
+            factor_color = factor_color_dict[player]["fac"]
+
             for piece in get_game_pieces(game)[player]:
-                if piece[0] in 'def' and piece[1] in '456':
-                    center_points += 30 * pl_factor
-                elif piece[0] in 'def':
-                    center_points += 5 * pl_factor
-                elif piece[0] in 'cg':
-                    center_points += 3 * pl_factor
-        return material_points + center_points
+                # Center Heuristic
+                center_points += self.get_center_heuristic(piece)*factor_cen*factor_color
+
+                # Positional Heuristic
+
+        return material_points + center_points + position_points
 
     # def find_all_available_moves(self):
     #     """Evaluates all possible moves and their appropriate heuristics."""
@@ -134,15 +151,17 @@ class AIPlayer(Player):
 def main():
     new_game = HasamiShogiGame()
     player_red = AIPlayer(new_game, "RED")
-    player_black = Player(new_game, "BLACK")
-    player_red.set_opposing_player(player_black)
-
-    player_black.make_move("i3", "e3")
-    player_red.make_move("a4", "e4")
-    player_black.make_move("i8", "e8")
-    new_game.get_game_board().print_board()
-    print(player_red.minimax(3))
-
+    # player_black = Player(new_game, "BLACK")
+    # player_red.set_opposing_player(player_black)
+    #
+    # player_black.make_move("i3", "e3")
+    # player_red.make_move("a4", "e4")
+    # player_black.make_move("i8", "e8")
+    # new_game.get_game_board().print_board()
+    # print(player_red.minimax(3))
+    for row in row_labels:
+        for col in col_labels:
+            print(row+col, player_red.get_center_heuristic(row+col))
 
 if __name__ == '__main__':
     main()

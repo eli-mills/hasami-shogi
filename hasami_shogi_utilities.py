@@ -15,6 +15,11 @@ def index_to_string(row, column):
     return row_labels[row] + col_labels[column]
 
 
+def string_to_index(square_string):
+    """Returns the indices of the given square string as a tuple."""
+    return row_labels.index(square_string[0]), col_labels.index(square_string[1])
+
+
 def get_game_pieces(game):
     """Given a game, returns a color: [square_string_list] dictionary."""
     output = {"RED": set(), "BLACK": set()}
@@ -25,8 +30,40 @@ def get_game_pieces(game):
                 output[square_occupant].add(row+col)
     return output
 
+
+def get_adjacent_squares(square_string):
+    """Returns all directly adjacent pieces of the given square string."""
+    output = set()
+    row, col = string_to_index(square_string)
+    poss_rows = row+1, row-1
+    poss_cols = col+1, col-1
+    for poss_row in poss_rows:
+        if 0 <= poss_row < 9:
+            output.add(index_to_string(poss_row, col))
+    for poss_col in poss_cols:
+        if 0 <= poss_col < 9:
+            output.add(index_to_string(row, poss_col))
+    return output
+
+
+def get_next_square_in_line(square_string1, square_string2):
+    """Given two adjacent square strings, gives the next square in a line. Returns None if out of range. Assumes valid input."""
+    row1, col1, row2, col2 = string_to_index(square_string1), string_to_index(square_string2)
+    row_dir, col_dir = row2 - row1, col2 - col1
+    next_row, next_col = row2 + row_dir, col2 + col_dir
+    if 0 <= next_row < 9 and 0 <= next_col < 9:
+        return index_to_string(next_row, next_col)
+    return None
+
+
 def build_square_string_range(square_string_from, square_string_to):
     """Returns list of square strings from first square to second. Range cannot be diagonal. Assumes valid input."""
+    if not square_string_from or not square_string_to:
+        return None
+
+    if square_string_from[0] != square_string_to[0] and square_string_from[1] != square_string_to[1]:
+        return None
+
     # 1. Convert square strings to indices.
     row_from, col_from = row_labels.index(square_string_from[0]), int(square_string_from[1]) - 1
     row_to, col_to = row_labels.index(square_string_to[0]), int(square_string_to[1]) - 1
@@ -110,6 +147,8 @@ class Player:
 
     def move_piece(self, start, end):
         """Removes start square from piece list and adds end square."""
+        print(self._color, self._pieces)
+        print("Moving", start, "to", end)
         self._pieces.remove(start)
         self._pieces.add(end)
 
@@ -161,7 +200,7 @@ def main():
     player_red.make_move("a4", "e4")
     player_black.make_move("i3", "e3")
     new_game.get_game_board().print_board()
-    print(get_game_pieces(new_game))
+    print(get_adjacent_squares("a2"))
 
 
 
