@@ -43,8 +43,6 @@ class AIPlayer(Player):
         capturing_index = ["RED", "BLACK"].index(capturing_color)
         captured_index = capturing_index*(-1) + 1
 
-        pot_caps = {}
-
         # Check if blank square on either side and potential chain.
         capturing_piece, captured_piece = pair[capturing_index], pair[captured_index]
         # Search direction: red capturing
@@ -54,7 +52,7 @@ class AIPlayer(Player):
             if capturing_piece in corner_capturing_pieces:
                 partner_square = corner_capturing_pieces[capturing_piece]
                 if partner_square not in red_pieces and partner_square not in black_pieces:
-                    return pot_caps, 1
+                    return partner_square, 1
 
         pot_cap_count = 1                                                                   # Check for linear capture
         while next_square is not None and next_square in pieces[captured_index]:
@@ -106,7 +104,8 @@ class AIPlayer(Player):
 
     def find_capture_moves(self, game_piece_dict, captures_to_check, capturing_color):
         """Given a piece dict and a set of potential capture squares: and their value, returns a list of 4-char move,
-        capture value tuples sorted by highest to lowest value. Value is positive no matter the color."""
+        capture value tuples sorted by highest to lowest value. Value is positive no matter the color.
+        Also returns a dict of reachable squares with list of movable pieces, and vice versa."""
         output = []
         for square_to_reach in captures_to_check:
             square_value = captures_to_check[square_to_reach]
@@ -114,55 +113,80 @@ class AIPlayer(Player):
             for piece in possible_pieces:
                 output.append((piece+square_to_reach, square_value))
 
-        return sorted(output, key=lambda x: x[1], reverse=True)
+        return tuple(sorted(output, key=lambda x: x[1], reverse=True))
 
-    def get_position_heuristic(self, game_piece_dict, player_turn):
-        """Given a dictionary of game pieces {'RED': {pieces}, 'BLACK': {pieces}}, returns score based on position."""
+    def get_capture_heuristic(self, game_piece_dict, player_turn):
+        """Given a dictionary of game pieces {'RED': {pieces}, 'BLACK': {pieces}}, returns score based on potential
+        capture analysis. Score represents potential net gain for active player (always non-negative)."""
+        opponent = {"RED": "BLACK", "BLACK": "RED"}[player_turn]
+        score = 0
+
         # Get potential captures squares and their values.
-        red_pot_caps = self.find_potential_captures(game_piece_dict, "RED")
-        black_pot_caps = self.find_potential_captures(game_piece_dict, "BLACK")
+        active_pot_caps = self.find_potential_captures(game_piece_dict, player_turn)
+        opp_pot_caps = self.find_potential_captures(game_piece_dict, opponent)
 
         # Check if potential capture squares are reachable.
-        red_capture_moves = self.find_capture_moves(game_piece_dict, red_pot_caps, "RED")
-        black_capture_moves = self.find_capture_moves(game_piece_dict, black_pot_caps, "BLACK")
+        active_cap_moves = self.find_capture_moves(game_piece_dict, active_pot_caps, player_turn)
+        opp_cap_moves = self.find_capture_moves(game_piece_dict, opp_pot_caps, opponent)
 
-        return red_capture_moves, black_capture_moves
+        # Evaluate
+        if active_cap_moves:
+            active_best = active_cap_moves[0][1]                            # Assumes sorted best to worst move.
+        else:
+            active_best = 0                                                 # Best move is avoiding capture.
+        if opp_cap_moves:
+            tradeoff = active_best - opp_cap_moves[0][1]                    # Both to make best move.
+            if len(opp_cap_moves) > 1:                                      # Opp can capture next turn either way.
+                opp_next_best = opp_cap_moves[1][1]                         # Active avoids max capture.
+            else:
+                opp_next_best = 0                                           # Active completely avoids capture.
+            score = max(tradeoff, opp_next_best)
+        else:
+            score = active_best                                             # No opposition, active makes best move.
 
-        # # Evaluate
-        # move_dict = {"RED": red_capture_moves, "BLACK": black_capture_moves}
-        # for player in move_dict:
-        #     moves = move_dict[player]
-        #     if player == player_turn:                           # More points awarded if current player can capture.
+        return score
 
     def get_heuristic(self, game=None):
-        """Checks a game board and returns a heuristic representing how advantageous it is for the AI."""
+        """Checks a game board and returns a heuristic representing how advantageous it is for the AI. Negative is
+        advantageous for RED, positive for BLACK."""
         # Constants:
         factor_vic = 9999
         factor_mat = 100
-        factor_pos = 50
+        factor_cap = 50
         factor_cen = 1/4
         factor_color_dict = {"BLACK": {"opp": "RED", "fac": 1}, "RED": {"opp": "BLACK", "fac": -1}}
 
         if not game:
             game = self._game
 
+        game_pieces = get_game_pieces(game)
+        active_player = game.get_active_player()
+        active_factor = factor_color_dict[active_player]["fac"]
+
         # Material Heuristic
         material_points = game.get_num_captured_pieces("RED") - game.get_num_captured_pieces("BLACK")
         material_points *= factor_mat
 
         center_points = 0
-        position_points = 0
-        for player in "RED", "BLACK":
-            opponent = factor_color_dict[player]["opp"]
-            factor_color = factor_color_dict[player]["fac"]
 
-            for piece in get_game_pieces(game)[player]:
-                # Center Heuristic
+        # Center Heuristic
+        for player in "RED", "BLACK":
+            factor_color = factor_color_dict[player]["fac"]
+            for piece in game_pieces[player]:
                 center_points += self.get_center_heuristic(piece)*factor_cen*factor_color
 
-                # Positional Heuristic
+        # Potential Capture Heuristic
+        pot_cap_points = self.get_capture_heuristic(game_pieces, active_player) * factor_cap * active_factor
 
-        return material_points + center_points + position_points
+        # Victory Heuristic
+        victory_points = 0
+        game_state = game.get_game_state()
+        if game_state == "RED_WON":
+            victory_points += factor_vic * factor_color["RED"]["fac"]
+        elif game_state == "BLACK_WON":
+            victory_points += factor_vic * factor_color["BLACK"]["fac"]
+
+        return material_points + center_points + pot_cap_points+ victory_points
 
     # def find_all_available_moves(self):
     #     """Evaluates all possible moves and their appropriate heuristics."""
@@ -203,7 +227,7 @@ class AIPlayer(Player):
         sim_board = tuple(get_game_pieces(sim_game)["RED"]), tuple(get_game_pieces(sim_game)["BLACK"])
 
         if depth == 0 or sim_game.get_game_state() != "UNFINISHED":
-            return (None, self.get_heuristic(sim_game)) if max_player else (None, self.get_heuristic(sim_game))
+            return None, self.get_heuristic(sim_game)
 
         if max_player:
             max_eval = None, -9999
@@ -272,8 +296,8 @@ def terminal_ai():
 def main():
     new_game = HasamiShogiGame()
     ai = AIPlayer(new_game, "RED")
-    game_pieces = {"RED": {'a3', 'c2', 'h3', 'e6', 'e7', 'e8', 'e4', 'd4', 'c4', 'b4', 'a1'}, "BLACK": {'a2', 'b1', 'f4', 'e5', 'i7', 'a4', 'i9'}}
-    print(ai.get_position_heuristic(game_pieces, "RED"))
+    game_pieces = {"RED": {'a3', 'c2', 'h3', 'e7', 'e8', 'e4', 'd4', 'c4', 'b4', 'a1', 'e6'}, "BLACK": {'a2', 'b1', 'f4', 'e5', 'i7', 'a4', 'i9'}}
+    print(ai.get_capture_heuristic(game_pieces, "RED"))
 
 
 if __name__ == '__main__':
