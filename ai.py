@@ -33,6 +33,107 @@ class AIPlayer(Player):
         row, col = string_to_index(square_string)
         return (8-row)*(row)*(8-col)*(col)
 
+    def find_capture_partner_square(self, game_piece_dict, pair, capturing_color):
+        """Takes a game dict {'RED': {pieces}, 'BLACK': {pieces}}, a red,black pair, and color to capture.
+        Returns a square_string, cap_count tuple, or None if no capturing square found."""
+        red_pieces = game_piece_dict["RED"]
+        black_pieces = game_piece_dict["BLACK"]
+
+        pieces = red_pieces, black_pieces
+        capturing_index = ["RED", "BLACK"].index(capturing_color)
+        captured_index = capturing_index*(-1) + 1
+
+        pot_caps = {}
+
+        # Check if blank square on either side and potential chain.
+        capturing_piece, captured_piece = pair[capturing_index], pair[captured_index]
+        # Search direction: red capturing
+        prev_square = captured_piece
+        next_square = get_next_square_in_line(capturing_piece, captured_piece)
+        if next_square is None:                                                             # Check for corner capture
+            if capturing_piece in corner_capturing_pieces:
+                partner_square = corner_capturing_pieces[capturing_piece]
+                if partner_square not in red_pieces and partner_square not in black_pieces:
+                    return pot_caps, 1
+
+        pot_cap_count = 1                                                                   # Check for linear capture
+        while next_square is not None and next_square in pieces[captured_index]:
+            pot_cap_count += 1
+            prev_square, next_square = next_square, get_next_square_in_line(prev_square, next_square)
+        if next_square not in red_pieces and next_square not in black_pieces and next_square is not None:
+            return next_square, pot_cap_count
+
+        return None
+
+    def find_potential_captures(self, game_piece_dict, capturing_color):
+        red_pieces = game_piece_dict["RED"]
+        black_pieces = game_piece_dict["BLACK"]
+        pieces = red_pieces, black_pieces
+        capturing_index = ["RED", "BLACK"].index(capturing_color)
+        captured_index = capturing_index * (-1) + 1
+        capturing_pieces, captured_pieces = pieces[capturing_index], pieces[captured_index]
+        pot_caps = {}
+
+        # Check if adjacent squares of opposite color (capture potential).
+        for piece in capturing_pieces:
+            for adj_square in get_adjacent_squares(piece):
+                if adj_square in captured_pieces:
+                    cap_pair = [None, None]
+                    cap_pair[capturing_index] = piece
+                    cap_pair[captured_index] = adj_square
+                    cap_square_and_value = self.find_capture_partner_square(game_piece_dict, tuple(cap_pair), capturing_color)
+                    if cap_square_and_value:
+                        square, value = cap_square_and_value[0], cap_square_and_value[1]
+                        if square in pot_caps:
+                            pot_caps[square] += value
+                        else:
+                            pot_caps[square] = value
+        return pot_caps
+
+    def find_reachable_pieces(self, game_piece_dict, square_to_reach, color_to_move):
+        """Checks if a given square is reachable with any of the given color's pieces."""
+        red_pieces = game_piece_dict["RED"]
+        black_pieces = game_piece_dict["BLACK"]
+        moving_pieces = game_piece_dict[color_to_move]
+        output = set()
+
+        for piece_to_move in moving_pieces:
+            path = build_square_string_range(piece_to_move, square_to_reach)
+            if path:
+                if not any([x in red_pieces or x in black_pieces for x in path[1:]]):
+                    output.add(piece_to_move)
+        return output
+
+    def find_capture_moves(self, game_piece_dict, captures_to_check, capturing_color):
+        """Given a piece dict and a set of potential capture squares: and their value, returns a list of 4-char move,
+        capture value tuples sorted by highest to lowest value. Value is positive no matter the color."""
+        output = []
+        for square_to_reach in captures_to_check:
+            square_value = captures_to_check[square_to_reach]
+            possible_pieces = self.find_reachable_pieces(game_piece_dict, square_to_reach, capturing_color)
+            for piece in possible_pieces:
+                output.append((piece+square_to_reach, square_value))
+
+        return sorted(output, key=lambda x: x[1], reverse=True)
+
+    def get_position_heuristic(self, game_piece_dict, player_turn):
+        """Given a dictionary of game pieces {'RED': {pieces}, 'BLACK': {pieces}}, returns score based on position."""
+        # Get potential captures squares and their values.
+        red_pot_caps = self.find_potential_captures(game_piece_dict, "RED")
+        black_pot_caps = self.find_potential_captures(game_piece_dict, "BLACK")
+
+        # Check if potential capture squares are reachable.
+        red_capture_moves = self.find_capture_moves(game_piece_dict, red_pot_caps, "RED")
+        black_capture_moves = self.find_capture_moves(game_piece_dict, black_pot_caps, "BLACK")
+
+        return red_capture_moves, black_capture_moves
+
+        # # Evaluate
+        # move_dict = {"RED": red_capture_moves, "BLACK": black_capture_moves}
+        # for player in move_dict:
+        #     moves = move_dict[player]
+        #     if player == player_turn:                           # More points awarded if current player can capture.
+
     def get_heuristic(self, game=None):
         """Checks a game board and returns a heuristic representing how advantageous it is for the AI."""
         # Constants:
@@ -148,7 +249,7 @@ class AIPlayer(Player):
             return min_eval
 
 
-def main():
+def terminal_ai():
     new_game = HasamiShogiGame()
     player_black = AIPlayer(new_game, "BLACK")
     player_red = Player(new_game, "RED")
@@ -165,6 +266,14 @@ def main():
         else:
             player_move = input("Enter a 4-char move.\n")
             player_red.make_move(player_move[:2], player_move[2:])
+
+
+
+def main():
+    new_game = HasamiShogiGame()
+    ai = AIPlayer(new_game, "RED")
+    game_pieces = {"RED": {'a3', 'c2', 'h3', 'e6', 'e7', 'e8', 'e4', 'd4', 'c4', 'b4', 'a1'}, "BLACK": {'a2', 'b1', 'f4', 'e5', 'i7', 'a4', 'i9'}}
+    print(ai.get_position_heuristic(game_pieces, "RED"))
 
 
 if __name__ == '__main__':

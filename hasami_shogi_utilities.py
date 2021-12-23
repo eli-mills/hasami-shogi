@@ -4,6 +4,17 @@ from HasamiShogiGame import HasamiShogiGame
 row_labels = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i']
 col_labels = ['1', '2', '3', '4', '5', '6', '7', '8', '9']
 
+# USED BY AI
+corner_capturing_pieces = {
+    'a2': 'b1',
+    'b1': 'a2',
+    'a8': 'b9',
+    'b9': 'a8',
+    'h1': 'i2',
+    'i2': 'h1',
+    'h9': 'i8',
+    'i8': 'h9'
+}
 
 def run_moves(game, move_list):
     """Takes game object and list of 4-string moves."""
@@ -48,7 +59,7 @@ def get_adjacent_squares(square_string):
 
 def get_next_square_in_line(square_string1, square_string2):
     """Given two adjacent square strings, gives the next square in a line. Returns None if out of range. Assumes valid input."""
-    row1, col1, row2, col2 = string_to_index(square_string1), string_to_index(square_string2)
+    (row1, col1), (row2, col2) = string_to_index(square_string1), string_to_index(square_string2)
     row_dir, col_dir = row2 - row1, col2 - col1
     next_row, next_col = row2 + row_dir, col2 + col_dir
     if 0 <= next_row < 9 and 0 <= next_col < 9:
