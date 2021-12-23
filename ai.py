@@ -151,8 +151,8 @@ class AIPlayer(Player):
         advantageous for RED, positive for BLACK."""
         # Constants:
         factor_vic = 9999
-        factor_mat = 100
-        factor_cap = 50
+        factor_mat = 200
+        factor_cap = 100
         factor_cen = 1/4
         factor_color_dict = {"BLACK": {"opp": "RED", "fac": 1}, "RED": {"opp": "BLACK", "fac": -1}}
 
@@ -182,9 +182,9 @@ class AIPlayer(Player):
         victory_points = 0
         game_state = game.get_game_state()
         if game_state == "RED_WON":
-            victory_points += factor_vic * factor_color["RED"]["fac"]
+            victory_points += factor_vic * factor_color_dict["RED"]["fac"]
         elif game_state == "BLACK_WON":
-            victory_points += factor_vic * factor_color["BLACK"]["fac"]
+            victory_points += factor_vic * factor_color_dict["BLACK"]["fac"]
 
         return material_points + center_points + pot_cap_points+ victory_points
 

@@ -190,12 +190,16 @@ class VisualGame():
             while 1:
                 self.render_board()
                 pygame.display.flip()
-                if self._ai_player.get_active():
-                    self.check_for_quit()
-                    next_move = self._ai_player.minimax(3)[0]
-                    self._ai_player.make_move(next_move[:2], next_move[2:])
+                if self._game.get_game_state() == "UNFINISHED":
+                    if self._ai_player.get_active():
+                        self.check_for_quit()
+                        next_move, heuristic = self._ai_player.minimax(1)
+                        self._ai_player.make_move(next_move[:2], next_move[2:])
+                        print(heuristic)
+                    else:
+                        self.event_handler()
                 else:
-                    self.event_handler()
+                    self.check_for_quit()
 
 
 def main():
