@@ -89,7 +89,8 @@ class AIPlayer(Player):
         return pot_caps
 
     def find_reachable_pieces(self, game_piece_dict, square_to_reach, color_to_move):
-        """Checks if a given square is reachable with any of the given color's pieces."""
+        """Checks if a given square is reachable with any of the given color's pieces. Returns set of pieces that can
+        reach the given square."""
         red_pieces = game_piece_dict["RED"]
         black_pieces = game_piece_dict["BLACK"]
         moving_pieces = game_piece_dict[color_to_move]
@@ -188,31 +189,41 @@ class AIPlayer(Player):
 
         return material_points + center_points + pot_cap_points+ victory_points
 
-    # def find_all_available_moves(self):
-    #     """Evaluates all possible moves and their appropriate heuristics."""
-    #     output = []
-    #     for piece in self.get_pieces():
-    #         possible_moves = return_valid_moves(self._game, piece)
-    #         for move in possible_moves:
-    #             move_log_copy = list(self.get_move_log())
-    #             move_log_copy.append(move[:2]+move[2:])
-    #             sim_game, sim_black, sim_red = self.simulate_game(move_log_copy)
-    #             score = sim_black.get_heuristic()
-    #             output.append([move, score])
-    #     if self.get_color() == "BLACK":
-    #         output = sorted(output, key=lambda x: x[1], reverse=True)
-    #     else:
-    #         output = sorted(output, key=lambda x: x[1])
-    #     return tuple((x[0] for x in output))
-
     def find_all_available_moves(self):
         """Returns a list of all possible moves given the current game state."""
-        output = []
+        all_moves = []
+        game = self.get_game()
+        game_pieces = get_game_pieces(game)
+        active_player = game.get_active_player()
+        opponent = {"RED": "BLACK", "BLACK": "RED"}[active_player]
+        active_pieces = game_pieces[active_player]
+        opp_pieces = game_pieces[opponent]
+
+        active_pot_caps = self.find_potential_captures(game_pieces, active_player)
+        active_cap_moves = self.find_capture_moves(game_pieces, active_pot_caps, active_player) # sorted list of tuples
+
         for piece in self.get_pieces():
             available_moves = return_valid_moves(self._game, piece)
             for move in available_moves:
-                output.append(move)
-        return output
+                all_moves.append(move)
+
+        opp_adj = set()
+        for opp_piece in opp_pieces:
+            for adj_square in get_adjacent_squares(opp_piece):
+                if adj_square not in active_pieces and adj_square not in opp_pieces:
+                    opp_adj.add(adj_square)
+
+        adjacent_moves = []
+
+        for square_to_reach in opp_adj:
+            pieces_to_move = self.find_reachable_pieces(game_pieces, square_to_reach, active_player)
+            for piece in pieces_to_move:
+                adjacent_moves.append(piece+square_to_reach)
+
+        preferred_moves = [move[0] for move in active_cap_moves] + adjacent_moves
+        leftover_moves = [x for x in all_moves if x not in preferred_moves]
+
+        return preferred_moves + leftover_moves
 
     def minimax(self, depth, moves=None, max_player=None, first_time=True, alpha=None, beta=None, memo=None):
         """Player uses to choose which move is best. Searches all possible moves up to depth."""

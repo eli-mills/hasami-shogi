@@ -3,6 +3,7 @@ from HasamiShogiGame import HasamiShogiGame
 # LABELS (USED BY VISUAL CONSTANTS)
 row_labels = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i']
 col_labels = ['1', '2', '3', '4', '5', '6', '7', '8', '9']
+all_squares = {row + col for row in row_labels for col in col_labels}
 
 # USED BY AI
 corner_capturing_pieces = {
@@ -15,6 +16,7 @@ corner_capturing_pieces = {
     'h9': 'i8',
     'i8': 'h9'
 }
+
 
 def run_moves(game, move_list):
     """Takes game object and list of 4-string moves."""
@@ -212,7 +214,6 @@ def main():
     player_black.make_move("i3", "e3")
     new_game.get_game_board().print_board()
     print(get_adjacent_squares("a2"))
-
 
 
 if __name__ == "__main__":

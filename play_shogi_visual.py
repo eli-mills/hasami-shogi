@@ -193,7 +193,7 @@ class VisualGame():
                 if self._game.get_game_state() == "UNFINISHED":
                     if self._ai_player.get_active():
                         self.check_for_quit()
-                        next_move, heuristic = self._ai_player.minimax(1)
+                        next_move, heuristic = self._ai_player.minimax(3)
                         self._ai_player.make_move(next_move[:2], next_move[2:])
                         print(heuristic)
                     else:
