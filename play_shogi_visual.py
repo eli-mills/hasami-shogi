@@ -8,7 +8,7 @@ import sys
 
 class VisualGame():
     """Contains methods and data members used to visually render a game of Hasami Shogi."""
-    def __init__(self, ai=False, player_color=None):
+    def __init__(self, num_players, player_color=None):
         """Initialize an instance of a visual Hasami Shogi game."""
         self._selected_square = None
         self._prev_move = None
@@ -16,18 +16,22 @@ class VisualGame():
         self._game = HasamiShogiGame()
         self._player_red = Player(self._game, "RED")
         self._player_black = Player(self._game, "BLACK")
-        self._ai = ai
-        if ai:
-            if player_color == "RED":
+        self._ai = num_players < 2
+        self._zero_player = num_players == 0
+
+        if self._ai:
+            if num_players == 0:
+                self._player_red = AIPlayer(self._game, "RED")
                 self._player_black = AIPlayer(self._game, "BLACK")
                 self._ai_player = self._player_black
-                self._player_red.set_opposing_player(self._ai_player)
+            elif player_color == "RED":
+                self._player_black = AIPlayer(self._game, "BLACK")
+                self._ai_player = self._player_black
             elif player_color == "BLACK":
                 self._player_red = AIPlayer(self._game, "RED")
                 self._ai_player = self._player_red
-                self._player_black.set_opposing_player(self._ai_player)
-        else:
-            self._player_red.set_opposing_player(self._player_black)
+
+        self._player_red.set_opposing_player(self._player_black)
         self._screen = pygame.display.set_mode((screen_size, screen_size))
 
     def draw_screen(self):
@@ -161,6 +165,13 @@ class VisualGame():
         x = board_margin + col_labels.index(col)*square_size
         return x, y
 
+    def swap_ai_player(self):
+        """For a zero-player game, switches ai_player to the other player."""
+        if self._ai_player == self._player_black:
+            self._ai_player = self._player_red
+        else:
+            self._ai_player = self._player_black
+
     def click_handler(self, gcoord):
         """Defines steps to take when the player clicks a square with the given game coordinates."""
         if not self.check_in_board_bounds(gcoord):
@@ -215,6 +226,8 @@ class VisualGame():
                         self._prev_move = next_move[:2]
                         self._curr_move = next_move[2:]
                         print(heuristic)
+                        if self._zero_player:
+                            self.swap_ai_player()
                     else:
                         self.event_handler()
                 else:
@@ -222,7 +235,7 @@ class VisualGame():
 
 
 def main():
-    vis_game = VisualGame(True, "RED")
+    vis_game = VisualGame(0)
     vis_game.game_loop_visual()
 
 
