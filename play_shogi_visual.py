@@ -11,6 +11,8 @@ class VisualGame():
     def __init__(self, ai=False, player_color=None):
         """Initialize an instance of a visual Hasami Shogi game."""
         self._selected_square = None
+        self._prev_move = None
+        self._curr_move = None
         self._game = HasamiShogiGame()
         self._player_red = Player(self._game, "RED")
         self._player_black = Player(self._game, "BLACK")
@@ -102,12 +104,23 @@ class VisualGame():
         if self._selected_square:
             x, y = self.square_string_to_gcoord(self._selected_square)
             selection_rect = (
-                    ((x - board_margin) // square_size) * square_size + board_margin,
-                    ((y - board_margin) // square_size) * square_size + board_margin,
-                    square_size,
-                    square_size
+                ((x - board_margin) // square_size) * square_size + board_margin,
+                ((y - board_margin) // square_size) * square_size + board_margin,
+                square_size,
+                square_size
             )
             pygame.draw.rect(self._screen, green, selection_rect, 2)
+
+    def draw_piece_tracking(self):
+        """Illustrates pieces that were just moved."""
+
+        if self._prev_move:
+            x, y = self.square_string_to_gcoord(self._prev_move)
+            pygame.draw.circle(self._screen, grey, (x+square_size//2, y + square_size//2), piece_size)
+
+        if self._curr_move:
+            x, y = self.square_string_to_gcoord(self._curr_move)
+            pygame.draw.circle(self._screen, green, (x+square_size//2, y+square_size//2), piece_size, 2)
 
     def draw_possible_moves(self):
         """Draws all possible moves for the selected square."""
@@ -126,6 +139,7 @@ class VisualGame():
         self.draw_pieces()
         self.draw_game_stats()
         self.draw_selection()
+        self.draw_piece_tracking()
         self.draw_possible_moves()
 
     def check_in_board_bounds(self, gcoord):
@@ -162,9 +176,12 @@ class VisualGame():
             self._selected_square = square_string
         else:
             if self._player_black.get_active():
-                self._player_black.make_move(self._selected_square, square_string)
+                success = self._player_black.make_move(self._selected_square, square_string)
             elif self._player_red.get_active():
-                self._player_red.make_move(self._selected_square, square_string)
+                success = self._player_red.make_move(self._selected_square, square_string)
+            if success:
+                self._curr_move = square_string
+                self._prev_move = self._selected_square
             self._selected_square = None
 
     def check_for_quit(self):
@@ -195,6 +212,8 @@ class VisualGame():
                         self.check_for_quit()
                         next_move, heuristic = self._ai_player.minimax(3)
                         self._ai_player.make_move(next_move[:2], next_move[2:])
+                        self._prev_move = next_move[:2]
+                        self._curr_move = next_move[2:]
                         print(heuristic)
                     else:
                         self.event_handler()
@@ -203,7 +222,7 @@ class VisualGame():
 
 
 def main():
-    vis_game = VisualGame(True, "BLACK")
+    vis_game = VisualGame(True, "RED")
     vis_game.game_loop_visual()
 
 

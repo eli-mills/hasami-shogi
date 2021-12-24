@@ -190,7 +190,7 @@ class AIPlayer(Player):
         return material_points + center_points + pot_cap_points+ victory_points
 
     def find_all_available_moves(self):
-        """Returns a list of all possible moves given the current game state."""
+        """Returns a list of all possible moves given the current game state. Orders preferable moves first."""
         all_moves = []
         game = self.get_game()
         game_pieces = get_game_pieces(game)
@@ -201,11 +201,8 @@ class AIPlayer(Player):
 
         active_pot_caps = self.find_potential_captures(game_pieces, active_player)
         active_cap_moves = self.find_capture_moves(game_pieces, active_pot_caps, active_player) # sorted list of tuples
+        capture_moves = [move[0] for move in active_cap_moves]
 
-        for piece in self.get_pieces():
-            available_moves = return_valid_moves(self._game, piece)
-            for move in available_moves:
-                all_moves.append(move)
 
         opp_adj = set()
         for opp_piece in opp_pieces:
@@ -220,7 +217,18 @@ class AIPlayer(Player):
             for piece in pieces_to_move:
                 adjacent_moves.append(piece+square_to_reach)
 
-        preferred_moves = [move[0] for move in active_cap_moves] + adjacent_moves
+        center_moves = []
+
+        for piece in self.get_pieces():
+            available_moves = return_valid_moves(self._game, piece)
+            for move in available_moves:
+                if move[2] in "def" and move[3] in "456":
+                    center_moves.append(move)
+                all_moves.append(move)
+
+        preferred_moves = capture_moves + [x for x in adjacent_moves if x not in capture_moves]
+        preferred_moves += [x for x in center_moves if x not in preferred_moves]
+
         leftover_moves = [x for x in all_moves if x not in preferred_moves]
 
         return preferred_moves + leftover_moves

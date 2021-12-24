@@ -202,6 +202,8 @@ class Player:
                 self._opposing_player.update_active()
             if prev_captures != self._game.get_num_captured_pieces(self._opposing_color):   # Pieces were captured
                 self.remove_captured_pieces()
+            return True
+        return False
 
 
 def main():
