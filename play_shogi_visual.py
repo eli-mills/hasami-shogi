@@ -9,7 +9,7 @@ import sys
 
 class VisualGame():
     """Contains methods and data members used to visually render a game of Hasami Shogi."""
-    def __init__(self, num_players, player_color=None):
+    def __init__(self, num_players, ai_depth=None, player_color=None):
         """Initialize an instance of a visual Hasami Shogi game."""
         self._selected_square = None
         self._prev_move = None
@@ -18,6 +18,7 @@ class VisualGame():
         self._player_red = Player(self._game, "RED")
         self._player_black = Player(self._game, "BLACK")
         self._ai = num_players < 2
+        self._ai_depth = ai_depth
         self._zero_player = num_players == 0
 
         if self._ai:
@@ -136,16 +137,18 @@ class VisualGame():
                 center = x + square_size//2, y + square_size//2
                 pygame.draw.circle(self._screen, grey, center, dot_size)
 
+
+
     def render_board(self):
         """Draws a blank board."""
         self.draw_screen()
         self.draw_headings()
         self.draw_squares()
         self.draw_pieces()
-        self.draw_game_stats()
         self.draw_selection()
         self.draw_piece_tracking()
         self.draw_possible_moves()
+        self.draw_game_stats()
 
     def check_in_board_bounds(self, gcoord):
         """Returns True if given coordinate is within the game board bounds."""
@@ -223,7 +226,7 @@ class VisualGame():
                 if self._game.get_game_state() == "UNFINISHED":
                     if self._ai_player.get_active():
                         self.check_for_quit()
-                        next_move, heuristic = self._ai_player.minimax(3)
+                        next_move, heuristic = self._ai_player.minimax(self._ai_depth)
                         self._ai_player.make_move(next_move[:2], next_move[2:])
                         self._prev_move = next_move[:2]
                         self._curr_move = next_move[2:]
@@ -237,7 +240,7 @@ class VisualGame():
 
 
 def main():
-    vis_game = VisualGame(0)
+    vis_game = VisualGame(1, 1, "BLACK")
     vis_game.game_loop_visual()
 
 

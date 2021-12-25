@@ -58,12 +58,13 @@ class AIPlayer(Player):
 
         return None
 
-    def find_potential_captures(self, game_piece_dict, capturing_color):
+    def find_potential_captures(self, game_piece_dict, capturing_color, active=True):
         red_pieces = game_piece_dict["RED"]
         black_pieces = game_piece_dict["BLACK"]
         pieces = red_pieces, black_pieces
         capturing_index = ["RED", "BLACK"].index(capturing_color)
         captured_index = capturing_index * (-1) + 1
+        captured_color = {"RED": "BLACK", "BLACK": "RED"}[capturing_color]
         capturing_pieces, captured_pieces = pieces[capturing_index], pieces[captured_index]
         pot_caps = {}
 
@@ -74,6 +75,8 @@ class AIPlayer(Player):
                     cap_pair = [None, None]
                     cap_pair[capturing_index] = piece
                     cap_pair[captured_index] = adj_square
+                    if not active and self.find_capture_partner_square(game_piece_dict, tuple(cap_pair), captured_color):
+                        continue
                     cap_square_and_value = self.find_capture_partner_square(game_piece_dict, tuple(cap_pair), capturing_color)
                     if cap_square_and_value:
                         square, value = cap_square_and_value[0], cap_square_and_value[1]
@@ -119,7 +122,7 @@ class AIPlayer(Player):
 
         # Get potential captures squares and their values.
         active_pot_caps = self.find_potential_captures(game_piece_dict, player_turn)
-        opp_pot_caps = self.find_potential_captures(game_piece_dict, opponent)
+        opp_pot_caps = self.find_potential_captures(game_piece_dict, opponent, False)
 
         # Check if potential capture squares are reachable.
         active_cap_moves = self.find_capture_moves(game_piece_dict, active_pot_caps, player_turn)
@@ -292,7 +295,10 @@ def terminal_ai():
 
 
 def main():
-    pass
+    game_pieces = {
+        "RED": {'e3', 'd7'}, "BLACK": {'e1', 'e4', 'e5', 'e6'}
+    }
+    print(AIPlayer(HasamiShogiGame(), "BLACK").get_capture_heuristic(game_pieces, "RED"))
 
 
 if __name__ == '__main__':
