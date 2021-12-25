@@ -2,6 +2,7 @@ from HasamiShogiGame import HasamiShogiGame
 from visual_constants import *
 from hasami_shogi_utilities import *
 from ai import *
+import ai
 import pygame
 import sys
 
@@ -209,6 +210,7 @@ class VisualGame():
 
     def game_loop_visual(self):
         """Plays a game of Hasami Shogi rendered visually with PyGame."""
+
         if not self._ai:
             while 1:
                 self.render_board()

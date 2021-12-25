@@ -5,11 +5,6 @@ from hasami_shogi_utilities import *
 class AIPlayer(Player):
     """Defines the methods for an AI Hasami Shogi player. Inherits from regular Player class."""
 
-    # def __init__(self, *args, **kwargs):
-    #     """Inherits from Player."""
-    #     super().__init__(*args, **kwargs)
-    #     self._simulation_memo = {}
-
     def simulate_game(self, moves):
         """Simulates a game given a list of moves (4-character string, rcrc). Assumes all moves are valid.
         Returns the simulated game, the black player, and the red player in order."""
@@ -233,63 +228,48 @@ class AIPlayer(Player):
 
         return preferred_moves + leftover_moves
 
-    def minimax(self, depth, moves=None, max_player=None, first_time=True, alpha=None, beta=None, memo=None):
+    def minimax(self, depth, moves=None, max_player=None, first_time=True, alpha=None, beta=None):
         """Player uses to choose which move is best. Searches all possible moves up to depth."""
+
         if first_time:
             max_player = (self.get_color() == "BLACK")
             alpha = None, -9999
             beta = None, 9999
-            memo = {}
             moves = self.get_move_log()
 
         sim_game, sim_max, sim_min = self.simulate_game(moves)
-        sim_board = tuple(get_game_pieces(sim_game)["RED"]), tuple(get_game_pieces(sim_game)["BLACK"])
 
         if depth == 0 or sim_game.get_game_state() != "UNFINISHED":
             return None, self.get_heuristic(sim_game)
 
         if max_player:
             max_eval = None, -9999
-            if (sim_board, depth) in memo:
-                return memo[(sim_board, depth)]
-            if (sim_board, "BLACK") in memo:
-                possible_move_list = memo[(sim_board, "BLACK")]
-            else:
-                possible_move_list = sim_max.find_all_available_moves()
-                memo[(sim_board, "BLACK")] = possible_move_list
+            possible_move_list = sim_max.find_all_available_moves()
             for possible_move in possible_move_list:
                 new_moves = list(moves)
                 new_moves.append(possible_move)
-                eval = self.minimax(depth-1, new_moves, False, False, alpha, beta, memo)
+                eval = self.minimax(depth-1, new_moves, False, False, alpha, beta)
                 if eval[1] > max_eval[1]:
                     max_eval = possible_move, eval[1]
                 if max_eval[1] > alpha[1]:
                     alpha = possible_move, max_eval[1]
                 if beta[1] <= alpha[1]:
                     break
-            memo[(sim_board, depth)] = max_eval
             return max_eval
         else:
-            if (sim_board, depth) in memo:
-                return memo[(sim_board, depth)]
             min_eval = None, 9999
-            if (sim_board, "RED") in memo:
-                possible_move_list = memo[(sim_board, "RED")]
-            else:
-                possible_move_list = sim_min.find_all_available_moves()
-                memo[(sim_board, "RED")] = possible_move_list
+            possible_move_list = sim_min.find_all_available_moves()
             for possible_move in possible_move_list:
                 new_moves = list(moves)
                 new_moves.append(possible_move)
-                eval = self.minimax(depth-1, new_moves, True, False, alpha, beta, memo)
+                eval = self.minimax(depth-1, new_moves, True, False, alpha, beta)
                 if eval[1] < min_eval[1]:
                     min_eval = possible_move, eval[1]
                 if min_eval[1] < beta[1]:
                     beta = possible_move, min_eval[1]
                 if beta[1] <= alpha[1]:
                     break
-            memo[(sim_board, depth)] = min_eval
-            return min_eval
+            return min_eval[0], min_eval[1]
 
 
 def terminal_ai():
@@ -311,12 +291,8 @@ def terminal_ai():
             player_red.make_move(player_move[:2], player_move[2:])
 
 
-
 def main():
-    new_game = HasamiShogiGame()
-    ai = AIPlayer(new_game, "RED")
-    game_pieces = {"RED": {'a3', 'c2', 'h3', 'e7', 'e8', 'e4', 'd4', 'c4', 'b4', 'a1', 'e6'}, "BLACK": {'a2', 'b1', 'f4', 'e5', 'i7', 'a4', 'i9'}}
-    print(ai.get_capture_heuristic(game_pieces, "RED"))
+    pass
 
 
 if __name__ == '__main__':
