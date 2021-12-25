@@ -76,7 +76,7 @@ class AIPlayer(Player):
                     cap_pair[capturing_index] = piece
                     cap_pair[captured_index] = adj_square
                     if not active and self.find_capture_partner_square(game_piece_dict, tuple(cap_pair), captured_color):
-                        continue
+                        continue                # In this case, one of the capturing pieces will be captured first.
                     cap_square_and_value = self.find_capture_partner_square(game_piece_dict, tuple(cap_pair), capturing_color)
                     if cap_square_and_value:
                         square, value = cap_square_and_value[0], cap_square_and_value[1]
@@ -296,9 +296,9 @@ def terminal_ai():
 
 def main():
     game_pieces = {
-        "RED": {'e3', 'd7'}, "BLACK": {'e1', 'e4', 'e5', 'e6'}
+        "RED": {'e3', 'd7'}, "BLACK": {'d9', 'e4', 'e5', 'e6', 'd6'}
     }
-    print(AIPlayer(HasamiShogiGame(), "BLACK").get_capture_heuristic(game_pieces, "RED"))
+    print(AIPlayer(HasamiShogiGame(), "BLACK").get_capture_heuristic(game_pieces, "BLACK"))
 
 
 if __name__ == '__main__':

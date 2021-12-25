@@ -20,6 +20,8 @@ class VisualGame():
         self._ai = num_players < 2
         self._ai_depth = ai_depth
         self._zero_player = num_players == 0
+        self._just_captured = set()
+        self._just_captured_color = None
 
         if self._ai:
             if num_players == 0:
@@ -137,7 +139,14 @@ class VisualGame():
                 center = x + square_size//2, y + square_size//2
                 pygame.draw.circle(self._screen, grey, center, dot_size)
 
-
+    def draw_just_captured(self):
+        """Draws colored x's where pieces were just captured."""
+        for piece in self._just_captured:
+            x, y = self.square_string_to_gcoord(piece)
+            width, height = cap_font.size("X")
+            coords = x + (square_size - width)//2, y + (square_size - height)//2
+            cap_x = cap_font.render("X", False, self._just_captured_color)
+            self._screen.blit(cap_x, coords)
 
     def render_board(self):
         """Draws a blank board."""
@@ -145,6 +154,7 @@ class VisualGame():
         self.draw_headings()
         self.draw_squares()
         self.draw_pieces()
+        self.draw_just_captured()
         self.draw_selection()
         self.draw_piece_tracking()
         self.draw_possible_moves()
@@ -185,11 +195,14 @@ class VisualGame():
             if self._game.get_square_occupant(square_string) != self._game.get_active_player():
                 return
             self._selected_square = square_string
+            self._just_captured = set()
         elif self._selected_square == square_string:
             self._selected_square = None        # Reset selection
         elif self._game.get_square_occupant(square_string) == self._game.get_square_occupant(self._selected_square):
             self._selected_square = square_string
         else:
+            inactive_player = {"RED": "BLACK", "BLACK": "RED"}[self._game.get_active_player()]
+            prev_game_pieces = get_game_pieces(self._game)[inactive_player]
             if self._player_black.get_active():
                 success = self._player_black.make_move(self._selected_square, square_string)
             elif self._player_red.get_active():
@@ -197,6 +210,10 @@ class VisualGame():
             if success:
                 self._curr_move = square_string
                 self._prev_move = self._selected_square
+            new_pieces = get_game_pieces(self._game)[inactive_player]
+            if prev_game_pieces != new_pieces:
+                self._just_captured_color = inactive_player
+                self._just_captured = prev_game_pieces - new_pieces
             self._selected_square = None
 
     def check_for_quit(self):
@@ -225,14 +242,21 @@ class VisualGame():
                 pygame.display.flip()
                 if self._game.get_game_state() == "UNFINISHED":
                     if self._ai_player.get_active():
-                        self.check_for_quit()
+                        prev_pieces = set(self._ai_player.get_opposing_player().get_pieces())
                         next_move, heuristic = self._ai_player.minimax(self._ai_depth)
                         self._ai_player.make_move(next_move[:2], next_move[2:])
                         self._prev_move = next_move[:2]
                         self._curr_move = next_move[2:]
+                        new_pieces = self._ai_player.get_opposing_player().get_pieces()
                         print(heuristic)
+                        print(prev_pieces)
+                        print(new_pieces)
+                        if new_pieces != prev_pieces:
+                            self._just_captured_color = self._ai_player.get_opposing_color()
+                            self._just_captured = prev_pieces - new_pieces
                         if self._zero_player:
                             self.swap_ai_player()
+                        self.check_for_quit()
                     else:
                         self.event_handler()
                 else:

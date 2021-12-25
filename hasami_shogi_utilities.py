@@ -120,8 +120,6 @@ class Player:
         self._is_active = False
         self.update_active()
 
-
-
     def update_active(self):
         """Checks the game status and updates whether the Player is the active player."""
         self._is_active = (self._game.get_active_player() == self._color)
@@ -141,6 +139,10 @@ class Player:
     def get_opposing_color(self):
         """Returns the opposing player's color."""
         return self._opposing_color
+
+    def get_opposing_player(self):
+        """Returns the opposing player object."""
+        return self._opposing_player
 
     def set_opposing_player(self, player):
         """Sets the given player as opponent and sets self as given player's opponent. Must be opposite colors."""

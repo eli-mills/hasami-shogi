@@ -10,6 +10,7 @@ square_size = board_size // rows
 board_margin = (screen_size - board_size) // 2
 piece_size = square_size//3
 dot_size = square_size//6
+cap_font = pygame.font.SysFont("Arial", 48)
 
 # COLORS
 black = 0, 0, 0
