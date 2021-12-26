@@ -28,58 +28,51 @@ class AIPlayer(Player):
         row, col = string_to_index(square_string)
         return (8-row)*(row)*(8-col)*(col)
 
-    def find_capture_partner_square(self, game_piece_dict, pair, capturing_color):
-        """Takes a game dict {'RED': {pieces}, 'BLACK': {pieces}}, a red,black pair, and color to capture.
-        Returns a square_string, cap_count tuple, or None if no capturing square found."""
-        red_pieces = game_piece_dict["RED"]
-        black_pieces = game_piece_dict["BLACK"]
+    def find_cap_partner(self, game_piece_dict, pair):
+        """Takes a game dict {'RED': {pieces}, 'BLACK': {pieces}}, and a capturing, captured pair.
+        Returns tuple: square_string that would complete a capture, and how many pieces would be captured, or None if
+        no capturing square found."""
+        all_pieces = get_all_pieces(game_piece_dict)
+        capturing_piece, captured_piece = pair
+        captured_color = get_piece_color(game_piece_dict, captured_piece)
+        captured_pieces = game_piece_dict[captured_color]
 
-        pieces = red_pieces, black_pieces
-        capturing_index = ["RED", "BLACK"].index(capturing_color)
-        captured_index = capturing_index*(-1) + 1
-
-        # Check if blank square on either side and potential chain.
-        capturing_piece, captured_piece = pair[capturing_index], pair[captured_index]
-        # Search direction: red capturing
+        # Search direction: capturing -> captured
         prev_square = captured_piece
-        next_square = get_next_square_in_line(capturing_piece, captured_piece)
+        next_square = get_next_square(capturing_piece, captured_piece)
         if next_square is None:                                                             # Check for corner capture
-            if capturing_piece in corner_capturing_pieces:
-                partner_square = corner_capturing_pieces[capturing_piece]
-                if partner_square not in red_pieces and partner_square not in black_pieces:
-                    return partner_square, 1
+            if capturing_piece in CORNER_CAP_PIECES:
+                partner_square = CORNER_CAP_PIECES[capturing_piece]
+                if partner_square not in all_pieces:                          # Corner partner is empty
+                    return partner_square, 1                                                # Corner captures only one
 
         pot_cap_count = 1                                                                   # Check for linear capture
-        while next_square is not None and next_square in pieces[captured_index]:
+        while next_square is not None and next_square in captured_pieces:                   # Checking for >1 capture
             pot_cap_count += 1
-            prev_square, next_square = next_square, get_next_square_in_line(prev_square, next_square)
-        if next_square not in red_pieces and next_square not in black_pieces and next_square is not None:
+            prev_square, next_square = next_square, get_next_square(prev_square, next_square)
+        if next_square not in all_pieces and next_square is not None:         # Partner square available
             return next_square, pot_cap_count
 
-        return None
+        return None                                                 # Partner square occupied or end of board reached.
 
-    def find_potential_captures(self, game_piece_dict, capturing_color, active=True):
-        red_pieces = game_piece_dict["RED"]
-        black_pieces = game_piece_dict["BLACK"]
-        pieces = red_pieces, black_pieces
-        capturing_index = ["RED", "BLACK"].index(capturing_color)
-        captured_index = capturing_index * (-1) + 1
-        captured_color = {"RED": "BLACK", "BLACK": "RED"}[capturing_color]
-        capturing_pieces, captured_pieces = pieces[capturing_index], pieces[captured_index]
+    def find_pot_cap_squares(self, game_piece_dict, capturing_color, active=True):
+        """Takes game piece dict, color to capture, and optional whether player is active. Returns square: value dict
+        for every square where a capture would result from a capturing color piece moving there."""
+        captured_color = opposite_color(capturing_color)
+        capturing_pieces = game_piece_dict[capturing_color]
+        captured_pieces = game_piece_dict[captured_color]
         pot_caps = {}
 
         # Check if adjacent squares of opposite color (capture potential).
-        for piece in capturing_pieces:
-            for adj_square in get_adjacent_squares(piece):
-                if adj_square in captured_pieces:
-                    cap_pair = [None, None]
-                    cap_pair[capturing_index] = piece
-                    cap_pair[captured_index] = adj_square
-                    if not active and self.find_capture_partner_square(game_piece_dict, tuple(cap_pair), captured_color):
+        for cap_piece in capturing_pieces:
+            for adj_square in get_adjacent_squares(cap_piece):
+                if adj_square in captured_pieces:                                       # Potential capture pair found.
+                    cap_pair = cap_piece, adj_square
+                    if not active and self.find_cap_partner(game_piece_dict, cap_pair[::-1]):
                         continue                # In this case, one of the capturing pieces will be captured first.
-                    cap_square_and_value = self.find_capture_partner_square(game_piece_dict, tuple(cap_pair), capturing_color)
+                    cap_square_and_value = self.find_cap_partner(game_piece_dict, cap_pair)
                     if cap_square_and_value:
-                        square, value = cap_square_and_value[0], cap_square_and_value[1]
+                        square, value = cap_square_and_value
                         if square in pot_caps:
                             pot_caps[square] += value
                         else:
@@ -89,48 +82,33 @@ class AIPlayer(Player):
     def find_reachable_pieces(self, game_piece_dict, square_to_reach, color_to_move):
         """Checks if a given square is reachable with any of the given color's pieces. Returns set of pieces that can
         reach the given square."""
-        red_pieces = game_piece_dict["RED"]
-        black_pieces = game_piece_dict["BLACK"]
+        all_pieces = get_all_pieces(game_piece_dict)
         moving_pieces = game_piece_dict[color_to_move]
         output = set()
 
         for piece_to_move in moving_pieces:
             path = build_square_string_range(piece_to_move, square_to_reach)
             if path:
-                if not any([x in red_pieces or x in black_pieces for x in path[1:]]):
+                if not any([x in all_pieces for x in path[1:]]):                                        # Path is clear.
                     output.add(piece_to_move)
         return output
 
     def find_capture_moves(self, game_piece_dict, captures_to_check, capturing_color):
-        """Given a piece dict and a set of potential capture squares: and their value, returns a list of 4-char move,
-        capture value tuples sorted by highest to lowest value. Value is positive no matter the color.
-        Also returns a dict of reachable squares with list of movable pieces, and vice versa."""
+        """Given a piece dict and a set of potential capture squares: and their value, returns a tuple of 4-char move,
+        capture value tuples sorted by highest to lowest value. Value is positive no matter the color."""
         output = []
         for square_to_reach in captures_to_check:
-            square_value = captures_to_check[square_to_reach]
+            square_value = captures_to_check[square_to_reach]           # Number of pieces that would be captured.
             possible_pieces = self.find_reachable_pieces(game_piece_dict, square_to_reach, capturing_color)
             for piece in possible_pieces:
                 output.append((piece+square_to_reach, square_value))
 
         return tuple(sorted(output, key=lambda x: x[1], reverse=True))
 
-    def get_capture_heuristic(self, game_piece_dict, player_turn):
-        """Given a dictionary of game pieces {'RED': {pieces}, 'BLACK': {pieces}}, returns score based on potential
-        capture analysis. Score represents potential net gain for active player (always non-negative)."""
-        opponent = {"RED": "BLACK", "BLACK": "RED"}[player_turn]
-        active_pieces = len(game_piece_dict[player_turn])
-        opp_pieces = len(game_piece_dict[player_turn])
-        material_advantage = active_pieces - opp_pieces
+    def evaluate_cap_moves(self, active_cap_moves, opp_cap_moves, material_advantage):
+        """Takes game piece dict, active player's capture moves, and opponent's capture moves. Returns score based on
+        best possible scenarios for both players. Score represents net material gain for active player."""
 
-        # Get potential captures squares and their values.
-        active_pot_caps = self.find_potential_captures(game_piece_dict, player_turn)
-        opp_pot_caps = self.find_potential_captures(game_piece_dict, opponent, False)
-
-        # Check if potential capture squares are reachable.
-        active_cap_moves = self.find_capture_moves(game_piece_dict, active_pot_caps, player_turn)
-        opp_cap_moves = self.find_capture_moves(game_piece_dict, opp_pot_caps, opponent)
-
-        # Evaluate
         if active_cap_moves:
             active_best = active_cap_moves[0][1]                            # Assumes sorted best to worst move.
         else:
@@ -148,6 +126,23 @@ class AIPlayer(Player):
             score = active_best                                             # No opposition, active makes best move.
 
         return score
+
+
+    def get_capture_heuristic(self, game_piece_dict, player_turn):
+        """Returns static evaluation of game piece dict {'RED': {pieces}, 'BLACK': {pieces}} based on potential capture
+        analysis. Score represents potential net gain for active player (always non-negative)."""
+        opponent = opposite_color(player_turn)
+        material_advantage = len(game_piece_dict[player_turn]) - len(game_piece_dict[opponent])
+
+        # Find all potential captures squares and their values for both players.
+        active_pot_caps = self.find_pot_cap_squares(game_piece_dict, player_turn)
+        opp_pot_caps = self.find_pot_cap_squares(game_piece_dict, opponent, False)
+
+        # Check if any potential capture squares are reachable for both players.
+        active_cap_moves = self.find_capture_moves(game_piece_dict, active_pot_caps, player_turn)
+        opp_cap_moves = self.find_capture_moves(game_piece_dict, opp_pot_caps, opponent)
+
+        return self.evaluate_cap_moves(active_cap_moves, opp_cap_moves, material_advantage)
 
     def get_heuristic(self, game=None):
         """Checks a game board and returns a heuristic representing how advantageous it is for the AI. Negative is
@@ -201,7 +196,7 @@ class AIPlayer(Player):
         active_pieces = game_pieces[active_player]
         opp_pieces = game_pieces[opponent]
 
-        active_pot_caps = self.find_potential_captures(game_pieces, active_player)
+        active_pot_caps = self.find_pot_cap_squares(game_pieces, active_player)
         active_cap_moves = self.find_capture_moves(game_pieces, active_pot_caps, active_player) # sorted list of tuples
         capture_moves = [move[0] for move in active_cap_moves]
 

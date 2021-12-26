@@ -4,7 +4,7 @@ from HasamiShogiGame import HasamiShogiGame
 row_labels = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i']
 col_labels = ['1', '2', '3', '4', '5', '6', '7', '8', '9']
 all_squares = [row + col for row in row_labels for col in col_labels]
-corner_capturing_pieces = {
+CORNER_CAP_PIECES = {
     'a2': 'b1',
     'b1': 'a2',
     'a8': 'b9',
@@ -34,14 +34,31 @@ def string_to_index(square_string):
     return row_labels.index(square_string[0]), col_labels.index(square_string[1])
 
 
+def opposite_color(color):
+    """Returns RED if BLACK, and vice versa."""
+    return {"RED": "BLACK", "BLACK": "RED"}[color]
+
+
 def get_game_pieces(game):
-    """Given a game, returns a color: [square_string_list] dictionary."""
+    """Given a game, returns a {'color': {square string set}} dictionary. Does not contain empty squares."""
     output = {"RED": set(), "BLACK": set()}
     for square in all_squares:
         square_occupant = game.get_square_occupant(square)
         if square_occupant in output:
             output[square_occupant].add(square)
     return output
+
+def get_all_pieces(game_piece_dict):
+    """Returns set of all pieces on gameboard without any reference to color."""
+    return game_piece_dict["RED"] | game_piece_dict["BLACK"]
+
+def get_piece_color(game_piece_dict, piece):
+    """Given a game piece dict, returns the color of the given piece, or None if not found. Assumes legit piece."""
+    if piece in game_piece_dict["RED"]:
+        return "RED"
+    if piece in game_piece_dict["BLACK"]:
+        return "BLACK"
+    return None
 
 
 def get_adjacent_squares(square_string):
@@ -52,7 +69,7 @@ def get_adjacent_squares(square_string):
     return {index_to_string(x, col) for x in poss_rows if 0<=x<9} | {index_to_string(row, y) for y in poss_cols if 0<=y<9}
 
 
-def get_next_square_in_line(square_string1, square_string2):
+def get_next_square(square_string1, square_string2):
     """Given two adjacent square strings, gives the next square in a line. Returns None if off board. Assumes valid input."""
     if not square_string1 or not square_string2:
         return None
@@ -93,13 +110,13 @@ def return_valid_moves(game, square_string):
         adj_squares = get_adjacent_squares(square_string)
         for square in adj_squares:
             curr_square = square
-            next_square = get_next_square_in_line(square_string, square)
+            next_square = get_next_square(square_string, square)
             while curr_square:
                 if game.get_square_occupant(curr_square) != "NONE":
                     break
                 else:
                     valid_moves.add(square_string+curr_square)
-                    curr_square, next_square = next_square, get_next_square_in_line(curr_square, next_square)
+                    curr_square, next_square = next_square, get_next_square(curr_square, next_square)
 
         return valid_moves
 
