@@ -110,23 +110,22 @@ class AIPlayer(Player):
         best possible scenarios for both players. Score represents net material gain for active player."""
 
         if active_cap_moves:
-            active_best = active_cap_moves[0][1]                            # Assumes sorted best to worst move.
+            active_best = active_cap_moves[0][1]                                # Assumes sorted best to worst move.
         else:
-            active_best = 0                                                 # Best move is avoiding capture.
+            active_best = 0                                                     # Best move is avoiding capture.
         if opp_cap_moves:
-            tradeoff = active_best - opp_cap_moves[0][1]                    # Both to make best move.
-            if tradeoff == 0:                                               # If active in lead, should go for trade.
+            tradeoff = active_best - opp_cap_moves[0][1]                        # Both to make best move.
+            if tradeoff == 0:                                                   # If active in lead, go for trade.
                 tradeoff += material_advantage
-            if len(opp_cap_moves) > 1:                                      # Opp can capture next turn either way.
-                opp_next_best = opp_cap_moves[1][1]                         # Active avoids max capture.
+            if len(opp_cap_moves) > 1:                                          # Opp can capture next turn either way.
+                opp_next_best = -1 * opp_cap_moves[1][1]                        # Active avoids max capture.
             else:
-                opp_next_best = 0                                           # Active completely avoids capture.
+                opp_next_best = 0                                               # Active completely avoids capture.
             score = max(tradeoff, opp_next_best)
         else:
-            score = active_best                                             # No opposition, active makes best move.
+            score = active_best                                                 # No opposition, active makes best move.
 
         return score
-
 
     def get_capture_heuristic(self, game_piece_dict, player_turn):
         """Returns static evaluation of game piece dict {'RED': {pieces}, 'BLACK': {pieces}} based on potential capture
@@ -151,7 +150,7 @@ class AIPlayer(Player):
         factor_vic = 9999
         factor_mat = 200
         factor_cap = 100
-        factor_cen = 1/8
+        factor_cen = 1/16
         factor_color_dict = {"BLACK": {"opp": "RED", "fac": 1}, "RED": {"opp": "BLACK", "fac": -1}}
 
         if not game:
