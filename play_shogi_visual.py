@@ -175,8 +175,8 @@ class VisualGame():
     def square_string_to_gcoord(self, square_string):
         """Converts the given square string into a game coordinate."""
         row, col = square_string[0], square_string[1]
-        y = board_margin + row_labels.index(row)*square_size
-        x = board_margin + col_labels.index(col)*square_size
+        y = board_margin + row_labels.index(row) * square_size
+        x = board_margin + col_labels.index(col) * square_size
         return x, y
 
     def swap_ai_player(self):

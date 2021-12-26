@@ -20,12 +20,17 @@ class GameBoard:
             "BLACK": {'i1', 'i2', 'i3', 'i4', 'i5', 'i6', 'i7', 'i8', 'i9'}
         }
         self._squares["NONE"] = self._all_squares - self._squares["RED"] - self._squares["BLACK"]
+        self._ind_squares = {square: color for color in self._squares for square in self._squares[color]}
         self._board[0] = ["RED" for x in range(9)]
         self._board[8] = ["BLACK" for x in range(9)]
 
     def get_board_list(self):
         """Returns the board as a list of lists."""
         return [[color for color in [self.get_square(ss) for ss in self._all_squares_in_order]][(9 * x):(9 * (x + 1))] for x in range(0, 9)]
+
+    def get_all_squares(self):
+        """Returns all possible squares of board as a set of square strings."""
+        return self._all_squares
 
     def print_board(self):
         """Prints the current board with row/column labels. Abbreviates RED and BLACK and replaces NONE with '.'. """
@@ -49,21 +54,13 @@ class GameBoard:
 
     def get_square(self, square_string):
         """Given a square string, returns the value at that square."""
-        if square_string not in self._all_squares:
-            return None
-        if square_string in self._squares["RED"]:
-            return "RED"
-        if square_string in self._squares["BLACK"]:
-            return "BLACK"
-        return "NONE"
+        return self._ind_squares[square_string]
 
     def set_square(self, square_string, square_value):
         """Sets the value of the given square to the given value."""
         if square_string not in self._all_squares or square_value not in {"RED", "BLACK", "NONE"}:
             return None
-        current_color = self.get_square(square_string)
-        self._squares[current_color].remove(square_string)
-        self._squares[square_value].add(square_string)
+        self._ind_squares[square_string] = square_value
 
     def build_square_string_range(self, square_string_from, square_string_to):
         """Returns list of square strings from first square to second. Range cannot be diagonal. Assumes valid input."""
@@ -93,6 +90,7 @@ class HasamiShogiGame:
         self._active_player = "BLACK"       # BLACK, RED
         self._inactive_player = "RED"       # BLACK, RED
         self._captured_pieces = {"RED": 0, "BLACK": 0}
+        self._all_squares = self._game_board.get_all_squares()
 
     def get_game_board(self):
         """Returns the game board object."""
@@ -141,11 +139,7 @@ class HasamiShogiGame:
         if self.get_game_state() != "UNFINISHED":                                     # Game is finished
             return False
 
-        allowed_rows = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i']
-        allowed_cols = ['1', '2', '3', '4', '5', '6', '7', '8', '9']
-        if moving_from[0] not in allowed_rows or moving_to[0] not in allowed_rows:    # Row out of range
-            return False
-        if moving_from[1] not in allowed_cols or moving_to[1] not in allowed_cols:    # Column out of range
+        if moving_from not in self._all_squares or moving_to not in self._all_squares:              # Out of range
             return False
 
         if self.get_square_occupant(moving_from) != self.get_active_player():         # Wrong color
@@ -158,7 +152,7 @@ class HasamiShogiGame:
             return False
 
         move_path = self.get_game_board().build_square_string_range(moving_from, moving_to)
-        return all([self.get_square_occupant(x) == "NONE" for x in move_path[1:]])    # Check for clear path.
+        return False not in {self.get_square_occupant(x) == "NONE" for x in move_path[1:]}    # Check for clear path.
 
     def find_captured_squares(self, from_square, to_square):
         """Finds capture pattern in given square string range. Returns captured squares if found, else False."""

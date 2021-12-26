@@ -1,9 +1,23 @@
 from HasamiShogiGame import HasamiShogiGame
 
+
+def bi_dict(dictionary):
+    """Given a dictionary, adds all values as keys and their keys as values. Does not work if values are mutable."""
+    temp_dict = dict(dictionary)
+    for key, value in temp_dict.items():
+        dictionary[value] = key
+
+
 # CONSTANTS
 row_labels = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i']
 col_labels = ['1', '2', '3', '4', '5', '6', '7', '8', '9']
-all_squares = [row + col for row in row_labels for col in col_labels]
+
+row_num = {'a': 0, 'b': 1, 'c': 2, 'd': 3, 'e': 4, 'f': 5, 'g': 6, 'h': 7, 'i': 8}
+col_num = {'1': 0, '2': 1, '3': 2, '4': 3, '5': 4, '6': 5, '7': 6, '8': 7, '9': 8}
+all_squares_in_order = [row + col for row in row_num for col in col_num]
+bi_dict(row_num)
+bi_dict(col_num)
+all_squares = set(all_squares_in_order)
 CORNER_CAP_PIECES = {
     'a2': 'b1',
     'b1': 'a2',
@@ -16,9 +30,6 @@ CORNER_CAP_PIECES = {
 }
 
 
-
-
-
 def run_moves(game, move_list):
     """Takes game object and list of 4-string moves."""
     return [game.make_move(move[:2], move[2:]) for move in move_list]
@@ -26,12 +37,12 @@ def run_moves(game, move_list):
 
 def index_to_string(row, column):
     """Converts row/column index (indexed at 0) to square string. Assumes valid input."""
-    return row_labels[row] + col_labels[column]
+    return row_num[row] + col_num[column]
 
 
 def string_to_index(square_string):
     """Returns the indices of the given square string as a tuple."""
-    return row_labels.index(square_string[0]), col_labels.index(square_string[1])
+    return row_num[square_string[0]], col_num[square_string[1]]
 
 
 def opposite_color(color):
@@ -42,7 +53,7 @@ def opposite_color(color):
 def get_game_pieces(game):
     """Given a game, returns a {'color': {square string set}} dictionary. Does not contain empty squares."""
     output = {"RED": set(), "BLACK": set()}
-    for square in all_squares:
+    for square in all_squares_in_order:
         square_occupant = game.get_square_occupant(square)
         if square_occupant in output:
             output[square_occupant].add(square)
