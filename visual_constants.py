@@ -4,8 +4,8 @@ pygame.font.init()
 
 # SIZES
 rows = cols = 9
-screen_size = 800
-board_size = 630
+screen_size = 700
+board_size = 550
 square_size = board_size // rows
 board_margin = (screen_size - board_size) // 2
 piece_size = square_size//3

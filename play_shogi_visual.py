@@ -242,6 +242,7 @@ class VisualGame():
                 pygame.display.flip()
                 if self._game.get_game_state() == "UNFINISHED":
                     if self._ai_player.get_active():
+                        self.check_for_quit()
                         prev_pieces = set(self._ai_player.get_opposing_player().get_pieces())
                         next_move, heuristic = self._ai_player.minimax(self._ai_depth)
                         self._ai_player.make_move(next_move[:2], next_move[2:])
@@ -249,14 +250,13 @@ class VisualGame():
                         self._curr_move = next_move[2:]
                         new_pieces = self._ai_player.get_opposing_player().get_pieces()
                         print(heuristic)
-                        print(prev_pieces)
-                        print(new_pieces)
                         if new_pieces != prev_pieces:
                             self._just_captured_color = self._ai_player.get_opposing_color()
                             self._just_captured = prev_pieces - new_pieces
+                        else:
+                            self._just_captured = set()
                         if self._zero_player:
                             self.swap_ai_player()
-                        self.check_for_quit()
                     else:
                         self.event_handler()
                 else:
@@ -264,7 +264,7 @@ class VisualGame():
 
 
 def main():
-    vis_game = VisualGame(1, 1, "BLACK")
+    vis_game = VisualGame(0, 3)
     vis_game.game_loop_visual()
 
 

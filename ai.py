@@ -118,7 +118,9 @@ class AIPlayer(Player):
         """Given a dictionary of game pieces {'RED': {pieces}, 'BLACK': {pieces}}, returns score based on potential
         capture analysis. Score represents potential net gain for active player (always non-negative)."""
         opponent = {"RED": "BLACK", "BLACK": "RED"}[player_turn]
-        score = 0
+        active_pieces = len(game_piece_dict[player_turn])
+        opp_pieces = len(game_piece_dict[player_turn])
+        material_advantage = active_pieces - opp_pieces
 
         # Get potential captures squares and their values.
         active_pot_caps = self.find_potential_captures(game_piece_dict, player_turn)
@@ -135,6 +137,8 @@ class AIPlayer(Player):
             active_best = 0                                                 # Best move is avoiding capture.
         if opp_cap_moves:
             tradeoff = active_best - opp_cap_moves[0][1]                    # Both to make best move.
+            if tradeoff == 0:                                               # If active in lead, should go for trade.
+                tradeoff += material_advantage
             if len(opp_cap_moves) > 1:                                      # Opp can capture next turn either way.
                 opp_next_best = opp_cap_moves[1][1]                         # Active avoids max capture.
             else:
@@ -152,7 +156,7 @@ class AIPlayer(Player):
         factor_vic = 9999
         factor_mat = 200
         factor_cap = 100
-        factor_cen = 1/4
+        factor_cen = 1/8
         factor_color_dict = {"BLACK": {"opp": "RED", "fac": 1}, "RED": {"opp": "BLACK", "fac": -1}}
 
         if not game:
