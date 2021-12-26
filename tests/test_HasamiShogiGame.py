@@ -61,13 +61,13 @@ class TestInit(unittest.TestCase):
         test1_black = new_game.get_square_occupant("i5")
         test1_none = new_game.get_square_occupant("e5")
         test1_red = new_game.get_square_occupant("a4")
-        new_game.set_square_occupant("d3", "HELLO")
+        new_game.set_square_occupant("d3", "BLACK")
         test2 = new_game.get_square_occupant("d3")
 
         self.assertEqual("BLACK", test1_black)
         self.assertEqual("NONE", test1_none)
         self.assertEqual("RED", test1_red)
-        self.assertEqual("HELLO", test2)
+        self.assertEqual("BLACK", test2)
 
 
 class TestWrongMakeMove(unittest.TestCase):

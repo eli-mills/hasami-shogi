@@ -1,5 +1,6 @@
 from HasamiShogiGame import HasamiShogiGame
 from hasami_shogi_utilities import *
+import cProfile
 
 
 class AIPlayer(Player):
@@ -280,6 +281,10 @@ class AIPlayer(Player):
                     break
             return min_eval[0], min_eval[1]
 
+    def ai_make_move(self):
+        next_move = self.minimax(3)
+        self.make_move(next_move[:2], next_move[2:])
+
 
 def terminal_ai():
     new_game = HasamiShogiGame()
@@ -301,11 +306,8 @@ def terminal_ai():
 
 
 def main():
-    game_pieces = {
-        "RED": {'e3', 'd7'}, "BLACK": {'d9', 'e4', 'e5', 'e6', 'd6'}
-    }
-    print(AIPlayer(HasamiShogiGame(), "BLACK").get_capture_heuristic(game_pieces, "BLACK"))
+    AIPlayer(HasamiShogiGame(), "BLACK").ai_make_move()
 
 
 if __name__ == '__main__':
-    main()
+    cProfile.run('main()', sort='cumtime')

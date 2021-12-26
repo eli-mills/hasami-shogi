@@ -97,12 +97,12 @@ class TestSquareValues(unittest.TestCase):
     def test_set_square(self):
         """Asserts that the correct square is set to the correct value."""
         new_board = GameBoard()
-        new_board.set_square("e5", "foo")
-        new_board.set_square("a1", "bar")
+        new_board.set_square("e5", "BLACK")
+        new_board.set_square("a1", "NONE")
         test1 = new_board.get_square("e5")
         test2 = new_board.get_square("a1")
-        self.assertEqual("foo", test1)
-        self.assertEqual("bar", test2)
+        self.assertEqual("BLACK", test1)
+        self.assertEqual("NONE", test2)
 
 
 class TestBuildSquareStringRange(unittest.TestCase):

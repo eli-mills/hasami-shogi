@@ -2,19 +2,30 @@
 # Date: 11/25/2021
 # Description: Portfolio Project - Hasami Shogi
 
+import cProfile
+
 class GameBoard:
     """Defines the methods for a Hasami Shogi game board. Used by HasamiShogiGame."""
     def __init__(self):
         """Initializes a 9x9 Hasami Shogi game board as a list of lists. Sets player positions."""
-        self._board = [["NONE" for x in range(9)] for x in range(9)]
-        self._board[0] = ["RED" for x in range(9)]
-        self._board[8] = ["BLACK" for x in range(9)]
         self._row_labels = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i']
         self._col_labels = ['1', '2', '3', '4', '5', '6', '7', '8', '9']
+        self._all_squares_in_order = [row + col for row in self._row_labels for col in self._col_labels]
+        self._all_squares = set(self._all_squares_in_order)
+
+        self._board = [["NONE" for x in range(9)] for x in range(9)]
+
+        self._squares = {
+            "RED": {'a1', 'a2', 'a3', 'a4', 'a5', 'a6', 'a7', 'a8', 'a9'},
+            "BLACK": {'i1', 'i2', 'i3', 'i4', 'i5', 'i6', 'i7', 'i8', 'i9'}
+        }
+        self._squares["NONE"] = self._all_squares - self._squares["RED"] - self._squares["BLACK"]
+        self._board[0] = ["RED" for x in range(9)]
+        self._board[8] = ["BLACK" for x in range(9)]
 
     def get_board_list(self):
         """Returns the board as a list of lists."""
-        return self._board
+        return [[color for color in [self.get_square(ss) for ss in self._all_squares_in_order]][(9 * x):(9 * (x + 1))] for x in range(0, 9)]
 
     def print_board(self):
         """Prints the current board with row/column labels. Abbreviates RED and BLACK and replaces NONE with '.'. """
@@ -38,13 +49,21 @@ class GameBoard:
 
     def get_square(self, square_string):
         """Given a square string, returns the value at that square."""
-        row, column = self.string_to_index(square_string)
-        return self.get_board_list()[row][column]
+        if square_string not in self._all_squares:
+            return None
+        if square_string in self._squares["RED"]:
+            return "RED"
+        if square_string in self._squares["BLACK"]:
+            return "BLACK"
+        return "NONE"
 
     def set_square(self, square_string, square_value):
         """Sets the value of the given square to the given value."""
-        row, column = self.string_to_index(square_string)
-        self.get_board_list()[row][column] = square_value
+        if square_string not in self._all_squares or square_value not in {"RED", "BLACK", "NONE"}:
+            return None
+        current_color = self.get_square(square_string)
+        self._squares[current_color].remove(square_string)
+        self._squares[square_value].add(square_string)
 
     def build_square_string_range(self, square_string_from, square_string_to):
         """Returns list of square strings from first square to second. Range cannot be diagonal. Assumes valid input."""
@@ -236,3 +255,9 @@ class HasamiShogiGame:
         self.toggle_active_player()
         return True
 
+
+def main():
+    HasamiShogiGame().make_move('i5', 'e5')
+
+if __name__ == '__main__':
+    cProfile.run('main()', sort='cumtime')
