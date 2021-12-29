@@ -281,7 +281,8 @@ class AIPlayer(Player):
             return min_eval[0], min_eval[1]
 
     def ai_make_move(self):
-        next_move = self.minimax(3)
+        next_move = self.minimax(1)
+        print(next_move)
         self.make_move(next_move[:2], next_move[2:])
 
 

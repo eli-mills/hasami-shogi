@@ -201,7 +201,7 @@ class TestNormalGames(unittest.TestCase):
         self.assertEqual(exp_state, test_state)
 
     def test_first_five_moves(self):
-        """Asserts that five normal moves correclty executed."""
+        """Asserts that five normal moves correctly executed."""
         moves = ["i5f5", "a7f7", "i1d1", "a9h9", "i3g3"]
         board_set = {"NONE": ["a7", "a9", "i1", "i5", "i3"],
                      "RED": ["f7", "h9"],

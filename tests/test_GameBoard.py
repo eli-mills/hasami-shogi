@@ -29,7 +29,7 @@ class TestStringConversion(unittest.TestCase):
     def test_basic_case_to_index(self):
         """Asserts that strings correctly convert to indices of the list."""
         new_board = GameBoard()
-        test_indices = new_board.string_to_index("e5")
+        test_indices = new_board.square_to_index("e5")
         expected_indices = (4, 4)
         self.assertEqual(test_indices, expected_indices)
 
@@ -37,10 +37,10 @@ class TestStringConversion(unittest.TestCase):
         """Asserts that the corner strings convert correctly."""
         new_board = GameBoard()
         tests = [
-            new_board.string_to_index("a1"),
-            new_board.string_to_index("a9"),
-            new_board.string_to_index("i1"),
-            new_board.string_to_index("i9")
+            new_board.square_to_index("a1"),
+            new_board.square_to_index("a9"),
+            new_board.square_to_index("i1"),
+            new_board.square_to_index("i9")
         ]
         exp_vals = [
             (0, 0),
@@ -53,7 +53,7 @@ class TestStringConversion(unittest.TestCase):
     def test_basic_case_to_string(self):
         """Asserts that valid coordinates are correctly converted to square string."""
         new_game = GameBoard()
-        test_string = new_game.index_to_string(3, 6)
+        test_string = new_game.index_to_square(3, 6)
         exp_string = "d7"
         self.assertEqual(exp_string, test_string)
 
@@ -62,10 +62,10 @@ class TestStringConversion(unittest.TestCase):
         new_board = GameBoard()
 
         tests = [
-            new_board.index_to_string(0, 0),
-            new_board.index_to_string(0, 8),
-            new_board.index_to_string(8, 0),
-            new_board.index_to_string(8, 8)
+            new_board.index_to_square(0, 0),
+            new_board.index_to_square(0, 8),
+            new_board.index_to_square(8, 0),
+            new_board.index_to_square(8, 8)
         ]
 
         exp_vals = ["a1", "a9", "i1", "i9"]

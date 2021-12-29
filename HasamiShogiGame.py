@@ -11,10 +11,10 @@ class HasamiShogiUtilities:
         """Initializes useful constants."""
         self.row_num = self.bi_dict({'a': 0, 'b': 1, 'c': 2, 'd': 3, 'e': 4, 'f': 5, 'g': 6, 'h': 7, 'i': 8})
         self.col_num = self.bi_dict({'1': 0, '2': 1, '3': 2, '4': 3, '5': 4, '6': 5, '7': 6, '8': 7, '9': 8})
-        self._row_labels = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i']
-        self._col_labels = ['1', '2', '3', '4', '5', '6', '7', '8', '9']
-        self._all_squares_in_order = [row + col for row in self._row_labels for col in self._col_labels]
-        self._all_squares = set(self._all_squares_in_order)
+        self.row_labels = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i']
+        self.col_labels = ['1', '2', '3', '4', '5', '6', '7', '8', '9']
+        self.all_squares_in_order = [row + col for row in self.row_labels for col in self.col_labels]
+        self.all_squares = set(self.all_squares_in_order)
 
     def bi_dict(self, dictionary):
         """Given a dictionary, adds all values as keys and their keys as values. Does not work if values are mutable."""
@@ -95,19 +95,45 @@ class Piece(HasamiShogiUtilities):
         self._visible_pieces = {'left': None, 'right': None, 'up': None, 'down': None}
         self._reachable_squares = {'left': set(), 'right': set(), 'up': set(), 'down': set()}
         self._move_dir_partners = self.bi_dict({'left': 'right', 'up': 'down'})
+        if self._board.get_square_piece_dict():
+            self.initialize_piece_to_board()
 
-        initial_reachable = {x + self._position[1] for x in self._row_labels[1:8]}
-        if self._position[0] == 'a':
-            self._reachable_squares['down'] = initial_reachable
-        elif self._position[0] == 'i':
-            self._reachable_squares['up'] = initial_reachable
-
-    def initialize_visible_piece(self):
+    def initialize_piece_to_board(self):
         """To be called by GameBoard after Pieces are initialized. Sets the initial visible piece across the board."""
-        if self._position[0] == 'a':
-            self._visible_pieces['down'] = self._board.get_square_piece_dict()['i'+self._position[1]]
-        elif self._position[0] == 'i':
-            self._visible_pieces['up'] = self._board.get_square_piece_dict()['a'+self._position[1]]
+        self.set_visible_piece('left', self.find_piece_in_direction('left'))
+        self.set_visible_piece('right', self.find_piece_in_direction('right'))
+        self.set_visible_piece('up', self.find_piece_in_direction('up'))
+        self.set_visible_piece('down', self.find_piece_in_direction('down'))
+
+        self.set_reachable_squares('left', self.find_squares_in_direction('left'))
+        self.set_reachable_squares('right', self.find_squares_in_direction('right'))
+        self.set_reachable_squares('up', self.find_squares_in_direction('up'))
+        self.set_reachable_squares('down', self.find_squares_in_direction('down'))
+
+    def find_piece_in_direction(self, direction):
+        """Given a direction, finds the first piece in that direction on the game board."""
+        if direction == 'left' or direction == 'right':
+            possible_squares = {square for square in self._board.get_square_piece_dict() if square[0] == self._position[0]}
+        if direction == 'up' or direction == 'down':
+            possible_squares = {square for square in self._board.get_square_piece_dict() if square[1] == self._position[1]}
+
+        if direction == 'right' or direction == 'down':             # Increasing direction
+            possible_squares = {square for square in possible_squares if square > self._position}
+            return self._board.get_square_piece_dict()[min(possible_squares)] if possible_squares else None
+        if direction == 'left' or direction == 'up':                # Decreasing direction
+            possible_squares = {square for square in possible_squares if square < self._position}
+            return self._board.get_square_piece_dict()[max(possible_squares)] if possible_squares else None
+
+    def find_squares_in_direction(self, direction):
+        """Given a direction, returns set of all reachable squares in that direction."""
+        if self._visible_pieces[direction]:
+            vis_piece = self._visible_pieces[direction]
+            return set(self.build_square_string_range(self._position, vis_piece.get_position())[1:-1])
+        edge = self.get_board_edge(self._position, direction)
+        return set(self.build_square_string_range(self._position, edge)[1:])
+
+    def find_all_visible_and_reachable(self):
+        """When called, performs a search in all four directions for visible pieces and reachable squares."""
 
     def set_position(self, new_square):
         """Sets piece position to new square. Does not check if square is valid."""
@@ -126,8 +152,11 @@ class Piece(HasamiShogiUtilities):
         return {self._visible_pieces[dir] for dir in {'left', 'right', 'up', 'down'} if self._visible_pieces[dir]}
 
     def set_visible_piece(self, direction, piece):
-        """Sets the Piece's visible pieces to the given piece in the given direction."""
+        """Sets the given Piece as visible in the given direction. Sets self as visible to Piece in opposite direction."""
+        opp_direction = self._move_dir_partners[direction]
         self._visible_pieces[direction] = piece
+        if piece:                                           # Check if piece given None value.
+            piece._visible_pieces[opp_direction] = self
 
     def get_reachable_squares(self):
         """Returns the set of squares the Piece object can reach."""
@@ -139,8 +168,12 @@ class Piece(HasamiShogiUtilities):
         return set(self._reachable_squares[direction])
 
     def set_reachable_squares(self, direction, square_set):
-        """Sets the Piece's reachable squares in a given direction to the given set."""
+        """Sets the Piece's reachable squares in a given direction to the given set.
+        Updates visible Piece if available."""
         self._reachable_squares[direction] = square_set
+        if self._visible_pieces[direction]:
+            opp_dir = self._move_dir_partners[direction]
+            self._visible_pieces[direction]._reachable_squares[opp_dir] = square_set
 
     def can_reach(self, square):
         """Returns True if the given square is in the Piece's reachable squares, else False."""
@@ -185,9 +218,8 @@ class Piece(HasamiShogiUtilities):
             return square[0] + '1'
         raise BoardEdgeError
 
-    def update_cross_dir(self, old_pos, new_pos, increase_dir, decrease_dir):
+    def update_cross_dir(self, old_pos, increase_dir, decrease_dir):
         """Updates the visible pieces and reachable squares in the given directions."""
-        piece_dict = self._board.get_square_piece_dict()
 
         old_increasing = self._visible_pieces[increase_dir]
         old_decreasing = self._visible_pieces[decrease_dir]
@@ -198,33 +230,32 @@ class Piece(HasamiShogiUtilities):
         if old_increasing: old_increasing.set_reachable_squares(decrease_dir, reachable_squares)
         if old_decreasing: old_decreasing.set_reachable_squares(increase_dir, reachable_squares)
 
-        incr_piece_squares = {square for square in piece_dict if square[0] == new_pos[0] and square[1] > new_pos[1]}
-        decr_piece_squares = {square for square in piece_dict if square[0] == new_pos[0] and square[1] < new_pos[1]}
-        if incr_piece_squares:
-            new_incr_piece = piece_dict.get(min(incr_piece_squares))
-        else:
-            new_incr_piece = None
-        if decr_piece_squares:
-            new_decr_piece = piece_dict.get(max(decr_piece_squares))
-        else:
-            new_decr_piece = None
-        self.set_visible_piece(increase_dir, new_incr_piece)        # TODO: Change this method to update both pieces.
+        new_incr_piece = self.find_piece_in_direction(increase_dir)
+        new_decr_piece = self.find_piece_in_direction(decrease_dir)
+        self.set_visible_piece(increase_dir, new_incr_piece)        # Also sets other piece if not None.
         self.set_visible_piece(decrease_dir, new_decr_piece)
-        if new_incr_piece: new_incr_piece.set_visible_piece(decrease_dir, self)
-        if new_decr_piece: new_decr_piece.set_visible_piece(increase_dir, self)
 
-        if new_incr_piece:
-            incr_reachable = set(self.build_square_string_range(new_pos, new_incr_piece.get_position())[1:-1])
-            new_incr_piece.set_reachable_squares(decrease_dir, incr_reachable)
-        else:
-            incr_reachable = set(self.build_square_string_range(new_pos, self.get_board_edge(new_pos, increase_dir))[1:])
-        if new_decr_piece:
-            decr_reachable = set(self.build_square_string_range(new_pos, new_decr_piece.get_position())[1:-1])
-            new_decr_piece.set_reachable_squares(increase_dir, decr_reachable)
-        else:
-            decr_reachable = set(self.build_square_string_range(new_pos, self.get_board_edge(new_pos, increase_dir))[1:])
+        incr_reachable = self.find_squares_in_direction(increase_dir)
+        decr_reachable = self.find_squares_in_direction(decrease_dir)
         self.set_reachable_squares(increase_dir, incr_reachable)
         self.set_reachable_squares(decrease_dir, decr_reachable)
+
+    def remove_piece(self):
+        """Updates visible pieces for Piece removal."""
+        vertical_reachable = self._reachable_squares['up'] | self._reachable_squares['down'] | {self._position}
+        horizontal_reachable = self._reachable_squares['left'] | self._reachable_squares['right'] | {self._position}
+        if self._visible_pieces['up']:
+            self._visible_pieces['up'].set_reachable_squares('down', vertical_reachable)
+            self._visible_pieces['up'].set_visible_piece('down', self._visible_pieces['down'])
+        if self._visible_pieces['down']:
+            self._visible_pieces['down'].set_reachable_squares('up', vertical_reachable)
+            self._visible_pieces['down'].set_visible_piece('up', self._visible_pieces['up'])
+        if self._visible_pieces['left']:
+            self._visible_pieces['left'].set_reachable_squares('right', horizontal_reachable)
+            self._visible_pieces['left'].set_visible_piece('right', self._visible_pieces['right'])
+        if self._visible_pieces['right']:
+            self._visible_pieces['right'].set_reachable_squares('left', horizontal_reachable)
+            self._visible_pieces['right'].set_visible_piece('left', self._visible_pieces['left'])
 
     def move_piece(self, new_pos):
         """Sets the new position and updates all necessary pieces."""
@@ -247,9 +278,7 @@ class Piece(HasamiShogiUtilities):
             self._visible_pieces[opp_dir].set_reachable_squares(move_dir, opp_dir_reachable)
 
         incr_cross, decr_cross = self.find_cross_move(move_dir)
-        self.update_cross_dir(old_pos, new_pos, incr_cross, decr_cross)
-
-
+        self.update_cross_dir(old_pos, incr_cross, decr_cross)
 
 
 class GameBoard(HasamiShogiUtilities):
@@ -260,29 +289,30 @@ class GameBoard(HasamiShogiUtilities):
         self._black_starting_squares = {'i1', 'i2', 'i3', 'i4', 'i5', 'i6', 'i7', 'i8', 'i9'}
         self._red_starting_squares = {'a1', 'a2', 'a3', 'a4', 'a5', 'a6', 'a7', 'a8', 'a9'}
         self._squares = {"RED": self._red_starting_squares, "BLACK": self._black_starting_squares}
-        self._squares["NONE"] = self._all_squares - self._squares["RED"] - self._squares["BLACK"]
+        self._squares["NONE"] = self.all_squares - self._squares["RED"] - self._squares["BLACK"]
         self._ind_squares = {square: color for color in self._squares for square in self._squares[color]}
+        self._square_piece_dict = {}
         self._pieces = {
             "RED": {Piece("RED", square, self) for square in self._red_starting_squares},
             "BLACK": {Piece("BLACK", square, self) for square in self._black_starting_squares}
         }
         self._all_pieces = self._pieces["RED"] | self._pieces["BLACK"]
-        self._square_piece_dict = {square: piece for square in self._all_squares for piece in self._all_pieces if piece.get_position() == square}
-        for piece in self._all_pieces: piece.initialize_visible_piece()
+        self._square_piece_dict = {square: piece for square in self.all_squares for piece in self._all_pieces if piece.get_position() == square}
+        for piece in self._all_pieces: piece.initialize_piece_to_board()
 
     def get_board_list(self):
         """Returns the board as a list of lists."""
-        return [[color for color in [self.get_square(ss) for ss in self._all_squares_in_order]][(9 * x):(9 * (x + 1))] for x in range(0, 9)]
+        return [[color for color in [self.get_square(ss) for ss in self.all_squares_in_order]][(9 * x):(9 * (x + 1))] for x in range(0, 9)]
 
     def get_all_squares(self):
         """Returns all possible squares of board as a set of square strings."""
-        return self._all_squares
+        return self.all_squares
 
     def print_board(self):
         """Prints the current board with row/column labels. Abbreviates RED and BLACK and replaces NONE with '.'. """
-        print("  " + " ".join(self._col_labels))
+        print("  " + " ".join(self.col_labels))
         for row in range(9):
-            output_string = self._row_labels[row] + " "
+            output_string = self.row_labels[row] + " "
             for square in self.get_board_list()[row]:
                 if square == "NONE":
                     output_string += '. '
@@ -290,23 +320,21 @@ class GameBoard(HasamiShogiUtilities):
                     output_string += square[0] + " "
             print(output_string[:-1])
 
-    def string_to_index(self, square_string):
-        """Converts row/column string to row/column indices as a tuple, indexed at 0. Assumes valid input."""
-        return self._row_labels.index(square_string[0]), self._col_labels.index(square_string[1])
-
-    def index_to_string(self, row, column):
-        """Converts row/column index (indexed at 0) to square string. Assumes valid input."""
-        return self._row_labels[row] + self._col_labels[column]
-
     def get_square(self, square_string):
         """Given a square string, returns the value at that square."""
-        return self._ind_squares[square_string]
+        # return self._ind_squares[square_string]
+        piece = self.get_piece_at_square(square_string)
+        return piece.get_color() if piece else "NONE"
 
     def set_square(self, square_string, square_value):
         """Sets the value of the given square to the given value."""
-        if square_string not in self._all_squares or square_value not in {"RED", "BLACK", "NONE"}:
+        if square_string not in self.all_squares or square_value not in {"RED", "BLACK", "NONE"}:
             return None
         self._ind_squares[square_string] = square_value
+        if square_value == "NONE":
+            self.remove_piece(square_string)
+        else:
+            self.set_square_piece(square_string, Piece(square_value, square_string, self))
 
     def get_square_piece_dict(self):
         """Returns the dictionary of all occupied squares and their Piece objects."""
@@ -314,11 +342,12 @@ class GameBoard(HasamiShogiUtilities):
 
     def get_piece_at_square(self, square):
         """Returns the Piece object at the given square. Returns NONE if no piece at square."""
-        return self._square_piece_dict.get(square, default="NONE")
+        return self._square_piece_dict.get(square)
 
     def set_square_piece(self, square, piece):
         """Sets the given square to the given piece."""
         self._square_piece_dict[square] = piece
+        self._pieces[piece.get_color()].add(piece)
 
     def del_square_piece(self, square):
         """Deletes the entry for the given square in the occupant dictionary."""
@@ -327,6 +356,13 @@ class GameBoard(HasamiShogiUtilities):
     def move_piece(self, piece_loc, destination):
         """Moves the piece at the given location to the destination."""
         self._square_piece_dict[piece_loc].move_piece(destination)
+
+    def remove_piece(self, piece_loc):
+        """Removes the piece at the given location from the dictionary and calls Piece method to update visibles."""
+        piece_to_remove = self._square_piece_dict[piece_loc]
+        piece_to_remove.remove_piece()
+        del self._square_piece_dict[piece_loc]
+        self._pieces[piece_to_remove.get_color()].remove(piece_to_remove)
 
 
 class HasamiShogiGame:
@@ -378,9 +414,10 @@ class HasamiShogiGame:
 
     def execute_move(self, moving_from, moving_to):
         """(Blindly) moves the piece at the first position to the second position."""
-        piece_moving = self.get_square_occupant(moving_from)
-        self.set_square_occupant(moving_to, piece_moving)
-        self.set_square_occupant(moving_from, "NONE")
+        # piece_moving = self.get_square_occupant(moving_from)
+        # self.set_square_occupant(moving_to, piece_moving)
+        # self.set_square_occupant(moving_from, "NONE")
+        self._game_board.move_piece(moving_from, moving_to)
 
     def is_move_legal(self, moving_from, moving_to):
         """Checks if move from first square to second is legal. Returns True if so, False if not."""
@@ -437,12 +474,12 @@ class HasamiShogiGame:
 
         # 4. Change all captured squares to "NONE".
         for captured in captured_squares:
-            self.set_square_occupant(captured, "NONE")
+            self._game_board.remove_piece(captured)
 
     def find_closest_corner(self, moved_to):
         """Finds the closest corner to the new square to check for corner capture."""
         closest_corner = ""
-        square_row, square_column = self.get_game_board().string_to_index(moved_to)
+        square_row, square_column = self.get_game_board().square_to_index(moved_to)
         if square_row <= 1:
             closest_corner += "a"
         if square_row >= 7:
@@ -476,7 +513,7 @@ class HasamiShogiGame:
 
                 # Check for correct pattern:
                 if moved_to_color == capturing_end_color and captured_color == self._inactive_player:
-                    self.set_square_occupant(closest_corner, "NONE")
+                    self._game_board.remove_piece(closest_corner)
                     self.add_num_captured_pieces(self._inactive_player, 1)
 
     def check_win(self):
