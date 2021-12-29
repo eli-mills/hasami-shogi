@@ -164,6 +164,68 @@ class Piece(HasamiShogiUtilities):
                 return 'up'
         return None
 
+    def find_cross_move(self, move_dir):
+        """Given a move direction, returns the 'cross directions' tuple. Increasing square value direction first."""
+        if move_dir == 'up' or move_dir == 'down':
+            return 'right', 'left'
+        elif move_dir == 'right' or move_dir == 'left':
+            return 'down', 'up'
+
+    def get_board_edge(self, square, direction):
+        """Given a square and a direction, returns the square at the board's edge in that direction."""
+        class BoardEdgeError(Exception):
+            pass
+        if direction == 'up':
+            return 'a' + square[1]
+        if direction == 'down':
+            return 'i' + square[1]
+        if direction == 'right':
+            return square[0] + '9'
+        if direction == 'left':
+            return square[0] + '1'
+        raise BoardEdgeError
+
+    def update_cross_dir(self, old_pos, new_pos, increase_dir, decrease_dir):
+        """Updates the visible pieces and reachable squares in the given directions."""
+        piece_dict = self._board.get_square_piece_dict()
+
+        old_increasing = self._visible_pieces[increase_dir]
+        old_decreasing = self._visible_pieces[decrease_dir]
+        if old_increasing: old_increasing.set_visible_piece(decrease_dir, old_decreasing)
+        if old_decreasing: old_decreasing.set_visible_piece(increase_dir, old_increasing)
+
+        reachable_squares = self._reachable_squares[decrease_dir] | self._reachable_squares[increase_dir] | {old_pos}
+        if old_increasing: old_increasing.set_reachable_squares(decrease_dir, reachable_squares)
+        if old_decreasing: old_decreasing.set_reachable_squares(increase_dir, reachable_squares)
+
+        incr_piece_squares = {square for square in piece_dict if square[0] == new_pos[0] and square[1] > new_pos[1]}
+        decr_piece_squares = {square for square in piece_dict if square[0] == new_pos[0] and square[1] < new_pos[1]}
+        if incr_piece_squares:
+            new_incr_piece = piece_dict.get(min(incr_piece_squares))
+        else:
+            new_incr_piece = None
+        if decr_piece_squares:
+            new_decr_piece = piece_dict.get(max(decr_piece_squares))
+        else:
+            new_decr_piece = None
+        self.set_visible_piece(increase_dir, new_incr_piece)        # TODO: Change this method to update both pieces.
+        self.set_visible_piece(decrease_dir, new_decr_piece)
+        if new_incr_piece: new_incr_piece.set_visible_piece(decrease_dir, self)
+        if new_decr_piece: new_decr_piece.set_visible_piece(increase_dir, self)
+
+        if new_incr_piece:
+            incr_reachable = set(self.build_square_string_range(new_pos, new_incr_piece.get_position())[1:-1])
+            new_incr_piece.set_reachable_squares(decrease_dir, incr_reachable)
+        else:
+            incr_reachable = set(self.build_square_string_range(new_pos, self.get_board_edge(new_pos, increase_dir))[1:])
+        if new_decr_piece:
+            decr_reachable = set(self.build_square_string_range(new_pos, new_decr_piece.get_position())[1:-1])
+            new_decr_piece.set_reachable_squares(increase_dir, decr_reachable)
+        else:
+            decr_reachable = set(self.build_square_string_range(new_pos, self.get_board_edge(new_pos, increase_dir))[1:])
+        self.set_reachable_squares(increase_dir, incr_reachable)
+        self.set_reachable_squares(decrease_dir, decr_reachable)
+
     def move_piece(self, new_pos):
         """Sets the new position and updates all necessary pieces."""
         old_pos = self._position
@@ -172,13 +234,11 @@ class Piece(HasamiShogiUtilities):
         opp_dir = self._move_dir_partners[move_dir]
         self._board.set_square_piece(new_pos, self)
         self._board.del_square_piece(old_pos)
-        piece_dict = self._board.get_square_piece_dict()
 
         path = self.build_square_string_range(old_pos, new_pos)
-        if self._reachable_squares[opp_dir]:
-            self._reachable_squares[opp_dir] |= set(path[:-1])
-        if self._reachable_squares[move_dir]:
-            self._reachable_squares[move_dir] -= set(path)
+
+        self._reachable_squares[opp_dir] |= set(path[:-1])
+        self._reachable_squares[move_dir] -= set(path)
         move_dir_reachable = self._reachable_squares[move_dir]
         opp_dir_reachable = self._reachable_squares[opp_dir]
         if self._visible_pieces[move_dir]:
@@ -186,73 +246,10 @@ class Piece(HasamiShogiUtilities):
         if self._visible_pieces[opp_dir]:
             self._visible_pieces[opp_dir].set_reachable_squares(move_dir, opp_dir_reachable)
 
-        if move_dir == "up" or move_dir == "down":                      # Update visible pieces in old and new row
-            old_right = self._visible_pieces['right']
-            old_left = self._visible_pieces['left']
-            if old_right: old_right.set_visible_piece('left', old_left)
-            if old_left: old_left.set_visible_piece('right', old_right)
+        incr_cross, decr_cross = self.find_cross_move(move_dir)
+        self.update_cross_dir(old_pos, new_pos, incr_cross, decr_cross)
 
-            reachable_squares = self._reachable_squares['left'] | self._reachable_squares['right'] | {old_pos}
-            if old_right: old_right.set_reachable_squares('left', reachable_squares)
-            if old_left: old_left.set_reachable_squares('right', reachable_squares)
 
-            right_piece_squares = {square for square in piece_dict if square[0] == new_pos[0] and square[1] > new_pos[1]}
-            left_piece_squares = {square for square in piece_dict if square[0] == new_pos[0] and square[1] < new_pos[1]}
-            if right_piece_squares:
-                new_right = piece_dict.get(min(right_piece_squares))
-            else:
-                new_right = None
-            if left_piece_squares:
-                new_left = piece_dict.get(max(left_piece_squares))
-            else:
-                new_left = None
-            self.set_visible_piece("right", new_right)
-            self.set_visible_piece("left", new_left)
-            if new_right: new_right.set_visible_piece("left", self)
-            if new_left: new_left.set_visible_piece("right", self)
-
-            right_reachable = self.build_square_string_range(new_pos, new_right)
-            left_reachable = self.build_square_string_range(new_pos, new_left)
-            if right_reachable: right_reachable = set(right_reachable[1:-1])
-            if left_reachable: left_reachable = set(left_reachable[1:-1])
-            self.set_reachable_squares('right', right_reachable)
-            self.set_reachable_squares('left', left_reachable)
-            if new_right: new_right.set_reachable_squares('left', right_reachable)
-            if new_left: new_left.set_reachable_squares('right', left_reachable)
-
-        elif move_dir == "left" or move_dir == "right":                 # Update visible pieces in old and new column
-            old_down = self._visible_pieces['down']
-            old_up = self._visible_pieces['up']
-            if old_down: old_down.set_visible_piece('up', old_up)
-            if old_up: old_up.set_visible_piece('down', old_down)
-            reachable_squares = self._reachable_squares['up'] | self._reachable_squares['down'] | {old_pos}
-            if old_down: old_down.set_reachable_squares('up', reachable_squares)
-            if old_up: old_up.set_reachable_squares('down', reachable_squares)
-
-            down_piece_squares = {square for square in piece_dict if
-                                   square[1] == new_pos[1] and square[0] > new_pos[0]}
-            up_piece_squares = {square for square in piece_dict if square[1] == new_pos[1] and square[0] < new_pos[0]}
-            if down_piece_squares:
-                new_down = piece_dict.get(min(down_piece_squares))
-            else:
-                new_down = None
-            if up_piece_squares:
-                new_up = piece_dict.get(max(up_piece_squares))
-            else:
-                new_up = None
-            self.set_visible_piece("down", new_down)
-            self.set_visible_piece("up", new_up)
-            if new_down: new_down.set_visible_piece("up", self)
-            if new_up: new_up.set_visible_piece("down", self)
-
-            down_reachable = self.build_square_string_range(new_pos, new_down)
-            up_reachable = self.build_square_string_range(new_pos, new_up)
-            if down_reachable: down_reachable = set(down_reachable[1:-1])
-            if up_reachable: up_reachable = set(up_reachable[1:-1])
-            self.set_reachable_squares('down', down_reachable)
-            self.set_reachable_squares('up', up_reachable)
-            if new_down: new_down.set_reachable_squares('up', down_reachable)
-            if new_up: new_up.set_reachable_squares('down', up_reachable)
 
 
 class GameBoard(HasamiShogiUtilities):
@@ -504,6 +501,7 @@ class HasamiShogiGame:
 def main():
     new_board = GameBoard()
     new_board.move_piece('i6', 'e6')
+    new_board.move_piece('a2', 'e2')
     pass
 
 if __name__ == '__main__':
