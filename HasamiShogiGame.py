@@ -3,6 +3,7 @@
 # Description: Portfolio Project - Hasami Shogi
 
 import cProfile
+import copy
 
 
 class HasamiShogiUtilities:
@@ -98,8 +99,26 @@ class Piece(HasamiShogiUtilities):
         if self._board.get_square_piece_dict():
             self.initialize_piece_to_board()
 
+    def short_setup(self):
+        """Used by Board to point Piece to partners once all have been initialized."""
+        row = self._position[0]
+        col = self._position[1]
+        right_neighbor = str(int(col)+1)
+        left_neighbor = str(int(col)-1)
+        if col < '9':
+            self._visible_pieces['right'] = self._board.get_square_piece_dict()[row + right_neighbor]
+        if col > '1':
+            self._visible_pieces['left'] = self._board.get_square_piece_dict()[row + left_neighbor]
+        if row == 'a':
+            self._visible_pieces['down'] = self._board.get_square_piece_dict()['i' + col]
+            self._reachable_squares['down'] = set(self.build_square_string_range(f'b{col}', f'h{col}'))
+        elif row == 'i':
+            self._visible_pieces['up'] = self._board.get_square_piece_dict()['a' + col]
+            self._reachable_squares['up'] = set(self.build_square_string_range(f'b{col}', f'h{col}'))
+
+
     def initialize_piece_to_board(self):
-        """To be called by GameBoard after Pieces are initialized. Sets the initial visible piece across the board."""
+        """Used to setup Piece object on existing board (for testing only)."""
         self.set_visible_piece('left', self.find_piece_in_direction('left'))
         self.set_visible_piece('right', self.find_piece_in_direction('right'))
         self.set_visible_piece('up', self.find_piece_in_direction('up'))
@@ -298,7 +317,7 @@ class GameBoard(HasamiShogiUtilities):
         }
         self._all_pieces = self._pieces["RED"] | self._pieces["BLACK"]
         self._square_piece_dict = {square: piece for square in self.all_squares for piece in self._all_pieces if piece.get_position() == square}
-        for piece in self._all_pieces: piece.initialize_piece_to_board()
+        for piece in self._all_pieces: piece.short_setup()
 
     def get_board_list(self):
         """Returns the board as a list of lists."""
@@ -421,23 +440,23 @@ class HasamiShogiGame:
 
     def is_move_legal(self, moving_from, moving_to):
         """Checks if move from first square to second is legal. Returns True if so, False if not."""
-        if self.get_game_state() != "UNFINISHED":                                     # Game is finished
+        if self.get_game_state() != "UNFINISHED":                                               # Game is finished
             return False
 
         if moving_from not in self._all_squares or moving_to not in self._all_squares:              # Out of range
             return False
 
-        if self.get_square_occupant(moving_from) != self.get_active_player():         # Wrong color
+        piece = self.get_game_board().get_piece_at_square(moving_from)
+
+        if not piece:                                                                           # Moving on empty square
             return False
 
-        if moving_from[0] != moving_to[0] and moving_from[1] != moving_to[1]:         # Not pure vertical or horizontal
+        if piece.get_color() != self.get_active_player():                                       # Wrong color
             return False
 
-        if moving_from == moving_to:                                                  # Same square
+        if moving_to not in piece.get_reachable_squares():                                      # Square not in reach
             return False
-
-        move_path = self.get_game_board().build_square_string_range(moving_from, moving_to)
-        return False not in {self.get_square_occupant(x) == "NONE" for x in move_path[1:]}    # Check for clear path.
+        return True
 
     def find_captured_squares(self, from_square, to_square):
         """Finds capture pattern in given square string range. Returns captured squares if found, else False."""
@@ -536,9 +555,12 @@ class HasamiShogiGame:
 
 
 def main():
-    new_board = GameBoard()
-    new_board.move_piece('i6', 'e6')
-    new_board.move_piece('a2', 'e2')
+    new_game = HasamiShogiGame()
+    new_game.make_move("i5", "e5")
+    new_game.make_move("a4", "e4")
+    test_game = copy.deepcopy(new_game)
+    print(test_game.make_move("i3", "e3"))
+    print(new_game.make_move("i3", "e3"))
     pass
 
 if __name__ == '__main__':

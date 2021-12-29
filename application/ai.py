@@ -280,8 +280,8 @@ class AIPlayer(Player):
                     break
             return min_eval[0], min_eval[1]
 
-    def ai_make_move(self):
-        next_move = self.minimax(1)
+    def ai_make_move(self, depth):
+        next_move = self.minimax(depth)
         print(next_move)
         self.make_move(next_move[:2], next_move[2:])
 
@@ -306,7 +306,7 @@ def terminal_ai():
 
 
 def main():
-    AIPlayer(HasamiShogiGame(), "BLACK").ai_make_move()
+    AIPlayer(HasamiShogiGame(), "BLACK").ai_make_move(3)
 
 
 if __name__ == '__main__':
