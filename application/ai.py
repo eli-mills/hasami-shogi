@@ -1,4 +1,3 @@
-from HasamiShogiGame import HasamiShogiGame
 from hasami_shogi_utilities import *
 import cProfile
 
