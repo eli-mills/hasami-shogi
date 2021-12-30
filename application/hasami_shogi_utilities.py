@@ -118,20 +118,20 @@ def build_square_string_range(square_string_from, square_string_to):
 def return_valid_moves(game, square_string):
     """Returns all valid moves for the given square."""
     if game.get_square_occupant(square_string) == game.get_active_player():
-        valid_moves = set()
-        adj_squares = get_adjacent_squares(square_string)
-        for square in adj_squares:
-            curr_square = square
-            next_square = get_next_square(square_string, square)
-            while curr_square:
-                if game.get_square_occupant(curr_square) != "NONE":
-                    break
-                else:
-                    valid_moves.add(square_string+curr_square)
-                    curr_square, next_square = next_square, get_next_square(curr_square, next_square)
-
-        return valid_moves
-
+        # valid_moves = set()
+        # adj_squares = get_adjacent_squares(square_string)
+        # for square in adj_squares:
+        #     curr_square = square
+        #     next_square = get_next_square(square_string, square)
+        #     while curr_square:
+        #         if game.get_square_occupant(curr_square) != "NONE":
+        #             break
+        #         else:
+        #             valid_moves.add(square_string+curr_square)
+        #             curr_square, next_square = next_square, get_next_square(curr_square, next_square)
+        #
+        # return valid_moves
+        return {square_string+square for square in game.get_game_board().get_piece_at_square(square_string).get_reachable_squares()}
 
 class Player:
     """Defines the methods for a player of Hasami Shogi."""

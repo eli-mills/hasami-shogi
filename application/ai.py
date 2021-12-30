@@ -1,5 +1,3 @@
-import copy
-
 from hasami_shogi_utilities import *
 import cProfile
 import pickle
