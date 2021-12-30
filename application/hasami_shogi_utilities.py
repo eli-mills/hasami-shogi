@@ -1,4 +1,5 @@
 from HasamiShogiGame import HasamiShogiGame
+import copy
 
 
 def bi_dict(dictionary):
@@ -229,8 +230,13 @@ class Player:
 
 
 def main():
-    print(build_square_string_range("f6", "a6"))
+    new_game = HasamiShogiGame()
+    player_one = Player(new_game, "BLACK")
+    player_two = Player(new_game, "RED")
+    player_one.set_opposing_player(player_two)
 
+    player_one_test = copy.deepcopy(player_one)
+    pass
 
 if __name__ == "__main__":
     main()

@@ -1,5 +1,8 @@
+import copy
+
 from hasami_shogi_utilities import *
 import cProfile
+import pickle
 
 
 class AIPlayer(Player):
@@ -237,16 +240,24 @@ class AIPlayer(Player):
 
         return preferred_moves + leftover_moves
 
-    def minimax(self, depth, moves=None, max_player=None, first_time=True, alpha=None, beta=None):
+    def minimax(self, depth, move=None, max_player=None, first_time=True, alpha=None, beta=None):
         """Player uses to choose which move is best. Searches all possible moves up to depth."""
 
         if first_time:
             max_player = (self.get_color() == "BLACK")
             alpha = None, -9999
             beta = None, 9999
-            moves = self.get_move_log()
 
-        sim_game, sim_max, sim_min = self.simulate_game(moves)
+        if self.get_color() == "BLACK":
+            sim_max = pickle.loads(pickle.dumps(self))
+            sim_min = sim_max.get_opposing_player()
+            sim_game = sim_max.get_game()
+            if move: sim_max.make_move(move[:2], move[2:])
+        else:
+            sim_min = pickle.loads(pickle.dumps(self))
+            sim_max = sim_min.get_opposing_player()
+            sim_game = sim_min.get_game()
+            if move: sim_min.make_move(move[:2], move[2:])
 
         if depth == 0 or sim_game.get_game_state() != "UNFINISHED":
             return None, self.get_heuristic(sim_game)
@@ -255,9 +266,7 @@ class AIPlayer(Player):
             max_eval = None, -9999
             possible_move_list = sim_max.find_all_available_moves()
             for possible_move in possible_move_list:
-                new_moves = list(moves)
-                new_moves.append(possible_move)
-                eval = self.minimax(depth-1, new_moves, False, False, alpha, beta)
+                eval = sim_max.minimax(depth-1, possible_move, False, False, alpha, beta)
                 if eval[1] > max_eval[1]:
                     max_eval = possible_move, eval[1]
                 if max_eval[1] > alpha[1]:
@@ -269,9 +278,7 @@ class AIPlayer(Player):
             min_eval = None, 9999
             possible_move_list = sim_min.find_all_available_moves()
             for possible_move in possible_move_list:
-                new_moves = list(moves)
-                new_moves.append(possible_move)
-                eval = self.minimax(depth-1, new_moves, True, False, alpha, beta)
+                eval = sim_min.minimax(depth-1, possible_move, True, False, alpha, beta)
                 if eval[1] < min_eval[1]:
                     min_eval = possible_move, eval[1]
                 if min_eval[1] < beta[1]:
@@ -306,7 +313,11 @@ def terminal_ai():
 
 
 def main():
-    AIPlayer(HasamiShogiGame(), "BLACK").ai_make_move(3)
+    new_game = HasamiShogiGame()
+    opponent = AIPlayer(new_game, "RED")
+    ai = AIPlayer(new_game, "BLACK")
+    ai.set_opposing_player(opponent)
+    ai.ai_make_move(3)
 
 
 if __name__ == '__main__':
