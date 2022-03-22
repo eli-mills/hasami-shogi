@@ -1,0 +1,6 @@
+.idea/
+TODO.txt
+__pycache__/
+application/
+profiles/
+tests/pygame-test/

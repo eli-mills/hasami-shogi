@@ -264,7 +264,7 @@ class VisualGame():
 
 
 def main():
-    vis_game = VisualGame(0, 3)
+    vis_game = VisualGame(1, 3, "BLACK")
     vis_game.game_loop_visual()
 
 
