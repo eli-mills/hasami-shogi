@@ -6,6 +6,28 @@ import pickle
 
 class AIPlayer(Player):
     """Defines the methods for an AI Hasami Shogi player. Inherits from regular Player class."""
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def undo_move(self, move):
+        """Forces game to execute given move in reverse. Toggles player to return control to correct party."""
+        # TODO: Needs to restore any captured pieces
+        self._game.execute_move(move[2:], move[:2])
+        self._game.toggle_active_player()
+
+
+    def copy_player(self):
+        """Returns a Player object with identical state values. Creates a deep copy."""
+        copy_game = HasamiShogiGame(self._game)
+        output = AIPlayer(copy_game, self._color)
+        output._pieces = set(self._pieces)
+        output._move_log = list(self._move_log)
+        output._is_active = self._is_active
+
+        # TODO: Fill in code to create copy of the opponent (remember, opponent may be regular Player). Need to set
+        # TODO: opponent's game to be the same game as current player.
+
+        return output
 
     def simulate_game(self, moves):
         """Simulates a game given a list of moves (4-character string, rcrc). Assumes all moves are valid.
@@ -248,12 +270,12 @@ class AIPlayer(Player):
             beta = None, 9999
 
         if self.get_color() == "BLACK":
-            sim_max = pickle.loads(pickle.dumps(self))
+            sim_max = self.copy_player()
             sim_min = sim_max.get_opposing_player()
             sim_game = sim_max.get_game()
             if move: sim_max.make_move(move[:2], move[2:])
         else:
-            sim_min = pickle.loads(pickle.dumps(self))
+            sim_min = self.copy_player()
             sim_max = sim_min.get_opposing_player()
             sim_game = sim_min.get_game()
             if move: sim_min.make_move(move[:2], move[2:])
