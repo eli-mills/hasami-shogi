@@ -191,6 +191,11 @@ class Player:
         for square in piece_list:
             self._pieces.remove(square)
 
+    def add_pieces(self, piece_list):
+        """Adds squares in given list to the Player's piece set."""
+        for square in piece_list:
+            self._pieces.add(square)
+
     def get_move_log(self):
         """Returns the current move log."""
         return self._move_log
@@ -225,6 +230,13 @@ class Player:
                 self.remove_captured_pieces()
             return True
         return False
+
+    def undo_move(self):
+        """Calls undo_move on HasamiShogiGame and handles restoring correct pieces to both players."""
+        move, cap_pieces = self._game.undo_move
+        self.move_piece(move[2:], move[:2])
+        if cap_pieces is not None:
+            self._opposing_player.add_pieces()
 
     # def simulate_game(self, moves):
     #     """Simulates a game given a list of moves (4-character string, rcrc). Assumes all moves are valid.

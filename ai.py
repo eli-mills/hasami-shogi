@@ -261,6 +261,9 @@ class AIPlayer(Player):
 
         return preferred_moves + leftover_moves
 
+    def undo_move(self):
+        """Undoes the last move """
+
     def minimax(self, depth, move=None, max_player=None, first_time=True, alpha=None, beta=None):
         """Player uses to choose which move is best. Searches all possible moves up to depth."""
 

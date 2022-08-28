@@ -18,7 +18,10 @@ def main():
         print('\n')
         player_move = input("Enter move: ")[:4]
         print('\n' * 100)
-        turn_success = new_game.make_move(player_move[:2], player_move[2:])
+        if player_move == 'undo':
+            new_game.undo_move()
+        else:
+            turn_success = new_game.make_move(player_move[:2], player_move[2:])
     print(new_game.get_game_state())
 
 

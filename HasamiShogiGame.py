@@ -139,6 +139,10 @@ class HasamiShogiGame:
         """Adds the given number to the captured pieces of the given color."""
         self._captured_pieces[player_color] += num_captured
 
+    def sub_num_captured_pieces(self, player_color, num_captured):
+        """Subtracts the given number from the captured pieces of the given color."""
+        self._captured_pieces[player_color] -= num_captured
+
     def get_square_occupant(self, square_string):
         """Returns the value at the given square on the board: RED, BLACK, or NONE."""
         return self.get_game_board().get_square(square_string)
@@ -211,10 +215,10 @@ class HasamiShogiGame:
 
         # 5. Update prev move data
         if captured_squares != []:
-            if self.move_log[-1].cap_pieces is None:
-                self.move_log[-1].cap_pieces = captured_squares
+            if self.move_log[-1].cap_squares is None:
+                self.move_log[-1].cap_squares = captured_squares
             else:
-                self.move_log[-1].cap_pieces.extend(captured_squares)
+                self.move_log[-1].cap_squares.extend(captured_squares)
             self.move_log[-1].cap_color = self._inactive_player
 
     def find_closest_corner(self, moved_to):
@@ -257,10 +261,10 @@ class HasamiShogiGame:
                 if moved_to_color == capturing_end_color and captured_color == self._inactive_player:
                     self.set_square_occupant(closest_corner, "NONE")
                     self.add_num_captured_pieces(self._inactive_player, 1)
-                    if self.move_log[-1].cap_pieces is None:
-                        self.move_log[-1].cap_pieces = [closest_corner]
+                    if self.move_log[-1].cap_squares is None:
+                        self.move_log[-1].cap_squares = [closest_corner]
                     else:
-                        self.move_log[-1].cap_pieces.append(closest_corner)
+                        self.move_log[-1].cap_squares.append(closest_corner)
                     self.move_log[-1].cap_color = self._inactive_player
 
     def check_win(self):
@@ -291,15 +295,22 @@ class HasamiShogiGame:
 
     def undo_move(self):
         """Undoes the last move. References last move in self.move_log. Force executes last move in reverse, returns
-        any captured pieces, toggles active player, and resets prev move to None. Can only undo up to one move."""
+        any captured pieces, toggles active player, and resets prev move to None. Can only undo up to one move.
+
+        Returns the last move, and opponent pieces to restore if any."""
+        if not self.move_log:
+            return
+
         prev_move = self.move_log.pop()
         self._game_state = "UNFINISHED"         # Safe to assume game state was unfinished if move was made
         self.execute_move(prev_move.move[2:], prev_move.move[:2])
         if prev_move.cap_squares is not None:
             for square in prev_move.cap_squares:
                 self.set_square_occupant(square, prev_move.cap_color)
-        self._active_player = prev_move.player
+            self.sub_num_captured_pieces(prev_move.cap_color, len(prev_move.cap_squares))
+        self.toggle_active_player()             # Assume undo occurs after player switch
 
+        return prev_move.move, prev_move.cap_squares
 
 def main():
     new_game = HasamiShogiGame()
