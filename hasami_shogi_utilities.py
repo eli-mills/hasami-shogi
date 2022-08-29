@@ -129,7 +129,8 @@ def return_valid_moves(game, square_string):
                     curr_square, next_square = next_square, get_next_square(curr_square, next_square)
 
         return valid_moves
-
+    else:
+        pass
 
 class Player:
     """Defines the methods for a player of Hasami Shogi."""

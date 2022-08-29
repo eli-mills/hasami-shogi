@@ -278,7 +278,8 @@ class AIPlayer(Player):
 
         # Base case
         if depth == 0 or sim_game.get_game_state() != "UNFINISHED":
-            self.undo_move()
+            if move:
+                self.undo_move()
             return None, self.get_heuristic(sim_game)
 
         # Recursion
@@ -293,7 +294,8 @@ class AIPlayer(Player):
                     alpha = possible_move, max_eval[1]
                 if beta[1] <= alpha[1]:
                     break
-            self.undo_move()
+            if move:
+                self.undo_move()
             return max_eval
         else:
             min_eval = None, 9999
@@ -306,13 +308,14 @@ class AIPlayer(Player):
                     beta = possible_move, min_eval[1]
                 if beta[1] <= alpha[1]:
                     break
-            self.undo_move()
+            if move:
+                self.undo_move()
             return min_eval[0], min_eval[1]
 
     def ai_make_move(self, depth):
         next_move = self.minimax(depth)
         print(next_move)
-        self.make_move(next_move[:2], next_move[2:])
+        self.make_move(next_move[0][:2], next_move[0][2:])
 
 
 def terminal_ai():
@@ -340,6 +343,7 @@ def main():
     player = AIPlayer(new_game, "BLACK")
     player.set_opposing_player(opponent)
     player.ai_make_move(3)
+    opponent.ai_make_move(3)
 
 
 if __name__ == '__main__':
