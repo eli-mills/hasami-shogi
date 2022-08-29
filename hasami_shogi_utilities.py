@@ -233,10 +233,14 @@ class Player:
 
     def undo_move(self):
         """Calls undo_move on HasamiShogiGame and handles restoring correct pieces to both players."""
-        move, cap_pieces = self._game.undo_move
+        results = self._game.undo_move()
+        if results is None:
+            return
+        move, cap_pieces = results
         self.move_piece(move[2:], move[:2])
         if cap_pieces is not None:
-            self._opposing_player.add_pieces()
+            self._opposing_player.add_pieces(cap_pieces)
+        self.update_active()
 
     # def simulate_game(self, moves):
     #     """Simulates a game given a list of moves (4-character string, rcrc). Assumes all moves are valid.
@@ -524,8 +528,20 @@ class Player:
 
 
 def main():
-    print(build_square_string_range("f6", "a6"))
-
+    new_game = HasamiShogiGame()
+    p1 = Player(new_game, "BLACK")
+    p2 = Player(new_game, "RED")
+    p1.set_opposing_player(p2)
+    p1.make_move("i5", "e5")
+    p2.make_move("a4", "e4")
+    p2.undo_move()
+    p1.make_move("i6", "e6")
+    p2.make_move("a6", "e6")
+    p1.make_move("i7", "e7")
+    p1.undo_move()
+    p1.make_move("i8", "e8")
+    new_game.get_game_board().print_board()
+    pass
 
 if __name__ == "__main__":
     main()

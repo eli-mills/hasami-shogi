@@ -109,6 +109,7 @@ class HasamiShogiGame:
             self._active_player = starting_game._active_player
             self._inactive_player = starting_game._inactive_player
             self._captured_pieces = dict(starting_game._captured_pieces)
+            self.move_log = []
         self._all_squares = self._game_board.get_all_squares()
 
     def get_game_board(self):

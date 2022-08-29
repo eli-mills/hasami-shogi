@@ -9,13 +9,6 @@ class AIPlayer(Player):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def undo_move(self, move):
-        """Forces game to execute given move in reverse. Toggles player to return control to correct party."""
-        # TODO: Needs to restore any captured pieces
-        self._game.execute_move(move[2:], move[:2])
-        self._game.toggle_active_player()
-
-
     def copy_player(self):
         """Returns a Player object with identical state values. Creates a deep copy."""
         copy_game = HasamiShogiGame(self._game)
@@ -261,11 +254,9 @@ class AIPlayer(Player):
 
         return preferred_moves + leftover_moves
 
-    def undo_move(self):
-        """Undoes the last move """
-
     def minimax(self, depth, move=None, max_player=None, first_time=True, alpha=None, beta=None):
-        """Player uses to choose which move is best. Searches all possible moves up to depth."""
+        """Player uses to choose which move is best. Searches all possible moves up to depth. Returns tuple
+        move_string, heuristic_value."""
 
         if first_time:
             max_player = (self.get_color() == "BLACK")
@@ -273,19 +264,24 @@ class AIPlayer(Player):
             beta = None, 9999
 
         if self.get_color() == "BLACK":
-            sim_max = self.copy_player()
+            sim_max = self
             sim_min = sim_max.get_opposing_player()
             sim_game = sim_max.get_game()
-            if move: sim_max.make_move(move[:2], move[2:])
+            if move:
+                sim_max.make_move(move[:2], move[2:])
         else:
-            sim_min = self.copy_player()
+            sim_min = self
             sim_max = sim_min.get_opposing_player()
             sim_game = sim_min.get_game()
-            if move: sim_min.make_move(move[:2], move[2:])
+            if move:
+                sim_min.make_move(move[:2], move[2:])
 
+        # Base case
         if depth == 0 or sim_game.get_game_state() != "UNFINISHED":
+            self.undo_move()
             return None, self.get_heuristic(sim_game)
 
+        # Recursion
         if max_player:
             max_eval = None, -9999
             possible_move_list = sim_max.find_all_available_moves()
@@ -297,6 +293,7 @@ class AIPlayer(Player):
                     alpha = possible_move, max_eval[1]
                 if beta[1] <= alpha[1]:
                     break
+            self.undo_move()
             return max_eval
         else:
             min_eval = None, 9999
@@ -309,6 +306,7 @@ class AIPlayer(Player):
                     beta = possible_move, min_eval[1]
                 if beta[1] <= alpha[1]:
                     break
+            self.undo_move()
             return min_eval[0], min_eval[1]
 
     def ai_make_move(self, depth):
