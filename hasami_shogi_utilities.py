@@ -40,7 +40,7 @@ def index_to_string(row, column):
 
 
 def string_to_index(square_string):
-    """Returns the indices of the given square string as a tuple."""
+    """Returns the indices of the given square string as a tuple. O(1)"""
     return row_num[square_string[0]], col_num[square_string[1]]
 
 
@@ -114,10 +114,14 @@ def build_square_string_range(square_string_from, square_string_to):
 
 
 def return_valid_moves(game, square_string):
-    """Returns all valid moves for the given square."""
+    """Returns all valid moves for the given square. O(1)"""
     if game.get_square_occupant(square_string) == game.get_active_player():
         valid_moves = set()
+
+        # Get coords of all adjacent squares
         adj_squares = get_adjacent_squares(square_string)
+
+        # Check all adjacent squares for vacancy. If vacant, check next in path. If not, check next direction.
         for square in adj_squares:
             curr_square = square
             next_square = get_next_square(square_string, square)
@@ -130,7 +134,7 @@ def return_valid_moves(game, square_string):
 
         return valid_moves
     else:
-        pass
+        raise Exception("Given square string is not active player.")
 
 class Player:
     """Defines the methods for a player of Hasami Shogi."""
