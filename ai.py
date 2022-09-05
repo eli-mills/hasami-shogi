@@ -83,7 +83,7 @@ class AIPlayer(Player):
         O(N^2)
 
         Calls:  get_adjacent_squares
-                find_cap_partner: O(N)
+                self.find_cap_partner: O(N)
         """
         captured_color = opposite_color(capturing_color)
         capturing_pieces = game_piece_dict[capturing_color]
@@ -289,6 +289,14 @@ class AIPlayer(Player):
 
         return preferred_moves + leftover_moves
 
+    def make_ai_clone(self, player):
+        """Makes an AI to pilot a Player object while calculating next move. Uses given Player's pieces but returns
+        them to initial state when done."""
+        ai_clone = AIPlayer(player._game, player._color)
+        ai_clone._pieces = player._pieces
+        ai_clone.set_opposing_player(player.get_opposing_player())
+        ai_clone.update_active()
+
     def minimax(self, depth, move=None, max_player=None, first_time=True, alpha=None, beta=None):
         """Player uses to choose which move is best. Searches all possible moves up to depth. Returns tuple
         move_string, heuristic_value."""
@@ -298,15 +306,25 @@ class AIPlayer(Player):
             alpha = None, -9999
             beta = None, 9999
 
+        replaced_player = False
+
         if self.get_color() == "BLACK":
             sim_max = self
             sim_min = sim_max.get_opposing_player()
+            if type(sim_min) == Player:
+                old_opp = sim_min
+                sim_min = self.make_ai_clone(old_opp)
+                replaced_player = True
             sim_game = sim_max.get_game()
             if move:
                 sim_max.make_move(move[:2], move[2:])
         else:
             sim_min = self
             sim_max = sim_min.get_opposing_player()
+            if type(sim_max) == Player:
+                old_opp = sim_max
+                sim_max = self.make_ai_clone(old_opp)
+                replaced_player = True
             sim_game = sim_min.get_game()
             if move:
                 sim_min.make_move(move[:2], move[2:])
@@ -315,7 +333,10 @@ class AIPlayer(Player):
         if depth == 0 or sim_game.get_game_state() != "UNFINISHED":
             if move:
                 self.undo_move()
-            return None, self.get_heuristic(sim_game)
+            result = None, self.get_heuristic(sim_game)
+            if replaced_player:
+                self.set_opposing_player(old_opp)
+            return result
 
         # Recursion
         if max_player:
@@ -331,6 +352,8 @@ class AIPlayer(Player):
                     break
             if move:
                 self.undo_move()
+            if replaced_player:
+                self.set_opposing_player(old_opp)
             return max_eval
         else:
             min_eval = None, 9999
@@ -345,6 +368,8 @@ class AIPlayer(Player):
                     break
             if move:
                 self.undo_move()
+            if replaced_player:
+                self.set_opposing_player(old_opp)
             return min_eval[0], min_eval[1]
 
     def ai_make_move(self, depth):
