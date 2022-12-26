@@ -296,6 +296,7 @@ class AIPlayer(Player):
         ai_clone._pieces = player._pieces
         ai_clone.set_opposing_player(player.get_opposing_player())
         ai_clone.update_active()
+        return ai_clone
 
     def minimax(self, depth, move=None, max_player=None, first_time=True, alpha=None, beta=None):
         """Player uses to choose which move is best. Searches all possible moves up to depth. Returns tuple

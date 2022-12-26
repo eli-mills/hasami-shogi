@@ -277,6 +277,8 @@ class HasamiShogiGame:
 
     def make_move(self, moving_from, moving_to):
         """Moves from first square to second and returns True if legal, then updates game variables accordingly."""
+
+        # Check if move is legal and execute
         if not self.is_move_legal(moving_from, moving_to):
             return False
         self.execute_move(moving_from, moving_to)
