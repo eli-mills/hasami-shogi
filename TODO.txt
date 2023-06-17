@@ -1,0 +1,20 @@
+TWEAKS:
+[x] Improve efficiency of HasamiShogiGame (lots of get square occupant calls)
+    [x] Add a Piece class that each player stores
+        Each Piece always knows all of its possible moves
+        Each time a Piece is moved, it should figure out what its possible moves must be without iterating in all directions
+
+    [x] Or instead of copying the board each time, create an "undo move" function
+
+[x] Improve capture heuristic in tradeoff cases where one of the opponent's capturing pieces will be captured first
+    Game example: i6e6, a5e5 (RED should avoid that last move but currently it evaluates to a 0 heuristic)
+
+[ ] Maybe moderate AI aggression based on how far in the lead?
+
+[x] Re-evaluate capture heuristic
+    I've been assuming score is positive, but tradeoff can be negative.
+    Score needs to represent net material gain for active player.
+
+FEATURES:
+[ ] Add difficulty selector
+[ ] Add rules screen
