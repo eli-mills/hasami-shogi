@@ -1,5 +1,5 @@
 import unittest
-from src.HasamiShogiGame import GameBoard
+from hasami_shogi.src.controller.game_board import GameBoard
 
 
 class TestInit(unittest.TestCase):

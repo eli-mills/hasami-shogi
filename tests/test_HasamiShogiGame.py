@@ -1,5 +1,5 @@
 import unittest
-from src.HasamiShogiGame import HasamiShogiGame
+from hasami_shogi.src.controller.hasami_shogi_game import HasamiShogiGame
 
 
 def run_moves(game, move_list):

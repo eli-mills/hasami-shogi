@@ -1,5 +1,5 @@
-from src import play_shogi_visual as visual
-from src import play_shogi_terminal as terminal
+from hasami_shogi import play_shogi_visual as visual
+from hasami_shogi import play_shogi_terminal as terminal
 import time
 
 USER_PROMPT = "Type a number and press enter: "
@@ -9,6 +9,7 @@ def main():
     # Instructions
     print("Welcome to Hasami Shogi, a project by Eli Mills.")
     print("To get started, select a game mode.")
+    print()
     time.sleep(1)
 
     # Get user input
@@ -19,6 +20,7 @@ def main():
         if (user_input := input(USER_PROMPT)) in ["1", "2"]:
             break
         print("Invalid input. Please try again.")
+        print()
 
     match user_input:
         case "1":

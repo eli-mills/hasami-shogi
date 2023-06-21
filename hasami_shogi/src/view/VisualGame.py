@@ -1,9 +1,10 @@
-from .HasamiShogiGame import HasamiShogiGame
-from .visual_constants import *
-from .hasami_shogi_utilities import *
-from .ai import *
-import pygame
 import sys
+from hasami_shogi.src.controller.hasami_shogi_game import HasamiShogiGame
+from hasami_shogi.src.controller.player import Player
+from hasami_shogi.src.controller.ai_player import AIPlayer
+from hasami_shogi.src.controller.hasami_shogi_utilities import return_valid_moves, get_game_pieces
+from hasami_shogi.src.view.visual_constants import *
+import pygame
 
 
 class VisualGame():
@@ -260,12 +261,3 @@ class VisualGame():
                         self.event_handler()
                 else:
                     self.check_for_quit()
-
-
-def main():
-    vis_game = VisualGame(1, 3, "BLACK")
-    vis_game.game_loop_visual()
-
-
-if __name__ == "__main__":
-    main()

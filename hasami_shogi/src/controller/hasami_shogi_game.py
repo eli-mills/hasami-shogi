@@ -1,105 +1,24 @@
-# Author: Eli Mills
-# Date: 11/25/2021
-# Description: Portfolio Project - Hasami Shogi
+from hasami_shogi.src.controller.game_board import GameBoard
 
-
-class GameBoard:
-    """Defines the methods for a Hasami Shogi game board. Used by HasamiShogiGame."""
-    def __init__(self, starting_board=None):
-        """
-        Initializes a 9x9 Hasami Shogi game board as a list of lists. Sets player positions. Optional
-        default GameBoard object.
-        """
-        self._row_labels = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i']
-        self._col_labels = ['1', '2', '3', '4', '5', '6', '7', '8', '9']
-        self._all_squares_in_order = [row + col for row in self._row_labels for col in self._col_labels]
-        self._all_squares = set(self._all_squares_in_order)
-
-        # Initialize game board
-        if starting_board is None:
-            self._board = [["NONE" for x in range(9)] for x in range(9)]
-            self._board[0] = ["RED" for x in range(9)]
-            self._board[8] = ["BLACK" for x in range(9)]
-        else:
-            self._board = [row[:] for row in starting_board._board]
-
-        self._squares = {
-            "RED": {'a1', 'a2', 'a3', 'a4', 'a5', 'a6', 'a7', 'a8', 'a9'},
-            "BLACK": {'i1', 'i2', 'i3', 'i4', 'i5', 'i6', 'i7', 'i8', 'i9'}
-        }
-        self._squares["NONE"] = self._all_squares - self._squares["RED"] - self._squares["BLACK"]
-        self._ind_squares = {square: color for color in self._squares for square in self._squares[color]}
-
-    def get_board_list(self):
-        """Returns the board as a list of lists."""
-        return [[color for color in [self.get_square(ss) for ss in self._all_squares_in_order]][(9 * x):(9 * (x + 1))] for x in range(0, 9)]
-
-    def get_all_squares(self):
-        """Returns all possible squares of board as a set of square strings."""
-        return self._all_squares
-
-    def print_board(self):
-        """Prints the current board with row/column labels. Abbreviates RED and BLACK and replaces NONE with '.'. """
-        print("  " + " ".join(self._col_labels))
-        for row in range(9):
-            output_string = self._row_labels[row] + " "
-            for square in self.get_board_list()[row]:
-                if square == "NONE":
-                    output_string += '. '
-                else:
-                    output_string += square[0] + " "
-            print(output_string[:-1])
-
-    def string_to_index(self, square_string):
-        """Converts row/column string to row/column indices as a tuple, indexed at 0. Assumes valid input."""
-        return self._row_labels.index(square_string[0]), self._col_labels.index(square_string[1])
-
-    def index_to_string(self, row, column):
-        """Converts row/column index (indexed at 0) to square string. Assumes valid input."""
-        return self._row_labels[row] + self._col_labels[column]
-
-    def get_square(self, square_string):
-        """Given a square string, returns the value at that square."""
-        return self._ind_squares[square_string]
-
-    def set_square(self, square_string, square_value):
-        """Sets the value of the given square to the given value."""
-        if square_string not in self._all_squares or square_value not in {"RED", "BLACK", "NONE"}:
-            return None
-        self._ind_squares[square_string] = square_value
-
-    def build_square_string_range(self, square_string_from, square_string_to):
-        """Returns list of square strings from first square to second. Range cannot be diagonal. Assumes valid input."""
-        # 1. Convert square strings to indices.
-        row_from, col_from = self._row_labels.index(square_string_from[0]), int(square_string_from[1])-1
-        row_to, col_to = self._row_labels.index(square_string_to[0]), int(square_string_to[1])-1
-
-        # 2. Generate ranges. There should be exactly one range of length 0.
-        row_min, row_max = min(row_to, row_from), max(row_to, row_from)
-        col_min, col_max = min(col_to, col_from), max(col_to, col_from)
-        row_range, col_range = range(row_min, row_max + 1), range(col_min, col_max + 1)
-
-        # 3. Generate list of square strings from ranges. Reverse output if necessary.
-        output_range = []
-        for row_index in row_range:
-            for col_index in col_range:
-                output_range.append(self._row_labels[row_index] + self._col_labels[col_index])
-        return output_range if row_from <= row_to and col_from <= col_to else output_range[::-1]
 
 class ShogiMove:
     """Defines data structure for recording a move in Hasami Shogi."""
+
     def __init__(self):
         self.player = self.move = self.cap_squares = self.cap_color = None
 
+
 class HasamiShogiGame:
     """Defines the methods for a game of Hasami Shogi."""
+
     def __init__(self, starting_game=None):
-        """Creates a new board, sets game state to UNFINISHED, active player to BLACK, captured pieces to 0."""
+        """Creates a new board, sets game state to UNFINISHED,
+        active player to BLACK, captured pieces to 0."""
         if starting_game is None:
             self._game_board = GameBoard()
-            self._game_state = "UNFINISHED"     # UNFINISHED, RED_WON, BLACK_WON
-            self._active_player = "BLACK"       # BLACK, RED
-            self._inactive_player = "RED"       # BLACK, RED
+            self._game_state = "UNFINISHED"  # UNFINISHED, RED_WON, BLACK_WON
+            self._active_player = "BLACK"  # BLACK, RED
+            self._inactive_player = "RED"  # BLACK, RED
             self._captured_pieces = {"RED": 0, "BLACK": 0}
             self.move_log = []
         else:
@@ -159,37 +78,46 @@ class HasamiShogiGame:
 
     def is_move_legal(self, moving_from, moving_to):
         """Checks if move from first square to second is legal. Returns True if so, False if not."""
-        if self.get_game_state() != "UNFINISHED":                                     # Game is finished
+        if self.get_game_state() != "UNFINISHED":  # Game is finished
             return False
 
-        if moving_from not in self._all_squares or moving_to not in self._all_squares:              # Out of range
+        if moving_from not in self._all_squares or moving_to not in self._all_squares:  # Out of range
             return False
 
-        if self.get_square_occupant(moving_from) != self.get_active_player():         # Wrong color
+        if self.get_square_occupant(
+                moving_from) != self.get_active_player():  # Wrong color
             return False
 
-        if moving_from[0] != moving_to[0] and moving_from[1] != moving_to[1]:         # Not pure vertical or horizontal
+        if moving_from[0] != moving_to[0] and moving_from[1] != moving_to[
+            1]:  # Not pure vertical or horizontal
             return False
 
-        if moving_from == moving_to:                                                  # Same square
+        if moving_from == moving_to:  # Same square
             return False
 
-        move_path = self.get_game_board().build_square_string_range(moving_from, moving_to)
-        return False not in {self.get_square_occupant(x) == "NONE" for x in move_path[1:]}    # Check for clear path.
+        move_path = self.get_game_board().build_square_string_range(moving_from,
+                                                                    moving_to)
+        return False not in {self.get_square_occupant(x) == "NONE" for x in
+                             move_path[1:]}  # Check for clear path.
 
     def find_captured_squares(self, from_square, to_square):
         """Finds capture pattern in given square string range. Returns captured squares if found, else False."""
         capturing_color = self.get_square_occupant(from_square)
-        captured_color = {"RED": "BLACK", "BLACK": "RED"}[capturing_color]              # Picks opposite color.
-        square_string_list = self.get_game_board().build_square_string_range(from_square, to_square)  # Square strings
-        square_value_list = [self.get_square_occupant(x) for x in square_string_list]                 # Values on board
+        captured_color = {"RED": "BLACK", "BLACK": "RED"}[
+            capturing_color]  # Picks opposite color.
+        square_string_list = self.get_game_board().build_square_string_range(
+            from_square, to_square)  # Square strings
+        square_value_list = [self.get_square_occupant(x) for x in
+                             square_string_list]  # Values on board
         for index, square_value in enumerate(square_value_list[1:]):
             if square_value == capturing_color:
-                if index == 0:                                          # Two of capturing color in a row, no capture.
+                if index == 0:  # Two of capturing color in a row, no capture.
                     return False
-                end_cap = square_string_list[1:][index]                 # Store the other "bread" of the "sandwich".
-                return self.get_game_board().build_square_string_range(from_square, end_cap)[1:-1]  # Captured only.
-            if square_value != captured_color:                          # Breaks on NONE.
+                end_cap = square_string_list[1:][
+                    index]  # Store the other "bread" of the "sandwich".
+                return self.get_game_board().build_square_string_range(
+                    from_square, end_cap)[1:-1]  # Captured only.
+            if square_value != captured_color:  # Breaks on NONE.
                 return False
 
     def check_linear_captures(self, moved_to):
@@ -203,11 +131,14 @@ class HasamiShogiGame:
         search_directions = [left_limit, right_limit, top_limit, bottom_limit]
 
         # 2. Check each direction for captures up to the edges of the board.
-        captured_lists = [self.find_captured_squares(moved_to, limit) for limit in search_directions]
-        captured_squares = [square for sublist in captured_lists if sublist for square in sublist]
+        captured_lists = [self.find_captured_squares(moved_to, limit) for limit
+                          in search_directions]
+        captured_squares = [square for sublist in captured_lists if sublist for
+                            square in sublist]
 
         # 3. Add captured pieces to the score.
-        self.add_num_captured_pieces(self._inactive_player, len(captured_squares))
+        self.add_num_captured_pieces(self._inactive_player,
+                                     len(captured_squares))
 
         # 4. Change all captured squares to "NONE".
         for captured in captured_squares:
@@ -224,7 +155,8 @@ class HasamiShogiGame:
     def find_closest_corner(self, moved_to):
         """Finds the closest corner to the new square to check for corner capture."""
         closest_corner = ""
-        square_row, square_column = self.get_game_board().string_to_index(moved_to)
+        square_row, square_column = self.get_game_board().string_to_index(
+            moved_to)
         if square_row <= 1:
             closest_corner += "a"
         if square_row >= 7:
@@ -238,7 +170,8 @@ class HasamiShogiGame:
     def check_corner_capture(self, moved_to):
         """Checks for a capture in the corner. Removes enemy piece in corner. Must occur after linear check for
         correct prev move data update."""
-        capture_scenarios = {                           # Key is the captured piece, lists are capturing positions.
+        capture_scenarios = {
+            # Key is the captured piece, lists are capturing positions.
             "a1": ["a2", "b1"],
             "a9": ["a8", "b9"],
             "i1": ["h1", "i2"],
@@ -251,8 +184,10 @@ class HasamiShogiGame:
             if moved_to in capture_scenarios[closest_corner]:
 
                 # Determine what colors are at the three corner positions:
-                moved_to_index = capture_scenarios[closest_corner].index(moved_to)
-                capturing_end = capture_scenarios[closest_corner][moved_to_index - 1]
+                moved_to_index = capture_scenarios[closest_corner].index(
+                    moved_to)
+                capturing_end = capture_scenarios[closest_corner][
+                    moved_to_index - 1]
                 moved_to_color = self.get_square_occupant(moved_to)
                 captured_color = self.get_square_occupant(closest_corner)
                 capturing_end_color = self.get_square_occupant(capturing_end)
@@ -304,15 +239,17 @@ class HasamiShogiGame:
             return
 
         prev_move = self.move_log.pop()
-        self._game_state = "UNFINISHED"         # Safe to assume game state was unfinished if move was made
+        self._game_state = "UNFINISHED"  # Safe to assume game state was unfinished if move was made
         self.execute_move(prev_move.move[2:], prev_move.move[:2])
         if prev_move.cap_squares is not None:
             for square in prev_move.cap_squares:
                 self.set_square_occupant(square, prev_move.cap_color)
-            self.sub_num_captured_pieces(prev_move.cap_color, len(prev_move.cap_squares))
-        self.toggle_active_player()             # Assume undo occurs after player switch
+            self.sub_num_captured_pieces(prev_move.cap_color,
+                                         len(prev_move.cap_squares))
+        self.toggle_active_player()  # Assume undo occurs after player switch
 
         return prev_move.move, prev_move.cap_squares
+
 
 def main():
     new_game = HasamiShogiGame()

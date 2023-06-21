@@ -1,7 +1,7 @@
-from .HasamiShogiGame import HasamiShogiGame
-from .hasami_shogi_utilities import *
+from hasami_shogi.src.controller.hasami_shogi_game import HasamiShogiGame
+from hasami_shogi.src.controller.hasami_shogi_utilities import *
+from hasami_shogi.src.controller.player import Player
 import cProfile
-import pickle
 
 
 class AIPlayer(Player):
