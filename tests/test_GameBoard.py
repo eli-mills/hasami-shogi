@@ -1,11 +1,11 @@
 import unittest
-from HasamiShogiGame import GameBoard
+from src.HasamiShogiGame import GameBoard
 
 
 class TestInit(unittest.TestCase):
     """Defines tests for the init method of the GameBoard class."""
     def test_board_setup(self):
-        """Asserts that board initialize correctly."""
+        """Asserts that board initializes correctly."""
         new_board = GameBoard()
         expected_board = [
             ['RED', 'RED', 'RED', 'RED', 'RED', 'RED', 'RED', 'RED', 'RED'],
@@ -186,3 +186,7 @@ class TestBuildSquareStringRange(unittest.TestCase):
         new_board = GameBoard()
         test = new_board.build_square_string_range("e4", "e4")
         self.assertEqual(["e4"], test)
+
+
+if __name__ == "__main__":
+    unittest.main()

@@ -1,7 +1,7 @@
-from HasamiShogiGame import HasamiShogiGame
-from visual_constants import *
-from hasami_shogi_utilities import *
-from ai import *
+from .HasamiShogiGame import HasamiShogiGame
+from .visual_constants import *
+from .hasami_shogi_utilities import *
+from .ai import *
 import pygame
 import sys
 

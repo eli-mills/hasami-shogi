@@ -1,5 +1,5 @@
-from HasamiShogiGame import HasamiShogiGame
-from hasami_shogi_utilities import *
+from .HasamiShogiGame import HasamiShogiGame
+from .hasami_shogi_utilities import *
 import cProfile
 import pickle
 

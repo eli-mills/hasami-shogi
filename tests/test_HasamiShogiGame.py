@@ -1,5 +1,5 @@
 import unittest
-from HasamiShogiGame import HasamiShogiGame
+from src.HasamiShogiGame import HasamiShogiGame
 
 
 def run_moves(game, move_list):
@@ -445,5 +445,5 @@ class TestWinCases(TestNormalGames):
         self.template(moves, [True]*3, exp_board, "RED", 0, 9, "BLACK_WON", board_setup)
 
 
-
-
+if __name__ == "__main__":
+    unittest.main()

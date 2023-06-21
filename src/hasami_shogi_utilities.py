@@ -1,4 +1,4 @@
-from HasamiShogiGame import HasamiShogiGame
+from .HasamiShogiGame import HasamiShogiGame
 
 def bi_dict(dictionary):
     """Given a dictionary, adds all values as keys and their keys as values. Does not work if values are mutable."""

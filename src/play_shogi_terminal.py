@@ -1,4 +1,4 @@
-from HasamiShogiGame import HasamiShogiGame
+from .HasamiShogiGame import HasamiShogiGame
 
 
 def main():

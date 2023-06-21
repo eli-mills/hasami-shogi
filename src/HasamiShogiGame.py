@@ -2,7 +2,6 @@
 # Date: 11/25/2021
 # Description: Portfolio Project - Hasami Shogi
 
-import cProfile
 
 class GameBoard:
     """Defines the methods for a Hasami Shogi game board. Used by HasamiShogiGame."""
