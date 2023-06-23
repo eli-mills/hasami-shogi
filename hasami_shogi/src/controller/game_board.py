@@ -8,18 +8,12 @@ class GameBoard:
         self._row_labels = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i']
         self._col_labels = ['1', '2', '3', '4', '5', '6', '7', '8', '9']
         self._all_squares_in_order = [row + col for row in self._row_labels for col in self._col_labels]
-        self._all_squares = set(self._all_squares_in_order)
-
-        # Initialize game board
-        self._board = [["NONE" for x in range(9)] for x in range(9)]
-        self._board[0] = ["RED" for x in range(9)]
-        self._board[8] = ["BLACK" for x in range(9)]
 
         self.squares_by_color = {
             "RED": {'a1', 'a2', 'a3', 'a4', 'a5', 'a6', 'a7', 'a8', 'a9'},
             "BLACK": {'i1', 'i2', 'i3', 'i4', 'i5', 'i6', 'i7', 'i8', 'i9'}
         }
-        self.square_values = {square: "NONE" for square in self._all_squares}
+        self.square_values = {square: "NONE" for square in self._all_squares_in_order}
         self.square_values |= {square: color for color in self.squares_by_color for square in self.squares_by_color[
             color]}
 
@@ -35,7 +29,7 @@ class GameBoard:
 
     def get_all_squares(self):
         """Returns all possible squares of board as a set of square strings."""
-        return self._all_squares
+        return set(self.square_values.keys())
 
     def print_board(self):
         """Prints the current board with row/column labels. Abbreviates RED and BLACK and replaces NONE with '.'. """
@@ -63,7 +57,7 @@ class GameBoard:
 
     def set_square(self, square_string, square_value):
         """Sets the value of the given square to the given value."""
-        if square_string not in self._all_squares or square_value not in {"RED", "BLACK", "NONE"}:
+        if square_string not in self.square_values or square_value not in {"RED", "BLACK", "NONE"}:
             return None
         current_value = self.square_values[square_string]
         if current_value in {"RED", "BLACK"}:

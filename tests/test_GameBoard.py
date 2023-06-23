@@ -18,7 +18,7 @@ class TestInit(unittest.TestCase):
             ['NONE', 'NONE', 'NONE', 'NONE', 'NONE', 'NONE', 'NONE', 'NONE', 'NONE'],
             ['BLACK', 'BLACK', 'BLACK', 'BLACK', 'BLACK', 'BLACK', 'BLACK', 'BLACK', 'BLACK']
         ]
-        test_board = new_board._board
+        test_board = new_board.get_board_list()
         self.assertEqual(expected_board, test_board)
         test_board = new_board.get_board_list()
         self.assertEqual(expected_board, test_board)

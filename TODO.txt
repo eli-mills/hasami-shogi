@@ -15,7 +15,7 @@ TWEAKS:
     I've been assuming score is positive, but tradeoff can be negative.
     Score needs to represent net material gain for active player.
 
-[ ] Move tracking pieces by color to GameBoard, away from Player.
+[X] Move tracking pieces by color to GameBoard, away from Player.
 
 FEATURES:
 [ ] Add difficulty selector
