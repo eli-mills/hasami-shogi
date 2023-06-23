@@ -23,6 +23,12 @@ class GameBoard:
         self.square_values |= {square: color for color in self.squares_by_color for square in self.squares_by_color[
             color]}
 
+    def get_squares_by_color(self, color):
+        try:
+            return set(self.squares_by_color[color])
+        except KeyError as e:
+            raise KeyError("get_squares_by_color was provided a color other than RED or BLACK") from e
+
     def get_board_list(self):
         """Returns the board as a list of lists."""
         return [[color for color in [self.get_square(ss) for ss in self._all_squares_in_order]][(9 * x):(9 * (x + 1))] for x in range(0, 9)]
