@@ -312,9 +312,8 @@ class AIPlayer(Player):
         them to initial state when done.
         """
         ai_clone = AIPlayer(player._game, player._color)
-        ai_clone._pieces = player._pieces
         ai_clone.set_opposing_player(player.get_opposing_player())
-        ai_clone.update_active()
+        # ai_clone.update_active()
         return ai_clone
 
     def minimax(self, depth, move=None, max_player=None, first_time=True,

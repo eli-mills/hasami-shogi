@@ -5,21 +5,11 @@ class Player:
         self._game = game
         self._color = color
         self._opposing_color = {"RED": "BLACK", "BLACK": "RED"}[color]
-        self._pieces = {
-            "RED": {'a1', 'a2', 'a3', 'a4', 'a5', 'a6', 'a7', 'a8', 'a9'},
-            "BLACK": {'i1', 'i2', 'i3', 'i4', 'i5', 'i6', 'i7', 'i8', 'i9'}
-        }[color]
         self._opposing_player = None
-        self._is_active = False
-        self.update_active()
-
-    def update_active(self):
-        """Checks the game status and updates whether the Player is the active player."""
-        self._is_active = (self._game.get_active_player() == self._color)
 
     def get_active(self):
         """Returns True if current player is active."""
-        return self._is_active
+        return self._game.get_active_player() == self._color
 
     def get_game(self):
         """Returns the current game."""
@@ -53,14 +43,8 @@ class Player:
 
     def make_move(self, start, destination):
         """Makes the given move in the game and updates piece locations in log and opponent's log."""
-        move_was_successful = self._game.make_move(start, destination)
-        self.update_active()
-        self._opposing_player.update_active()
-        return move_was_successful
+        return self._game.make_move(start, destination)
 
     def undo_move(self):
-        """Calls undo_move on HasamiShogiGame and handles restoring correct pieces to both players."""
-        results = self._game.undo_move()
-        if results is None:
-            return
-        self.update_active()
+        """Calls undo_move on HasamiShogiGame."""
+        self._game.undo_move()
