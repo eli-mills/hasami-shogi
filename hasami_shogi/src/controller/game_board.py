@@ -18,12 +18,12 @@ class GameBoard:
         else:
             self._board = [row[:] for row in starting_board._board]
 
-        self._squares = {
+        self.squares_by_color = {
             "RED": {'a1', 'a2', 'a3', 'a4', 'a5', 'a6', 'a7', 'a8', 'a9'},
             "BLACK": {'i1', 'i2', 'i3', 'i4', 'i5', 'i6', 'i7', 'i8', 'i9'}
         }
-        self._squares["NONE"] = self._all_squares - self._squares["RED"] - self._squares["BLACK"]
-        self._ind_squares = {square: color for color in self._squares for square in self._squares[color]}
+        self.squares_by_color["NONE"] = self._all_squares - self.squares_by_color["RED"] - self.squares_by_color["BLACK"]
+        self.square_values = {square: color for color in self.squares_by_color for square in self.squares_by_color[color]}
 
     def get_board_list(self):
         """Returns the board as a list of lists."""
@@ -55,13 +55,18 @@ class GameBoard:
 
     def get_square(self, square_string):
         """Given a square string, returns the value at that square."""
-        return self._ind_squares[square_string]
+        return self.square_values[square_string]
 
     def set_square(self, square_string, square_value):
         """Sets the value of the given square to the given value."""
         if square_string not in self._all_squares or square_value not in {"RED", "BLACK", "NONE"}:
             return None
-        self._ind_squares[square_string] = square_value
+        current_value = self.square_values[square_string]
+        if current_value in {"RED", "BLACK"}:
+            self.squares_by_color[current_value].remove(square_string)
+        self.square_values[square_string] = square_value
+        if square_value in {"RED", "BLACK"}:
+            self.squares_by_color[square_value].add(square_string)
 
     def build_square_string_range(self, square_string_from, square_string_to):
         """Returns list of square strings from first square to second. Range cannot be diagonal. Assumes valid input."""

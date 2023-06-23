@@ -17,16 +17,18 @@ def main():
         print("Please select from the following options:")
         print("[1] Play in the terminal console.")
         print("[2] Play with a visual game board.")
+        print("Enter 'exit' to exit.")
         if (user_input := input(USER_PROMPT)) in ["1", "2"]:
+            break
+        elif user_input == "exit":
             break
         print("Invalid input. Please try again.")
         print()
 
-    match user_input:
-        case "1":
-            terminal.main()
-        case "2":
-            visual.main()
+    if user_input == "1":
+        terminal.main()
+    elif user_input == "2":
+        visual.main()
 
 
 if __name__ == "__main__":

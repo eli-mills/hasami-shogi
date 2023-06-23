@@ -1,4 +1,4 @@
-from hasami_shogi.src.view.VisualGame import VisualGame
+from hasami_shogi.src.view.visual_game import VisualGame
 
 
 def main():
