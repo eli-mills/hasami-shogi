@@ -11,23 +11,15 @@ class ShogiMove:
 class HasamiShogiGame:
     """Defines the methods for a game of Hasami Shogi."""
 
-    def __init__(self, starting_game=None):
+    def __init__(self):
         """Creates a new board, sets game state to UNFINISHED,
         active player to BLACK, captured pieces to 0."""
-        if starting_game is None:
-            self._game_board = GameBoard()
-            self._game_state = "UNFINISHED"  # UNFINISHED, RED_WON, BLACK_WON
-            self._active_player = "BLACK"  # BLACK, RED
-            self._inactive_player = "RED"  # BLACK, RED
-            self._captured_pieces = {"RED": 0, "BLACK": 0}
-            self.move_log = []
-        else:
-            self._game_board = GameBoard(starting_game._game_board)
-            self._game_state = starting_game._game_state
-            self._active_player = starting_game._active_player
-            self._inactive_player = starting_game._inactive_player
-            self._captured_pieces = dict(starting_game._captured_pieces)
-            self.move_log = []
+        self._game_board = GameBoard()
+        self._game_state = "UNFINISHED"  # UNFINISHED, RED_WON, BLACK_WON
+        self._active_player = "BLACK"  # BLACK, RED
+        self._inactive_player = "RED"  # BLACK, RED
+        self._captured_pieces = {"RED": 0, "BLACK": 0}
+        self.move_log = []
         self._all_squares = self._game_board.get_all_squares()
 
     def get_game_board(self):

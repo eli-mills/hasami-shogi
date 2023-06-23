@@ -1,6 +1,6 @@
 class GameBoard:
     """Defines the methods for a Hasami Shogi game board. Used by HasamiShogiGame."""
-    def __init__(self, starting_board=None):
+    def __init__(self):
         """
         Initializes a 9x9 Hasami Shogi game board as a list of lists. Sets player positions. Optional
         default GameBoard object.
@@ -11,19 +11,17 @@ class GameBoard:
         self._all_squares = set(self._all_squares_in_order)
 
         # Initialize game board
-        if starting_board is None:
-            self._board = [["NONE" for x in range(9)] for x in range(9)]
-            self._board[0] = ["RED" for x in range(9)]
-            self._board[8] = ["BLACK" for x in range(9)]
-        else:
-            self._board = [row[:] for row in starting_board._board]
+        self._board = [["NONE" for x in range(9)] for x in range(9)]
+        self._board[0] = ["RED" for x in range(9)]
+        self._board[8] = ["BLACK" for x in range(9)]
 
         self.squares_by_color = {
             "RED": {'a1', 'a2', 'a3', 'a4', 'a5', 'a6', 'a7', 'a8', 'a9'},
             "BLACK": {'i1', 'i2', 'i3', 'i4', 'i5', 'i6', 'i7', 'i8', 'i9'}
         }
-        self.squares_by_color["NONE"] = self._all_squares - self.squares_by_color["RED"] - self.squares_by_color["BLACK"]
-        self.square_values = {square: color for color in self.squares_by_color for square in self.squares_by_color[color]}
+        self.square_values = {square: "NONE" for square in self._all_squares}
+        self.square_values |= {square: color for color in self.squares_by_color for square in self.squares_by_color[
+            color]}
 
     def get_board_list(self):
         """Returns the board as a list of lists."""
