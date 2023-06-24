@@ -1,5 +1,6 @@
 from hasami_shogi.src.controller.hasami_shogi_utilities import *
 from hasami_shogi.src.controller.player import Player
+from hasami_shogi.src.controller.game_board import GameBoard
 
 
 class AIPlayer(Player):
@@ -64,7 +65,7 @@ class AIPlayer(Player):
         Calls:  get_adjacent_squares
                 self.find_cap_partner: O(N)
         """
-        captured_color = opposite_color(capturing_color)
+        captured_color = GameBoard.opposite_color(capturing_color)
         capturing_pieces = game_piece_dict[capturing_color]
         captured_pieces = game_piece_dict[captured_color]
         pot_caps = {}
@@ -174,7 +175,7 @@ class AIPlayer(Player):
                 self.find_capture_moves   O(N^3)
                 self.evaluate_cap_moves   O(1)
         """
-        opponent = opposite_color(player_turn)
+        opponent = GameBoard.opposite_color(player_turn)
         material_advantage = len(game_piece_dict[player_turn]) - len(
             game_piece_dict[opponent])
 
@@ -248,7 +249,7 @@ class AIPlayer(Player):
         """
         Given a piece dict and active player, returns all moves active can make to squares adjacent to opponent.
         """
-        opponent = opposite_color(player_turn)
+        opponent = GameBoard.opposite_color(player_turn)
         opp_pieces = game_piece_dict[opponent]
         active_pieces = game_piece_dict[player_turn]
 

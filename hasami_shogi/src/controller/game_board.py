@@ -7,6 +7,11 @@ class GameBoard:
     RED_START = {'a1', 'a2', 'a3', 'a4', 'a5', 'a6', 'a7', 'a8', 'a9'}
     BLACK_START = {'i1', 'i2', 'i3', 'i4', 'i5', 'i6', 'i7', 'i8', 'i9'}
 
+    @staticmethod
+    def opposite_color(color):
+        """Returns RED if BLACK, and vice versa."""
+        return {"RED": "BLACK", "BLACK": "RED"}[color]
+
     def __init__(self):
         """
         Initializes a Hasami Shogi game board and sets player positions.
@@ -15,16 +20,29 @@ class GameBoard:
             | {square: "RED" for square in GameBoard.RED_START} \
             | {square: "BLACK" for square in GameBoard.BLACK_START}
 
-    def get_squares_by_color(self, seeking_color):
-        return {square for square, color in self.square_values.items() if color == seeking_color}
+    def get_square(self, square_string):
+        """Given a square string, returns the value at that square."""
+        return self.square_values[square_string]
 
-    def get_board_list(self):
-        """Returns the board as a list of lists."""
-        return [[self.get_square(square) for square in row] for row in utils.BOARD]
+    def set_square(self, square_string, square_value):
+        """Sets the value of the given square to the given value."""
+        if square_string not in self.square_values or square_value not in {"RED", "BLACK", "NONE"}:
+            return None
+        self.square_values[square_string] = square_value
+
+    def get_squares_by_color(self, seeking_color):
+        """
+        Returns set of squares belonging to the given color.
+        """
+        return {square for square, color in self.square_values.items() if color == seeking_color}
 
     def get_all_squares(self):
         """Returns all possible squares of board as a set of square strings."""
         return set(self.square_values.keys())
+
+    def get_board_list(self):
+        """Returns the board as a list of lists."""
+        return [[self.get_square(square) for square in row] for row in utils.BOARD]
 
     def print_board(self):
         """Prints the current board with row/column labels. Abbreviates RED and BLACK and replaces NONE with '.'. """
@@ -37,13 +55,3 @@ class GameBoard:
                 else:
                     output_string += square[0] + " "
             print(output_string[:-1])
-
-    def get_square(self, square_string):
-        """Given a square string, returns the value at that square."""
-        return self.square_values[square_string]
-
-    def set_square(self, square_string, square_value):
-        """Sets the value of the given square to the given value."""
-        if square_string not in self.square_values or square_value not in {"RED", "BLACK", "NONE"}:
-            return None
-        self.square_values[square_string] = square_value

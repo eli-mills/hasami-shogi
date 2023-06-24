@@ -46,11 +46,6 @@ def string_to_index(square_string):
     return row_num[square_string[0]], col_num[square_string[1]]
 
 
-def opposite_color(color):
-    """Returns RED if BLACK, and vice versa."""
-    return {"RED": "BLACK", "BLACK": "RED"}[color]
-
-
 def get_game_pieces(game):
     """Given a game, returns a {'color': {square string set}} dictionary. Does not contain empty squares."""
     output = {"RED": set(), "BLACK": set()}
@@ -93,6 +88,13 @@ def get_next_square(square_string1, square_string2):
     if 0 <= next_row < 9 and 0 <= next_col < 9:
         return index_to_string(next_row, next_col)
     return None
+
+
+def move_is_straight(moving_from, moving_to):
+    """
+    Returns whether the given move is pure horizontal/vertical.
+    """
+    return moving_from[0] == moving_to[0] or moving_from[1] == moving_to[1]
 
 
 def build_square_string_range(square_string_from, square_string_to):

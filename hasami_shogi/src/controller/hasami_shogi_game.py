@@ -1,11 +1,16 @@
 from hasami_shogi.src.controller.game_board import GameBoard
 import hasami_shogi.src.controller.hasami_shogi_utilities as utils
 
+
 class ShogiMove:
     """Defines data structure for recording a move in Hasami Shogi."""
 
     def __init__(self):
-        self.player = self.move = self.cap_squares = self.cap_color = None
+        self.player = \
+            self.move = \
+            self.cap_squares = \
+            self.cap_color = \
+            None
 
 
 class HasamiShogiGame:
@@ -20,7 +25,6 @@ class HasamiShogiGame:
         self._inactive_player = "RED"  # BLACK, RED
         self._captured_pieces = {"RED": 0, "BLACK": 0}
         self.move_log = []
-        self._all_squares = self._game_board.get_all_squares()
 
     def get_game_board(self):
         """Returns the game board object."""
@@ -50,10 +54,6 @@ class HasamiShogiGame:
         """Adds the given number to the captured pieces of the given color."""
         self._captured_pieces[player_color] += num_captured
 
-    def sub_num_captured_pieces(self, player_color, num_captured):
-        """Subtracts the given number from the captured pieces of the given color."""
-        self._captured_pieces[player_color] -= num_captured
-
     def get_square_occupant(self, square_string):
         """Returns the value at the given square on the board: RED, BLACK, or NONE."""
         return self.get_game_board().get_square(square_string)
@@ -68,48 +68,33 @@ class HasamiShogiGame:
         self.set_square_occupant(moving_to, piece_moving)
         self.set_square_occupant(moving_from, "NONE")
 
+    def path_is_clear(self, moving_from, moving_to):
+        move_path = utils.build_square_string_range(moving_from, moving_to)
+        return False not in {self.get_square_occupant(x) == "NONE" for x in move_path[1:]}
+
     def is_move_legal(self, moving_from, moving_to):
         """Checks if move from first square to second is legal. Returns True if so, False if not."""
-        if self.get_game_state() != "UNFINISHED":  # Game is finished
-            return False
-
-        if moving_from not in self._all_squares or moving_to not in self._all_squares:  # Out of range
-            return False
-
-        if self.get_square_occupant(
-                moving_from) != self.get_active_player():  # Wrong color
-            return False
-
-        if moving_from[0] != moving_to[0] and moving_from[1] != moving_to[
-            1]:  # Not pure vertical or horizontal
-            return False
-
-        if moving_from == moving_to:  # Same square
-            return False
-
-        move_path = utils.build_square_string_range(moving_from, moving_to)
-        return False not in {self.get_square_occupant(x) == "NONE" for x in
-                             move_path[1:]}  # Check for clear path.
+        return self.get_game_state() == "UNFINISHED"\
+            and moving_from in self.get_game_board().get_all_squares()\
+            and moving_to in self.get_game_board().get_all_squares()\
+            and self.get_square_occupant(moving_from) == self.get_active_player()\
+            and utils.move_is_straight(moving_from, moving_to)\
+            and moving_from != moving_to\
+            and self.path_is_clear(moving_from, moving_to)
 
     def find_captured_squares(self, from_square, to_square):
-        """Finds capture pattern in given square string range. Returns captured squares if found, else False."""
+        """
+        Return list of captured squares between from_ and to_square (exclusive), or False if from_ and to_ do not
+        form a valid capture.
+        """
         capturing_color = self.get_square_occupant(from_square)
-        captured_color = {"RED": "BLACK", "BLACK": "RED"}[
-            capturing_color]  # Picks opposite color.
-        square_string_list = utils.build_square_string_range(
-            from_square, to_square)  # Square strings
-        square_value_list = [self.get_square_occupant(x) for x in
-                             square_string_list]  # Values on board
-        for index, square_value in enumerate(square_value_list[1:]):
-            if square_value == capturing_color:
-                if index == 0:  # Two of capturing color in a row, no capture.
-                    return False
-                end_cap = square_string_list[1:][
-                    index]  # Store the other "bread" of the "sandwich".
-                return utils.build_square_string_range(
-                    from_square, end_cap)[1:-1]  # Captured only.
-            if square_value != captured_color:  # Breaks on NONE.
-                return False
+        range_to_check = utils.build_square_string_range(from_square, to_square)[1:]
+        square_value_list = [self.get_square_occupant(x) for x in range_to_check]
+
+        end_cap = square_value_list.index(capturing_color) if capturing_color in square_value_list else -1
+        first_empty = square_value_list.index("NONE") if "NONE" in square_value_list else -1
+
+        return False if end_cap <= 0 or 0 <= first_empty < end_cap else range_to_check[:end_cap]
 
     def check_linear_captures(self, moved_to):
         """Searches four directions around latest move, captures pieces, and updates capture counts."""
@@ -235,8 +220,8 @@ class HasamiShogiGame:
         if prev_move.cap_squares is not None:
             for square in prev_move.cap_squares:
                 self.set_square_occupant(square, prev_move.cap_color)
-            self.sub_num_captured_pieces(prev_move.cap_color,
-                                         len(prev_move.cap_squares))
+            self.add_num_captured_pieces(prev_move.cap_color,
+                                         -len(prev_move.cap_squares))
         self.toggle_active_player()  # Assume undo occurs after player switch
 
         return prev_move.move, prev_move.cap_squares
