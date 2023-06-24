@@ -306,45 +306,27 @@ class AIPlayer(Player):
 
         return preferred_moves + leftover_moves
 
-    @staticmethod
-    def make_ai_clone(player):
+    def make_ai_clone(self):
         """
         Makes an AI to pilot a Player object while calculating next move. Uses given Player's pieces but returns
         them to initial state when done.
         """
-        ai_clone = AIPlayer(player._game, player._color)
-        ai_clone.set_opposing_player(player.get_opposing_player())
-        return ai_clone
+        ai_clone = AIPlayer(self.get_game(), self.get_opposing_player().get_color())
+        self.set_opposing_player(ai_clone)
 
-    def minimax(self, depth, move=None, max_player=None, first_time=True,
-                alpha=None, beta=None):
-        """Player uses to choose which move is best. Searches all possible moves up to depth. Returns tuple
-        move_string, heuristic_value."""
-
-        if first_time:
-            max_player = (self.get_color() == "BLACK")
-            alpha = None, -9999
-            beta = None, 9999
-
-        replaced_player = False
-
+    def minimax_helper(self, depth, move=None, max_player=None, alpha=None, beta=None):
+        """
+        BLACK = max, RED = min
+        """
         if self.get_color() == "BLACK":
             sim_max = self
             sim_min = sim_max.get_opposing_player()
-            if type(sim_min) == Player:
-                old_opp = sim_min
-                sim_min = self.make_ai_clone(old_opp)
-                replaced_player = True
             sim_game = sim_max.get_game()
             if move:
                 sim_max.make_move(move[:2], move[2:])
         else:
             sim_min = self
             sim_max = sim_min.get_opposing_player()
-            if type(sim_max) == Player:
-                old_opp = sim_max
-                sim_max = self.make_ai_clone(old_opp)
-                replaced_player = True
             sim_game = sim_min.get_game()
             if move:
                 sim_min.make_move(move[:2], move[2:])
@@ -354,8 +336,6 @@ class AIPlayer(Player):
             if move:
                 self.undo_move()
             result = None, self.get_heuristic(sim_game)
-            if replaced_player:
-                self.set_opposing_player(old_opp)
             return result
 
         # Recursion
@@ -363,8 +343,7 @@ class AIPlayer(Player):
             max_eval = None, -9999
             possible_move_list = sim_max.find_all_available_moves()
             for possible_move in possible_move_list:
-                eval = sim_max.minimax(depth - 1, possible_move, False, False,
-                                       alpha, beta)
+                eval = sim_max.minimax_helper(depth - 1, possible_move, False, alpha, beta)
                 if eval[1] > max_eval[1]:
                     max_eval = possible_move, eval[1]
                 if max_eval[1] > alpha[1]:
@@ -373,15 +352,12 @@ class AIPlayer(Player):
                     break
             if move:
                 self.undo_move()
-            if replaced_player:
-                self.set_opposing_player(old_opp)
             return max_eval
         else:
             min_eval = None, 9999
             possible_move_list = sim_min.find_all_available_moves()
             for possible_move in possible_move_list:
-                eval = sim_min.minimax(depth - 1, possible_move, True, False,
-                                       alpha, beta)
+                eval = sim_min.minimax_helper(depth - 1, possible_move, True, alpha, beta)
                 if eval[1] < min_eval[1]:
                     min_eval = possible_move, eval[1]
                 if min_eval[1] < beta[1]:
@@ -390,9 +366,22 @@ class AIPlayer(Player):
                     break
             if move:
                 self.undo_move()
-            if replaced_player:
-                self.set_opposing_player(old_opp)
             return min_eval[0], min_eval[1]
+
+    def minimax(self, depth):
+        """Player uses to choose which move is best. Searches all possible moves up to depth. Returns tuple
+        move_string, heuristic_value."""
+
+        max_player = (self.get_color() == "BLACK")
+        alpha = None, -9999
+        beta = None, 9999
+        old_opp = self.get_opposing_player()
+        self.make_ai_clone()
+        next_move = self.minimax_helper(depth, None, max_player, alpha, beta)
+        self.set_opposing_player(old_opp)
+        return next_move
+
+
 
     def ai_make_move(self, depth):
         next_move = self.minimax(depth)
