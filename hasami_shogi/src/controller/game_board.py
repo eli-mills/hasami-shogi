@@ -12,6 +12,21 @@ class GameBoard:
         """Returns RED if BLACK, and vice versa."""
         return {"RED": "BLACK", "BLACK": "RED"}[color]
 
+    @staticmethod
+    def find_closest_corner(square):
+        """Finds the closest corner to the new square to check for corner capture."""
+        closest_corner = ""
+        row, col = square
+        if row in {"a", "b"}:
+            closest_corner += "a"
+        elif row in {"h", "i"}:
+            closest_corner += "i"
+        if col in {"1", "2"}:
+            closest_corner += "1"
+        elif col in {"8", "9"}:
+            closest_corner += "9"
+        return closest_corner
+
     def __init__(self):
         """
         Initializes a Hasami Shogi game board and sets player positions.
