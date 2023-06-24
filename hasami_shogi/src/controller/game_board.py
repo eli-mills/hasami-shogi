@@ -43,14 +43,6 @@ class GameBoard:
                     output_string += square[0] + " "
             print(output_string[:-1])
 
-    def string_to_index(self, square_string):
-        """Converts row/column string to row/column indices as a tuple, indexed at 0. Assumes valid input."""
-        return utils.ROW_LABELS.index(square_string[0]), utils.COL_LABELS.index(square_string[1])
-
-    def index_to_string(self, row, column):
-        """Converts row/column index (indexed at 0) to square string. Assumes valid input."""
-        return utils.ROW_LABELS[row] + utils.COL_LABELS[column]
-
     def get_square(self, square_string):
         """Given a square string, returns the value at that square."""
         return self.square_values[square_string]
@@ -65,21 +57,3 @@ class GameBoard:
         self.square_values[square_string] = square_value
         if square_value in {"RED", "BLACK"}:
             self.squares_by_color[square_value].add(square_string)
-
-    def build_square_string_range(self, square_string_from, square_string_to):
-        """Returns list of square strings from first square to second. Range cannot be diagonal. Assumes valid input."""
-        # 1. Convert square strings to indices.
-        row_from, col_from = utils.ROW_LABELS.index(square_string_from[0]), int(square_string_from[1]) - 1
-        row_to, col_to = utils.ROW_LABELS.index(square_string_to[0]), int(square_string_to[1]) - 1
-
-        # 2. Generate ranges. There should be exactly one range of length 0.
-        row_min, row_max = min(row_to, row_from), max(row_to, row_from)
-        col_min, col_max = min(col_to, col_from), max(col_to, col_from)
-        row_range, col_range = range(row_min, row_max + 1), range(col_min, col_max + 1)
-
-        # 3. Generate list of square strings from ranges. Reverse output if necessary.
-        output_range = []
-        for row_index in row_range:
-            for col_index in col_range:
-                output_range.append(utils.ROW_LABELS[row_index] + utils.COL_LABELS[col_index])
-        return output_range if row_from <= row_to and col_from <= col_to else output_range[::-1]

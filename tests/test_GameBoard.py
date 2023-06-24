@@ -1,5 +1,6 @@
 import unittest
 from hasami_shogi.src.controller.game_board import GameBoard
+import hasami_shogi.src.controller.hasami_shogi_utilities as utils
 
 
 class TestInit(unittest.TestCase):
@@ -29,7 +30,7 @@ class TestStringConversion(unittest.TestCase):
     def test_basic_case_to_index(self):
         """Asserts that strings correctly convert to indices of the list."""
         new_board = GameBoard()
-        test_indices = new_board.string_to_index("e5")
+        test_indices = utils.string_to_index("e5")
         expected_indices = (4, 4)
         self.assertEqual(test_indices, expected_indices)
 
@@ -37,10 +38,10 @@ class TestStringConversion(unittest.TestCase):
         """Asserts that the corner strings convert correctly."""
         new_board = GameBoard()
         tests = [
-            new_board.string_to_index("a1"),
-            new_board.string_to_index("a9"),
-            new_board.string_to_index("i1"),
-            new_board.string_to_index("i9")
+            utils.string_to_index("a1"),
+            utils.string_to_index("a9"),
+            utils.string_to_index("i1"),
+            utils.string_to_index("i9")
         ]
         exp_vals = [
             (0, 0),
@@ -53,7 +54,7 @@ class TestStringConversion(unittest.TestCase):
     def test_basic_case_to_string(self):
         """Asserts that valid coordinates are correctly converted to square string."""
         new_game = GameBoard()
-        test_string = new_game.index_to_string(3, 6)
+        test_string = utils.index_to_string(3, 6)
         exp_string = "d7"
         self.assertEqual(exp_string, test_string)
 
@@ -62,10 +63,10 @@ class TestStringConversion(unittest.TestCase):
         new_board = GameBoard()
 
         tests = [
-            new_board.index_to_string(0, 0),
-            new_board.index_to_string(0, 8),
-            new_board.index_to_string(8, 0),
-            new_board.index_to_string(8, 8)
+            utils.index_to_string(0, 0),
+            utils.index_to_string(0, 8),
+            utils.index_to_string(8, 0),
+            utils.index_to_string(8, 8)
         ]
 
         exp_vals = ["a1", "a9", "i1", "i9"]
@@ -111,9 +112,9 @@ class TestBuildSquareStringRange(unittest.TestCase):
         """Asserts that a horizontal (row) range returns correctly."""
         new_board = GameBoard()
 
-        test1 = new_board.build_square_string_range("a1", "a9")
-        test2 = new_board.build_square_string_range("e1", "e9")
-        test3 = new_board.build_square_string_range("i1", "i9")
+        test1 = utils.build_square_string_range("a1", "a9")
+        test2 = utils.build_square_string_range("e1", "e9")
+        test3 = utils.build_square_string_range("i1", "i9")
 
         exp1 = ['a1', 'a2', 'a3', 'a4', 'a5', 'a6', 'a7', 'a8', 'a9']
         exp2 = ['e1', 'e2', 'e3', 'e4', 'e5', 'e6', 'e7', 'e8', 'e9']
@@ -126,9 +127,9 @@ class TestBuildSquareStringRange(unittest.TestCase):
     def test_vertical(self):
         """Asserts that a vertical range (column) returns correctly."""
         new_board = GameBoard()
-        test1 = new_board.build_square_string_range("a1", "i1")
-        test2 = new_board.build_square_string_range("a5", "i5")
-        test3 = new_board.build_square_string_range("a9", "i9")
+        test1 = utils.build_square_string_range("a1", "i1")
+        test2 = utils.build_square_string_range("a5", "i5")
+        test3 = utils.build_square_string_range("a9", "i9")
 
         exp1 = ['a1', 'b1', 'c1', 'd1', 'e1', 'f1', 'g1', 'h1', 'i1']
         exp2 = ['a5', 'b5', 'c5', 'd5', 'e5', 'f5', 'g5', 'h5', 'i5']
@@ -142,12 +143,12 @@ class TestBuildSquareStringRange(unittest.TestCase):
         """Asserts that a partial row or column returns correctly."""
         new_board = GameBoard()
 
-        test_hor1 = new_board.build_square_string_range("a3", "a6")
-        test_hor2 = new_board.build_square_string_range("d2", "d7")
-        test_hor3 = new_board.build_square_string_range("i4", "i8")
-        test_ver1 = new_board.build_square_string_range("a1", "f1")
-        test_ver2 = new_board.build_square_string_range("c6", "g6")
-        test_ver3 = new_board.build_square_string_range("d9", "h9")
+        test_hor1 = utils.build_square_string_range("a3", "a6")
+        test_hor2 = utils.build_square_string_range("d2", "d7")
+        test_hor3 = utils.build_square_string_range("i4", "i8")
+        test_ver1 = utils.build_square_string_range("a1", "f1")
+        test_ver2 = utils.build_square_string_range("c6", "g6")
+        test_ver3 = utils.build_square_string_range("d9", "h9")
 
         exp_hor1 = ['a3', 'a4', 'a5', 'a6']
         exp_hor2 = ['d2', 'd3', 'd4', 'd5', 'd6', 'd7']
@@ -166,10 +167,10 @@ class TestBuildSquareStringRange(unittest.TestCase):
     def test_backwards_ranges(self):
         """Asserts that ranges always go from square1 to square2."""
         new_board = GameBoard()
-        test1 = new_board.build_square_string_range("a9", "a1")
-        test2 = new_board.build_square_string_range("i9", "i1")
-        test3 = new_board.build_square_string_range("i1", "a1")
-        test4 = new_board.build_square_string_range("i9", "a9")
+        test1 = utils.build_square_string_range("a9", "a1")
+        test2 = utils.build_square_string_range("i9", "i1")
+        test3 = utils.build_square_string_range("i1", "a1")
+        test4 = utils.build_square_string_range("i9", "a9")
 
         exp1 = ['a9', 'a8', 'a7', 'a6', 'a5', 'a4', 'a3', 'a2', 'a1']
         exp2 = ['i9', 'i8', 'i7', 'i6', 'i5', 'i4', 'i3', 'i2', 'i1']
@@ -184,7 +185,7 @@ class TestBuildSquareStringRange(unittest.TestCase):
     def test_single_range(self):
         """Asserts that a range of 1 returns the one square."""
         new_board = GameBoard()
-        test = new_board.build_square_string_range("e4", "e4")
+        test = utils.build_square_string_range("e4", "e4")
         self.assertEqual(["e4"], test)
 
 

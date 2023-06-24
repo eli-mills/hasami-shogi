@@ -1,5 +1,5 @@
 from hasami_shogi.src.controller.game_board import GameBoard
-
+import hasami_shogi.src.controller.hasami_shogi_utilities as utils
 
 class ShogiMove:
     """Defines data structure for recording a move in Hasami Shogi."""
@@ -87,8 +87,7 @@ class HasamiShogiGame:
         if moving_from == moving_to:  # Same square
             return False
 
-        move_path = self.get_game_board().build_square_string_range(moving_from,
-                                                                    moving_to)
+        move_path = utils.build_square_string_range(moving_from, moving_to)
         return False not in {self.get_square_occupant(x) == "NONE" for x in
                              move_path[1:]}  # Check for clear path.
 
@@ -97,7 +96,7 @@ class HasamiShogiGame:
         capturing_color = self.get_square_occupant(from_square)
         captured_color = {"RED": "BLACK", "BLACK": "RED"}[
             capturing_color]  # Picks opposite color.
-        square_string_list = self.get_game_board().build_square_string_range(
+        square_string_list = utils.build_square_string_range(
             from_square, to_square)  # Square strings
         square_value_list = [self.get_square_occupant(x) for x in
                              square_string_list]  # Values on board
@@ -107,7 +106,7 @@ class HasamiShogiGame:
                     return False
                 end_cap = square_string_list[1:][
                     index]  # Store the other "bread" of the "sandwich".
-                return self.get_game_board().build_square_string_range(
+                return utils.build_square_string_range(
                     from_square, end_cap)[1:-1]  # Captured only.
             if square_value != captured_color:  # Breaks on NONE.
                 return False
@@ -147,7 +146,7 @@ class HasamiShogiGame:
     def find_closest_corner(self, moved_to):
         """Finds the closest corner to the new square to check for corner capture."""
         closest_corner = ""
-        square_row, square_column = self.get_game_board().string_to_index(
+        square_row, square_column = utils.string_to_index(
             moved_to)
         if square_row <= 1:
             closest_corner += "a"

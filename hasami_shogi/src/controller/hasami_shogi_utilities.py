@@ -60,9 +60,11 @@ def get_game_pieces(game):
             output[square_occupant].add(square)
     return output
 
+
 def get_all_pieces(game_piece_dict):
     """Returns set of all pieces on gameboard without any reference to color."""
     return game_piece_dict["RED"] | game_piece_dict["BLACK"]
+
 
 def get_piece_color(game_piece_dict, piece):
     """Given a game piece dict, returns the color of the given piece, or None if not found. Assumes legit piece."""
