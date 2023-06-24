@@ -314,7 +314,7 @@ class AIPlayer(Player):
         ai_clone = AIPlayer(self.get_game(), self.get_opposing_player().get_color())
         self.set_opposing_player(ai_clone)
 
-    def minimax_helper(self, depth, move=None, max_player=None, alpha=None, beta=None):
+    def minimax_helper(self, depth, move=None, alpha=None, beta=None):
         """
         BLACK = max, RED = min
         """
@@ -339,11 +339,11 @@ class AIPlayer(Player):
             return result
 
         # Recursion
-        if max_player:
+        if sim_max == self:
             max_eval = None, -9999
             possible_move_list = sim_max.find_all_available_moves()
             for possible_move in possible_move_list:
-                eval = sim_max.minimax_helper(depth - 1, possible_move, False, alpha, beta)
+                eval = sim_min.minimax_helper(depth - 1, possible_move, alpha, beta)
                 if eval[1] > max_eval[1]:
                     max_eval = possible_move, eval[1]
                 if max_eval[1] > alpha[1]:
@@ -357,7 +357,7 @@ class AIPlayer(Player):
             min_eval = None, 9999
             possible_move_list = sim_min.find_all_available_moves()
             for possible_move in possible_move_list:
-                eval = sim_min.minimax_helper(depth - 1, possible_move, True, alpha, beta)
+                eval = sim_max.minimax_helper(depth - 1, possible_move, alpha, beta)
                 if eval[1] < min_eval[1]:
                     min_eval = possible_move, eval[1]
                 if min_eval[1] < beta[1]:
@@ -372,12 +372,11 @@ class AIPlayer(Player):
         """Player uses to choose which move is best. Searches all possible moves up to depth. Returns tuple
         move_string, heuristic_value."""
 
-        max_player = (self.get_color() == "BLACK")
         alpha = None, -9999
         beta = None, 9999
         old_opp = self.get_opposing_player()
         self.make_ai_clone()
-        next_move = self.minimax_helper(depth, None, max_player, alpha, beta)
+        next_move = self.minimax_helper(depth, None, alpha, beta)
         self.set_opposing_player(old_opp)
         return next_move
 
