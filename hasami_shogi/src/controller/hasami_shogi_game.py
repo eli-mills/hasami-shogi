@@ -8,9 +8,9 @@ class ShogiMove:
     def __init__(self):
         self.player = \
             self.move = \
-            self.cap_squares = \
             self.cap_color = \
             None
+        self.cap_squares = []
 
 
 class HasamiShogiGame:
@@ -98,41 +98,39 @@ class HasamiShogiGame:
 
     def check_linear_captures(self, moved_to):
         """Searches four directions around latest move, captures pieces, and updates capture counts."""
+        if type(moved_to) != str and len(moved_to) != 2:
+            raise ValueError("check_linear_captures needs a valid 2-character square string")
 
-        # 1. Determine 4 limits to the edges of the board.
-        left_limit = moved_to[0] + '1'
-        right_limit = moved_to[0] + '9'
-        top_limit = 'a' + moved_to[1]
-        bottom_limit = 'i' + moved_to[1]
-        search_directions = [left_limit, right_limit, top_limit, bottom_limit]
+        # Determine 4 limits to the edges of the board.
+        row, col = moved_to
+        search_limits = [f"{row}1", f"{row}9", f"a{col}", f"i{col}"]
 
-        # 2. Check each direction for captures up to the edges of the board.
-        captured_lists = [self.find_captured_squares(moved_to, limit) for limit
-                          in search_directions]
-        captured_squares = [square for sublist in captured_lists if sublist for
-                            square in sublist]
+        # Check each direction for captures up to the edges of the board.
+        captured_lists = [self.find_captured_squares(moved_to, limit) for limit in search_limits]
+        captured_squares = [square for sublist in captured_lists if sublist for square in sublist]
 
-        # 3. Add captured pieces to the score.
-        self.add_num_captured_pieces(self._inactive_player,
-                                     len(captured_squares))
+        self.handle_captured_pieces(captured_squares)
 
-        # 4. Change all captured squares to "NONE".
+    def handle_captured_pieces(self, captured_squares):
+        """
+        Captures the given list of squares, updating score and board state.
+        """
+        if not captured_squares:
+            return None
+
+        self.add_num_captured_pieces(self._inactive_player, len(captured_squares))
+
         for captured in captured_squares:
             self.set_square_occupant(captured, "NONE")
 
-        # 5. Update prev move data
-        if captured_squares != []:
-            if self.move_log[-1].cap_squares is None:
-                self.move_log[-1].cap_squares = captured_squares
-            else:
-                self.move_log[-1].cap_squares.extend(captured_squares)
-            self.move_log[-1].cap_color = self._inactive_player
+        # Update data for latest move log entry
+        self.move_log[-1].cap_squares.extend(captured_squares)
+        self.move_log[-1].cap_color = self._inactive_player
 
     def find_closest_corner(self, moved_to):
         """Finds the closest corner to the new square to check for corner capture."""
         closest_corner = ""
-        square_row, square_column = utils.string_to_index(
-            moved_to)
+        square_row, square_column = utils.string_to_index(moved_to)
         if square_row <= 1:
             closest_corner += "a"
         if square_row >= 7:
@@ -170,13 +168,7 @@ class HasamiShogiGame:
 
                 # Check for correct pattern:
                 if moved_to_color == capturing_end_color and captured_color == self._inactive_player:
-                    self.set_square_occupant(closest_corner, "NONE")
-                    self.add_num_captured_pieces(self._inactive_player, 1)
-                    if self.move_log[-1].cap_squares is None:
-                        self.move_log[-1].cap_squares = [closest_corner]
-                    else:
-                        self.move_log[-1].cap_squares.append(closest_corner)
-                    self.move_log[-1].cap_color = self._inactive_player
+                    self.handle_captured_pieces([closest_corner])
 
     def check_win(self):
         """Checks if the number of captured pieces of either color is 8 or 9."""
@@ -217,11 +209,10 @@ class HasamiShogiGame:
         prev_move = self.move_log.pop()
         self._game_state = "UNFINISHED"  # Safe to assume game state was unfinished if move was made
         self.execute_move(prev_move.move[2:], prev_move.move[:2])
-        if prev_move.cap_squares is not None:
+        if prev_move.cap_squares:
             for square in prev_move.cap_squares:
                 self.set_square_occupant(square, prev_move.cap_color)
-            self.add_num_captured_pieces(prev_move.cap_color,
-                                         -len(prev_move.cap_squares))
+            self.add_num_captured_pieces(prev_move.cap_color, -len(prev_move.cap_squares))
         self.toggle_active_player()  # Assume undo occurs after player switch
 
         return prev_move.move, prev_move.cap_squares
