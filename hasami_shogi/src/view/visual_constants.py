@@ -1,5 +1,5 @@
 import pygame
-from hasami_shogi.src.controller.hasami_shogi_utilities import row_labels, col_labels
+from hasami_shogi.src.controller.hasami_shogi_utilities import ROW_LABELS, COL_LABELS
 pygame.font.init()
 
 # SIZES
@@ -34,8 +34,8 @@ victory_font = pygame.font.SysFont("Arial", 68)
 
 # HEADINGS AND TITLES
 pygame.display.set_caption("Hasami Shogi")
-row_headings = [label_font.render(x, False, heading_color) for x in row_labels]
-col_headings = [label_font.render(x, False, heading_color) for x in col_labels]
+row_headings = [label_font.render(x, False, heading_color) for x in ROW_LABELS]
+col_headings = [label_font.render(x, False, heading_color) for x in COL_LABELS]
 stat_height_1 = board_margin + board_size + board_margin//4
 stat_height_2 = board_margin + board_size + board_margin//2
 stat_height_3 = board_margin + board_size + 3*board_margin//4

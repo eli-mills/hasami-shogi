@@ -66,8 +66,8 @@ class VisualGame():
 
     def draw_pieces(self):
         """Loops through all board squares and draws the appropriate pieces."""
-        for row in row_labels:
-            for col in col_labels:
+        for row in ROW_LABELS:
+            for col in COL_LABELS:
                 square_string = row + col
                 x, y = self.square_string_to_gcoord(square_string)
                 center = x + square_size//2, y + square_size//2
@@ -169,14 +169,14 @@ class VisualGame():
         """Converts the given game coordinates into the appropriate square string."""
         x, y = gcoord
         if self.check_in_board_bounds(gcoord):
-            text_pos = row_labels[(y - board_margin) // square_size] + col_labels[(x - board_margin) // square_size]
+            text_pos = ROW_LABELS[(y - board_margin) // square_size] + COL_LABELS[(x - board_margin) // square_size]
             return text_pos
 
     def square_string_to_gcoord(self, square_string):
         """Converts the given square string into a game coordinate."""
         row, col = square_string[0], square_string[1]
-        y = board_margin + row_labels.index(row) * square_size
-        x = board_margin + col_labels.index(col) * square_size
+        y = board_margin + ROW_LABELS.index(row) * square_size
+        x = board_margin + COL_LABELS.index(col) * square_size
         return x, y
 
     def swap_ai_player(self):

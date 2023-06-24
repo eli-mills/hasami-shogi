@@ -1,3 +1,6 @@
+print("utilities used")
+
+
 def bi_dict(dictionary):
     """Given a dictionary, adds all values as keys and their keys as values. Does not work if values are mutable."""
     temp_dict = dict(dictionary)
@@ -6,8 +9,9 @@ def bi_dict(dictionary):
 
 
 # CONSTANTS
-row_labels = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i']
-col_labels = ['1', '2', '3', '4', '5', '6', '7', '8', '9']
+ROW_LABELS = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i']
+COL_LABELS = ['1', '2', '3', '4', '5', '6', '7', '8', '9']
+BOARD = [[row + col for col in COL_LABELS] for row in ROW_LABELS]
 
 row_num = {'a': 0, 'b': 1, 'c': 2, 'd': 3, 'e': 4, 'f': 5, 'g': 6, 'h': 7, 'i': 8}
 col_num = {'1': 0, '2': 1, '3': 2, '4': 3, '5': 4, '6': 5, '7': 6, '8': 7, '9': 8}
