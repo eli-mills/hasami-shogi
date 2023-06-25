@@ -54,34 +54,22 @@ class AIPlayer(Player):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.best_move = None
-        self.best_score = None
         self.alpha = None
         self.beta = None
         self.is_maximizing = self.get_color() == "BLACK"
         self.initialize_best_move()
 
     def initialize_best_move(self):
-        self.best_score = {
-            "BLACK": -9999,
-            "RED": 9999
-        }[self.get_color()]
         self.alpha = -9999
         self.beta = 9999
 
-    def update_best_move(self, score, move):
+    def update_alpha_beta(self, score):
         if self.is_maximizing:
-            if score > self.best_score:
-                self.best_move = move
-                self.best_score = score
-            if self.best_score > self.alpha:
-                self.alpha = self.best_score
+            if score > self.alpha:
+                self.alpha = score
         else:
-            if score < self.best_score:
-                self.best_move = move
-                self.best_score = score
-            if self.best_score < self.beta:
-                self.beta = self.best_score
+            if score < self.beta:
+                self.beta = score
 
     def find_pot_cap_squares(self, game_piece_dict, capturing_color, active=True):
         """
@@ -346,55 +334,48 @@ class AIPlayer(Player):
         """
         BLACK = max, RED = min
         """
-        if self.get_color() == "BLACK":
-            sim_max = self
-            sim_min = self.get_opposing_player()
-            sim_game = self.get_game()
-            if move:
-                self.make_move(move[:2], move[2:])
-        else:
-            sim_min = self
-            sim_max = self.get_opposing_player()
-            sim_game = self.get_game()
-            if move:
-                self.make_move(move[:2], move[2:])
+        if move:
+            self.make_move(move[:2], move[2:])
 
         # Base case
-        if depth == 0 or sim_game.get_game_state() != "UNFINISHED":
+        if depth == 0 or self.get_game().get_game_state() != "UNFINISHED":
             if move:
                 self.undo_move()
-            result = None, self.get_heuristic(sim_game)
+            result = None, self.get_heuristic()
             return result
 
+        best_eval = {
+            "BLACK": (None, -9999),
+            "RED": (None, 9999)
+        }[self.get_color()]
+
         # Recursion
-        if sim_max == self:
-            max_eval = None, -9999
+        if self.is_maximizing:
             possible_move_list = self.find_all_available_moves()
             for possible_move in possible_move_list:
-                eval = self.get_opposing_player().minimax_helper(depth - 1, possible_move, alpha, beta)
-                if eval[1] > max_eval[1]:
-                    max_eval = possible_move, eval[1]
-                if max_eval[1] > alpha[1]:
-                    alpha = possible_move, max_eval[1]
+                current_move_eval = self.get_opposing_player().minimax_helper(depth - 1, possible_move, alpha, beta)
+                if current_move_eval[1] > best_eval[1]:
+                    best_eval = possible_move, current_move_eval[1]
+                if best_eval[1] > alpha[1]:
+                    alpha = possible_move, best_eval[1]
                 if beta[1] <= alpha[1]:
                     break
             if move:
                 self.undo_move()
-            return max_eval
+            return best_eval
         else:
-            min_eval = None, 9999
             possible_move_list = self.find_all_available_moves()
             for possible_move in possible_move_list:
-                eval = self.get_opposing_player().minimax_helper(depth - 1, possible_move, alpha, beta)
-                if eval[1] < min_eval[1]:
-                    min_eval = possible_move, eval[1]
-                if min_eval[1] < beta[1]:
-                    beta = possible_move, min_eval[1]
+                current_move_eval = self.get_opposing_player().minimax_helper(depth - 1, possible_move, alpha, beta)
+                if current_move_eval[1] < best_eval[1]:
+                    best_eval = possible_move, current_move_eval[1]
+                if best_eval[1] < beta[1]:
+                    beta = possible_move, best_eval[1]
                 if beta[1] <= alpha[1]:
                     break
             if move:
                 self.undo_move()
-            return min_eval[0], min_eval[1]
+            return best_eval[0], best_eval[1]
 
     def minimax(self, depth):
         """Player uses to choose which move is best. Searches all possible moves up to depth. Returns tuple
