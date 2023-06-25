@@ -8,9 +8,6 @@ class AIPlayer(Player):
     Defines the methods for an AI Hasami Shogi player. Inherits from regular Player class.
     """
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
     @staticmethod
     def get_center_heuristic(square_string):
         """
@@ -54,6 +51,37 @@ class AIPlayer(Player):
             return next_square, pot_cap_count
 
         return None  # Partner square occupied or end of board reached.
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.best_move = None
+        self.best_score = None
+        self.alpha = None
+        self.beta = None
+        self.is_maximizing = self.get_color() == "BLACK"
+        self.initialize_best_move()
+
+    def initialize_best_move(self):
+        self.best_score = {
+            "BLACK": -9999,
+            "RED": 9999
+        }[self.get_color()]
+        self.alpha = -9999
+        self.beta = 9999
+
+    def update_best_move(self, score, move):
+        if self.is_maximizing:
+            if score > self.best_score:
+                self.best_move = move
+                self.best_score = score
+            if self.best_score > self.alpha:
+                self.alpha = self.best_score
+        else:
+            if score < self.best_score:
+                self.best_move = move
+                self.best_score = score
+            if self.best_score < self.beta:
+                self.beta = self.best_score
 
     def find_pot_cap_squares(self, game_piece_dict, capturing_color, active=True):
         """
@@ -320,16 +348,16 @@ class AIPlayer(Player):
         """
         if self.get_color() == "BLACK":
             sim_max = self
-            sim_min = sim_max.get_opposing_player()
-            sim_game = sim_max.get_game()
+            sim_min = self.get_opposing_player()
+            sim_game = self.get_game()
             if move:
-                sim_max.make_move(move[:2], move[2:])
+                self.make_move(move[:2], move[2:])
         else:
             sim_min = self
-            sim_max = sim_min.get_opposing_player()
-            sim_game = sim_min.get_game()
+            sim_max = self.get_opposing_player()
+            sim_game = self.get_game()
             if move:
-                sim_min.make_move(move[:2], move[2:])
+                self.make_move(move[:2], move[2:])
 
         # Base case
         if depth == 0 or sim_game.get_game_state() != "UNFINISHED":
@@ -341,9 +369,9 @@ class AIPlayer(Player):
         # Recursion
         if sim_max == self:
             max_eval = None, -9999
-            possible_move_list = sim_max.find_all_available_moves()
+            possible_move_list = self.find_all_available_moves()
             for possible_move in possible_move_list:
-                eval = sim_min.minimax_helper(depth - 1, possible_move, alpha, beta)
+                eval = self.get_opposing_player().minimax_helper(depth - 1, possible_move, alpha, beta)
                 if eval[1] > max_eval[1]:
                     max_eval = possible_move, eval[1]
                 if max_eval[1] > alpha[1]:
@@ -355,9 +383,9 @@ class AIPlayer(Player):
             return max_eval
         else:
             min_eval = None, 9999
-            possible_move_list = sim_min.find_all_available_moves()
+            possible_move_list = self.find_all_available_moves()
             for possible_move in possible_move_list:
-                eval = sim_max.minimax_helper(depth - 1, possible_move, alpha, beta)
+                eval = self.get_opposing_player().minimax_helper(depth - 1, possible_move, alpha, beta)
                 if eval[1] < min_eval[1]:
                     min_eval = possible_move, eval[1]
                 if min_eval[1] < beta[1]:
