@@ -335,19 +335,14 @@ class AIPlayer(Player):
             return better_score > worse_score
         return better_score < worse_score
 
-    def minimax_helper(self, depth, move=None, alpha=None, beta=None):
+    def minimax_helper(self, depth, alpha=None, beta=None):
         """
         BLACK = max, RED = min
         """
-        if move:
-            self.make_move(move[:2], move[2:])
 
         # Base case
         if depth == 0 or self.get_game().get_game_state() != "UNFINISHED":
-            if move:
-                self.undo_move()
-            result = None, self.get_heuristic()
-            return result
+            return None, self.get_heuristic()
 
         best_eval = {                   # Initial values, updated best_eval is scoped to below for loop
             "BLACK": (None, -9999),
@@ -358,7 +353,12 @@ class AIPlayer(Player):
 
         # Recursion
         for possible_move in possible_move_list:
-            current_move_eval = self.get_opposing_player().minimax_helper(depth - 1, possible_move, alpha, beta)
+            # Make move, then undo
+            self.get_opposing_player().make_move(possible_move[:2], possible_move[2:])
+            current_move_eval = self.get_opposing_player().minimax_helper(depth - 1, alpha, beta)
+            self.get_opposing_player().undo_move()
+
+            # Evaluate result of playing move
             if self.evaluate_better_score(current_move_eval[1], best_eval[1]):
                 best_eval = possible_move, current_move_eval[1]         # Replace move with move from this level
             if self.evaluate_better_score(best_eval[1], alpha[1]):
@@ -367,10 +367,6 @@ class AIPlayer(Player):
                 beta = possible_move, best_eval[1]
             if beta[1] <= alpha[1]:
                 break
-
-        # Cleanup
-        if move:
-            self.undo_move()
 
         return best_eval
 
@@ -382,7 +378,7 @@ class AIPlayer(Player):
         beta = None, 9999
         old_opp = self.get_opposing_player()
         self.make_ai_clone()
-        next_move = self.minimax_helper(depth, None, alpha, beta)
+        next_move = self.minimax_helper(depth, alpha, beta)
         self.set_opposing_player(old_opp)
         return next_move
 
