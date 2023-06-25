@@ -344,10 +344,11 @@ class AIPlayer(Player):
         if depth == 0 or self.get_game().get_game_state() != "UNFINISHED":
             return None, self.get_heuristic()
 
-        best_eval = {                   # Initial values, updated best_eval is scoped to below for loop
-            "BLACK": (None, -9999),
-            "RED": (None, 9999)
+        best_score = {                   # Initial values, updated best_score is scoped to below for loop
+            "BLACK": -9999,
+            "RED": 9999
         }[self.get_color()]
+        best_move = None
 
         possible_move_list = self.find_all_available_moves()
 
@@ -355,27 +356,27 @@ class AIPlayer(Player):
         for possible_move in possible_move_list:
             # Make move, then undo
             self.get_opposing_player().make_move(possible_move[:2], possible_move[2:])
-            current_move_eval = self.get_opposing_player().minimax_helper(depth - 1, alpha, beta)
+            sub_move, sub_score = self.get_opposing_player().minimax_helper(depth - 1, alpha, beta)
             self.get_opposing_player().undo_move()
 
             # Evaluate result of playing move
-            if self.evaluate_better_score(current_move_eval[1], best_eval[1]):
-                best_eval = possible_move, current_move_eval[1]         # Replace move with move from this level
-            if self.evaluate_better_score(best_eval[1], alpha[1]):
-                alpha = possible_move, best_eval[1]
-            if self.evaluate_better_score(best_eval[1], beta[1]):
-                beta = possible_move, best_eval[1]
-            if beta[1] <= alpha[1]:
+            if self.evaluate_better_score(sub_score, best_score):
+                best_move, best_score = possible_move, sub_score
+            if self.evaluate_better_score(best_score, alpha):
+                alpha = best_score
+            if self.evaluate_better_score(best_score, beta):
+                beta = best_score
+            if beta <= alpha:
                 break
 
-        return best_eval
+        return best_move, best_score
 
     def minimax(self, depth):
         """Player uses to choose which move is best. Searches all possible moves up to depth. Returns tuple
         move_string, heuristic_value."""
 
-        alpha = None, -9999
-        beta = None, 9999
+        alpha = -9999
+        beta = 9999
         old_opp = self.get_opposing_player()
         self.make_ai_clone()
         next_move = self.minimax_helper(depth, alpha, beta)
