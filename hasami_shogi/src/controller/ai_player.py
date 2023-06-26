@@ -50,51 +50,7 @@ class AIPlayer(Player):
         if next_square not in all_pieces and next_square is not None:  # Partner square available
             return next_square, pot_cap_count
 
-        return None  # Partner square occupied or end of board reached.
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.alpha = None
-        self.beta = None
-        self.is_maximizing = self.get_color() == "BLACK"
-        self.initial_best_score = -9999 if self.is_maximizing else 9999
-
-    def find_pot_cap_squares(self, game_piece_dict, capturing_color, active=True):
-        """
-        Takes game piece dict, color to capture, and optional whether player is active. Returns square: value dict
-        for every square where a capture would result from a capturing color piece moving there.
-
-        O(N^2)
-
-        Calls:  get_adjacent_squares
-                self.find_cap_partner: O(N)
-        """
-        captured_color = GameBoard.opposite_color(capturing_color)
-        capturing_pieces = game_piece_dict[capturing_color]
-        captured_pieces = game_piece_dict[captured_color]
-        pot_caps = {}
-
-        # Check if adjacent squares of opposite color (capture potential).
-        for cap_piece in capturing_pieces:  # O(N)
-            for adj_square in get_adjacent_squares(cap_piece):  # O(1)
-                if adj_square in captured_pieces:  # Potential capture pair found.
-                    cap_pair = cap_piece, adj_square
-                    if not active and self.find_cap_partner(game_piece_dict,
-                                                            cap_pair[
-                                                            ::-1]):  # O(N)
-                        continue  # In this case, one of the capturing pieces will be captured first.
-
-                    cap_square_and_value = self.find_cap_partner(
-                        game_piece_dict, cap_pair)  # O(N)
-
-                    # Add capture square and value to output
-                    if cap_square_and_value:
-                        square, value = cap_square_and_value
-                        if square in pot_caps:
-                            pot_caps[square] += value
-                        else:
-                            pot_caps[square] = value
-        return pot_caps
+        return None, None  # Partner square occupied or end of board reached.
 
     @staticmethod
     def find_reachable_pieces(game_piece_dict, square_to_reach, color_to_move):
@@ -118,6 +74,43 @@ class AIPlayer(Player):
                             path[1:]]):  # Check clear path. O(N)
                     output.add(piece_to_move)
         return output
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.alpha = None
+        self.beta = None
+        self.is_maximizing = self.get_color() == "BLACK"
+        self.initial_best_score = -9999 if self.is_maximizing else 9999
+        self.print_piece_sets = False
+
+    def find_pot_cap_squares(self, game_piece_dict=None, capturing_color=None, active=True):
+        """
+        Takes game piece dict, color to capture, and optional whether player is active. Returns square: value dict
+        for every square where a capture would result from a capturing color piece moving there.
+
+        O(N^2)
+
+        Calls:  get_adjacent_squares
+                self.find_cap_partner: O(N)
+        """
+        capturing_pieces = self.get_pieces()
+        captured_pieces = self.get_opposing_player().get_pieces()
+        potential_cap_pairs = {
+            capturing_piece: {adj_square for adj_square in get_adjacent_squares(capturing_piece)}
+            .intersection(captured_pieces) for capturing_piece in capturing_pieces
+        }
+
+        pot_caps = {}
+
+        for capturing_piece, captured_partners in potential_cap_pairs.items():
+            for captured_partner in captured_partners:
+                if not self.get_active() and self.find_cap_partner(game_piece_dict, (captured_partner,capturing_piece)):
+                    continue
+                square, value = self.find_cap_partner(game_piece_dict, (capturing_piece, captured_partner))
+                if square and value:
+                    pot_caps[square] = pot_caps.get(square, 0) + value
+
+        return pot_caps
 
     def find_capture_moves(self, game_piece_dict, captures_to_check, capturing_color):
         """
@@ -184,10 +177,8 @@ class AIPlayer(Player):
             game_piece_dict[opponent])
 
         # Find all potential captures squares and their values for both players.
-        active_pot_caps = self.find_pot_cap_squares(game_piece_dict,
-                                                    player_turn)  # O(N^2)
-        opp_pot_caps = self.find_pot_cap_squares(game_piece_dict, opponent,
-                                                 False)  # O(N^2)
+        active_pot_caps = self.find_pot_cap_squares(game_piece_dict,player_turn)  # O(N^2)
+        opp_pot_caps = self.get_opposing_player().find_pot_cap_squares(game_piece_dict, opponent,False)  # O(N^2)
 
         # Check if any potential capture squares are reachable for both players.
         active_cap_moves = self.find_capture_moves(game_piece_dict,
@@ -278,13 +269,17 @@ class AIPlayer(Player):
         """
         Returns a list of all possible moves given the current game state. Orders preferable moves first.
         """
-        game = self.get_game()
-        game_pieces = get_game_pieces(game)
-        active_player = game.get_active_player()
+        if not self.get_active():
+            raise Exception("find_all_moves called by inactive Player.")
+
+        game_pieces = {
+            self.get_color(): self.get_pieces(),
+            self.get_opposing_color(): self.get_opposing_player().get_pieces()
+        }
+        active_player = self.get_color()
 
         active_pot_caps = self.find_pot_cap_squares(game_pieces, active_player)
-        active_cap_moves = self.find_capture_moves(game_pieces, active_pot_caps,
-                                                   active_player)  # sorted list of tuples
+        active_cap_moves = self.find_capture_moves(game_pieces, active_pot_caps, active_player)  # sorted list of tuples
 
         capture_moves = [move[0] for move in active_cap_moves]
 
@@ -359,13 +354,11 @@ class AIPlayer(Player):
     def minimax(self, depth):
         """Player uses to choose which move is best. Searches all possible moves up to depth. Returns tuple
         move_string, heuristic_value."""
-
-        alpha = -9999
-        beta = 9999
         old_opp = self.get_opposing_player()
         self.make_ai_clone()
+        self.print_piece_sets = True
 
-        next_move, heuristic = self.minimax_helper(depth, alpha, beta)
+        next_move, heuristic = self.minimax_helper(depth, -9999, 9999)
 
         self.set_opposing_player(old_opp)
         return next_move, heuristic
