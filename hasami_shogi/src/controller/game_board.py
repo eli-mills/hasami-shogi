@@ -70,3 +70,14 @@ class GameBoard:
                 else:
                     output_string += square[0] + " "
             print(output_string[:-1])
+
+    def serialize_board(self):
+        """
+        Returns the current RED and BLACK squares as a string.
+        """
+        red_list = sorted(list(self.get_squares_by_color("RED")))
+        black_list = sorted(list(self.get_squares_by_color("BLACK")))
+        red_list.insert(0, "r")
+        black_list.insert(0, "b")
+        red_list.extend(black_list)
+        return "".join(red_list)

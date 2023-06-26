@@ -57,19 +57,7 @@ class AIPlayer(Player):
         self.alpha = None
         self.beta = None
         self.is_maximizing = self.get_color() == "BLACK"
-        self.initialize_best_move()
-
-    def initialize_best_move(self):
-        self.alpha = -9999
-        self.beta = 9999
-
-    def update_alpha_beta(self, score):
-        if self.is_maximizing:
-            if score > self.alpha:
-                self.alpha = score
-        else:
-            if score < self.beta:
-                self.beta = score
+        self.initial_best_score = -9999 if self.is_maximizing else 9999
 
     def find_pot_cap_squares(self, game_piece_dict, capturing_color, active=True):
         """
@@ -335,37 +323,26 @@ class AIPlayer(Player):
             return better_score > worse_score
         return better_score < worse_score
 
-    def minimax_helper(self, depth, alpha, beta, move=False):
+    def minimax_helper(self, depth, alpha, beta):
         """
         BLACK = max, RED = min
         """
-        # move and self.make_move(move[:2], move[2:])
         # Base case
         if depth == 0 or self.get_game().get_game_state() != "UNFINISHED":
-            # print(f"undoing move that was executed from depth {depth + 1}")
-            # move and self.undo_move()
             return None, self.get_heuristic()
 
-        best_score = {                   # Initial values, updated best_score is scoped to below for loop
-            "BLACK": -9999,
-            "RED": 9999
-        }[self.get_color()]
+        # Recursion
+        best_score = self.initial_best_score
         best_move = None
 
         possible_move_list = self.find_all_available_moves()
 
-        # Recursion
-        for possible_move in possible_move_list:
-            # Make move, then undo
-            print(f"making move {possible_move}")
-            self.get_opposing_player().make_move(possible_move[:2], possible_move[2:])
-            print(f"checking minimax at depth {depth-1}")
-            sub_move, sub_score = self.get_opposing_player().minimax_helper(depth - 1, alpha, beta, True)
-            print(f"undoing move {possible_move} at depth {depth}")
-            self.get_opposing_player().undo_move()
+        for index, possible_move in enumerate(possible_move_list):
+            self.make_move(possible_move[:2], possible_move[2:])
+            sub_move, sub_score = self.get_opposing_player().minimax_helper(depth - 1, alpha, beta)
+            self.undo_move()
 
-
-            # Evaluate result of playing move
+            # Evaluation
             if self.evaluate_better_score(sub_score, best_score):
                 best_move, best_score = possible_move, sub_score
             if self.evaluate_better_score(best_score, alpha):
@@ -376,8 +353,7 @@ class AIPlayer(Player):
             # Cut short if no move will gain further advantage
             if beta <= alpha:
                 break
-        # print(f"undoing move that was executed from depth {depth + 1}")
-        # move and self.undo_move()
+
         return best_move, best_score
 
     def minimax(self, depth):
@@ -388,11 +364,11 @@ class AIPlayer(Player):
         beta = 9999
         old_opp = self.get_opposing_player()
         self.make_ai_clone()
-        next_move = self.minimax_helper(depth, alpha, beta)
+
+        next_move, heuristic = self.minimax_helper(depth, alpha, beta)
+
         self.set_opposing_player(old_opp)
-        return next_move
-
-
+        return next_move, heuristic
 
     def ai_make_move(self, depth):
         next_move = self.minimax(depth)

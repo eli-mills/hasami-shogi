@@ -1,6 +1,3 @@
-print("utilities used")
-
-
 def bi_dict(dictionary):
     """Given a dictionary, adds all values as keys and their keys as values. Does not work if values are mutable."""
     temp_dict = dict(dictionary)
