@@ -45,23 +45,38 @@ class GameBoard:
             return None
         self.square_values[square_string] = square_value
 
-    def get_squares_by_color(self, seeking_color):
+    def get_squares_by_color(self, seeking_color: str) -> set:
         """
         Returns set of squares belonging to the given color.
         """
         return {square for square, color in self.square_values.items() if color == seeking_color}
 
-    def get_occupied_squares_by_axis(self, axis):
+    def get_squares_by_axis(self, axis: str) -> dict:
+        return {"".join(sorted([axis, other], reverse=True)): value for other, value in self.squares_by_axis[
+            axis].items()}
+
+    def get_occupied_squares_by_axis(self, axis: str) -> list:
         """
         Returns sorted list of all squares that are occupied in the given row or column.
         """
         return [square for square, value in self.square_values.items() if axis in square and value != "NONE"]
 
-    def get_free_squares_by_axis(self, axis):
+    def get_free_squares_by_axis(self, axis: str) -> list:
         """
         Returns sorted list of all squares that are free in the given row or column.
         """
         return [square for square, value in self.square_values.items() if axis in square and value == "NONE"]
+
+    def square_is_reachable(self, square1: str, square2: str) -> bool:
+        """
+        Returns true if square2 is reachable from square1. Does not mean move is valid.
+        """
+        if square1[0] != square2[0] and square1[1] != square2[1]:
+            return False
+        axis = square1[0] if square1[0] in square2 else square1[1]
+        min_square, max_square = sorted([square1, square2])
+        occupied_squares = [sq for sq in self.get_occupied_squares_by_axis(axis) if min_square < sq < max_square]
+        return len(occupied_squares) == 0
 
     def get_all_squares(self):
         """Returns all possible squares of board as a set of square strings."""
@@ -93,3 +108,15 @@ class GameBoard:
         black_list.insert(0, "b")
         red_list.extend(black_list)
         return "".join(red_list)
+
+
+if __name__ == '__main__':
+    gb = GameBoard()
+    gb.set_square("e5", "BLACK")
+    gb.set_square("i5", "NONE")
+    print(gb.square_is_reachable("b1", "b2"))        # True
+    print(gb.square_is_reachable("b1", "b1"))        # True
+    print(gb.square_is_reachable("b1", "g1"))        # True
+    print(gb.square_is_reachable("a1", "i1"))        # True
+    print(gb.square_is_reachable("e1", "e9"))        # False
+

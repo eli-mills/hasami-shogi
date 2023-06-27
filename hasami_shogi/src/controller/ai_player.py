@@ -21,17 +21,6 @@ class AIPlayer(Player):
         self.initial_best_score = -9999 if self.is_maximizing else 9999
         self.print_piece_sets = False
 
-    def get_center_heuristic(self):
-        """
-        Takes a square string and returns a point value based on how close it is to the center of the board.
-        O(1).
-        """
-        output = 0
-        for piece in self.get_pieces():
-            row, col = string_to_index(piece)
-            output += (8 - row) * row * (8 - col) * col
-        return output
-
     def find_cap_partner(self, capturing_piece, captured_piece):
         """
         Takes a game dict {'RED': {pieces}, 'BLACK': {pieces}}, and a capturing, captured pair.
@@ -60,23 +49,6 @@ class AIPlayer(Player):
             return partner_square, 1  # Corner captures only one
 
         return None, None  # Partner square occupied or end of board reached.
-
-    def find_reachable_pieces(self, square_to_reach):
-        """
-        Checks if a given square is reachable with any of the given color's pieces. Returns set of pieces that can
-        reach the given square.
-
-        Calls: build_square_string
-        """
-        moving_pieces = self.get_pieces()
-        all_pieces = moving_pieces | self.get_opposing_player().get_pieces()
-        output = set()
-
-        for piece_to_move in moving_pieces:
-            path = build_square_string_range(piece_to_move, square_to_reach)
-            if path and not any([x in all_pieces for x in path[1:]]):  # Check clear path.
-                output.add(piece_to_move)
-        return output
 
     def find_pot_cap_squares(self):
         """
@@ -107,6 +79,13 @@ class AIPlayer(Player):
 
         return pot_caps
 
+    def find_reachable_pieces(self, square_to_reach):
+        """
+        Checks if a given square is reachable with any of the given color's pieces. Returns set of pieces that can
+        reach the given square.
+        """
+        return {piece for piece in self.get_pieces() if self.get_board().square_is_reachable(piece, square_to_reach)}
+
     def find_capture_moves(self):
         """
         Given a piece dict and a set of potential capture squares: and their value, returns a tuple of 4-char move,
@@ -118,42 +97,6 @@ class AIPlayer(Player):
         output = [(piece + square_to_reach, square_value) for square_to_reach, square_value in squares_to_check.items()
                   for piece in self.find_reachable_pieces(square_to_reach)]
         return tuple(sorted(output, key=lambda x: x[1], reverse=True))
-
-    def get_capture_heuristic(self):
-        """
-        Returns static evaluation of game piece dict {'RED': {pieces}, 'BLACK': {pieces}} based on potential capture
-        analysis. Score represents potential net gain for active player (always non-negative).
-        """
-        material_advantage = len(self.get_pieces()) - len(self.get_opposing_player().get_pieces())
-
-        # Check if any potential capture squares are reachable for both players, assume sorted best first.
-        active_cap_moves = self.find_capture_moves()
-        active_best = active_cap_moves[0][1] if active_cap_moves else 0
-        opp_cap_moves = self.get_opposing_player().find_capture_moves()
-
-        if not opp_cap_moves:           # No opposition, active makes best move.
-            return active_best
-
-        opp_best = opp_cap_moves[0][1]
-        opp_next_best = opp_cap_moves[1][1] if len(opp_cap_moves) > 1 else 0
-        tradeoff = active_best - opp_best + material_advantage      # Play more aggressive/timid based on material
-
-        return max(tradeoff, opp_next_best)
-
-    def get_heuristic(self):
-        """
-        Checks a game board and returns a heuristic representing how advantageous it is for the AI. Negative is
-        advantageous for RED, positive for BLACK.
-        """
-
-        material_points = (len(self.get_pieces()) - len(self.get_opposing_player().get_pieces())) * AIPlayer.H_MATERIAL
-        center_points = (self.get_center_heuristic() - self.get_opposing_player().get_center_heuristic()) * \
-                        AIPlayer.H_CENTER
-        pot_cap_points = self.get_capture_heuristic() * AIPlayer.H_CAPTURE
-        victory_points = AIPlayer.H_WIN if self.did_win() else 0
-
-        total = material_points + center_points + pot_cap_points + victory_points
-        return total if self.is_maximizing else -total
 
     def find_adjacent_moves(self):
         """
@@ -193,6 +136,53 @@ class AIPlayer(Player):
         leftover_moves = [move for move in remaining_moves if move not in center_moves]
 
         return preferred_moves + center_moves + leftover_moves
+
+    def get_center_heuristic(self):
+        """
+        Takes a square string and returns a point value based on how close it is to the center of the board.
+        O(1).
+        """
+        output = 0
+        for piece in self.get_pieces():
+            row, col = string_to_index(piece)
+            output += (8 - row) * row * (8 - col) * col
+        return output
+
+    def get_capture_heuristic(self):
+        """
+        Returns static evaluation of game piece dict {'RED': {pieces}, 'BLACK': {pieces}} based on potential capture
+        analysis. Score represents potential net gain for active player (always non-negative).
+        """
+        material_advantage = len(self.get_pieces()) - len(self.get_opposing_player().get_pieces())
+
+        # Check if any potential capture squares are reachable for both players, assume sorted best first.
+        active_cap_moves = self.find_capture_moves()
+        active_best = active_cap_moves[0][1] if active_cap_moves else 0
+        opp_cap_moves = self.get_opposing_player().find_capture_moves()
+
+        if not opp_cap_moves:           # No opposition, active makes best move.
+            return active_best
+
+        opp_best = opp_cap_moves[0][1]
+        opp_next_best = opp_cap_moves[1][1] if len(opp_cap_moves) > 1 else 0
+        tradeoff = active_best - opp_best + material_advantage      # Play more aggressive/timid based on material
+
+        return max(tradeoff, opp_next_best)
+
+    def get_heuristic(self):
+        """
+        Checks a game board and returns a heuristic representing how advantageous it is for the AI. Negative is
+        advantageous for RED, positive for BLACK.
+        """
+
+        material_points = (len(self.get_pieces()) - len(self.get_opposing_player().get_pieces())) * AIPlayer.H_MATERIAL
+        center_points = (self.get_center_heuristic() - self.get_opposing_player().get_center_heuristic()) * \
+                        AIPlayer.H_CENTER
+        pot_cap_points = self.get_capture_heuristic() * AIPlayer.H_CAPTURE
+        victory_points = AIPlayer.H_WIN if self.did_win() else 0
+
+        total = material_points + center_points + pot_cap_points + victory_points
+        return total if self.is_maximizing else -total
 
     def make_ai_clone(self):
         """

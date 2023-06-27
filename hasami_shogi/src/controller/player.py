@@ -15,6 +15,9 @@ class Player:
         """Returns the current game."""
         return self._game
 
+    def get_board(self):
+        return self.get_game().get_game_board()
+
     def get_color(self):
         """Returns the player's color."""
         return self._color
