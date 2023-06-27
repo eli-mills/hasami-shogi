@@ -27,6 +27,9 @@ TWEAKS:
 
 [ ] Minimax: memoize on serialized board and current depth
 
+[ ] Minimax: turn move ordering into a generator so don't have to generate every
+    possible move all the time
+
 FEATURES:
 [ ] Add difficulty selector
 [ ] Add rules screen
