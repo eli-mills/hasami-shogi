@@ -34,6 +34,13 @@ class GameBoard:
         self.square_values = {square: "NONE" for row in utils.BOARD for square in row} \
             | {square: "RED" for square in GameBoard.RED_START} \
             | {square: "BLACK" for square in GameBoard.BLACK_START}
+        self.squares_by_axis = {}
+        for square, value in self.square_values.items():
+            row, col = square
+            curr_row = self.squares_by_axis.get(row, {})
+            curr_col = self.squares_by_axis.get(col, {})
+            self.squares_by_axis[row] = curr_row | {col: value}
+            self.squares_by_axis[col] = curr_col | {row: value}
 
     def get_square(self, square_string):
         """Given a square string, returns the value at that square."""
@@ -50,6 +57,25 @@ class GameBoard:
         Returns set of squares belonging to the given color.
         """
         return {square for square, color in self.square_values.items() if color == seeking_color}
+
+    def get_squares_by_axis(self, axis):
+        """
+        Returns sorted list of all squares in the given row or column.
+        """
+        partials = self.squares_by_axis[axis]
+        return {"".join(sorted([axis, partial], reverse=True)): value for partial, value in partials.items()}
+
+    def get_occupied_squares_by_axis(self, axis):
+        """
+        Returns sorted list of all squares that are occupied in the given row or column.
+        """
+        return sorted([square for square, value in self.get_squares_by_axis(axis).items() if value != "NONE"])
+
+    def get_free_squares_by_axis(self, axis):
+        """
+        Returns sorted list of all squares that are free in the given row or column.
+        """
+        return sorted([square for square, value in self.get_squares_by_axis(axis).items() if value == "NONE"])
 
     def get_all_squares(self):
         """Returns all possible squares of board as a set of square strings."""
@@ -81,3 +107,11 @@ class GameBoard:
         black_list.insert(0, "b")
         red_list.extend(black_list)
         return "".join(red_list)
+
+if __name__ == '__main__':
+    gb = GameBoard()
+    print(gb.get_squares_by_axis("a"))
+    print(gb.get_squares_by_axis("5"))
+    print(gb.get_occupied_squares_by_axis("1"))
+    print(gb.get_free_squares_by_axis("1"))
+
