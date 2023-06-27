@@ -17,6 +17,12 @@ TWEAKS:
 
 [X] Move tracking pieces by color to GameBoard, away from Player.
 
+[ ] Idea: "Grouping" class, owned by HasamiShogiGame or GameBoard, that keeps
+    track of adjacent blocks of similar colored squares. Knows the two ends that
+     will capture it, including case of corner square. Knows when a member
+     leaves and how to split the Grouping into two smaller Groupings accordingly
+     .
+
 FEATURES:
 [ ] Add difficulty selector
 [ ] Add rules screen
