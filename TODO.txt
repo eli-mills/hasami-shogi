@@ -23,6 +23,8 @@ TWEAKS:
      leaves and how to split the Grouping into two smaller Groupings accordingly
      .
 
+[ ] Add data structure to board to track squares by row and by column.
+
 FEATURES:
 [ ] Add difficulty selector
 [ ] Add rules screen

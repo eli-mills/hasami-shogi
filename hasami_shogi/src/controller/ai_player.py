@@ -59,9 +59,8 @@ class AIPlayer(Player):
 
         for piece_to_move in moving_pieces:
             path = build_square_string_range(piece_to_move, square_to_reach)
-            if path:
-                if not any([x in all_pieces for x in path[1:]]):  # Check clear path.
-                    output.add(piece_to_move)
+            if path and not any([x in all_pieces for x in path[1:]]):  # Check clear path.
+                output.add(piece_to_move)
         return output
 
     def __init__(self, *args, **kwargs):
@@ -101,22 +100,15 @@ class AIPlayer(Player):
 
         return pot_caps
 
-    def find_capture_moves(self, game_piece_dict, captures_to_check, capturing_color):
+    def find_capture_moves(self, captures_to_check):
         """
         Given a piece dict and a set of potential capture squares: and their value, returns a tuple of 4-char move,
         capture value tuples sorted by highest to lowest value. Value is positive no matter the color.
 
-        O(N^3)
-
-        Calls: self.find_reachable_pieces O(N^2)
+        Calls: self.find_reachable_pieces
         """
-        output = []
-        for square_to_reach in captures_to_check:  # O(N)
-            square_value = captures_to_check[square_to_reach]  # Number of pieces that would be captured.
-            possible_pieces = self.find_reachable_pieces(square_to_reach)
-            for piece in possible_pieces:  # O(N)
-                output.append((piece + square_to_reach, square_value))
-
+        output = [(piece + square_to_reach, square_value) for square_to_reach, square_value in captures_to_check.items()
+                  for piece in self.find_reachable_pieces(square_to_reach)]
         return tuple(sorted(output, key=lambda x: x[1], reverse=True))
 
     @staticmethod
@@ -167,11 +159,8 @@ class AIPlayer(Player):
         opp_pot_caps = self.get_opposing_player().find_pot_cap_squares()  # O(N^2)
 
         # Check if any potential capture squares are reachable for both players.
-        active_cap_moves = self.find_capture_moves(game_piece_dict,
-                                                   active_pot_caps,
-                                                   player_turn)  # O(N^3)
-        opp_cap_moves = self.find_capture_moves(game_piece_dict, opp_pot_caps,
-                                                opponent)  # O(N^3)
+        active_cap_moves = self.find_capture_moves(active_pot_caps)  # O(N^3)
+        opp_cap_moves = self.find_capture_moves(opp_pot_caps)  # O(N^3)
 
         return self.evaluate_cap_moves(active_cap_moves, opp_cap_moves,
                                        material_advantage)
@@ -263,7 +252,7 @@ class AIPlayer(Player):
         active_player = self.get_color()
 
         active_pot_caps = self.find_pot_cap_squares()
-        active_cap_moves = self.find_capture_moves(game_pieces, active_pot_caps, active_player)  # sorted list of tuples
+        active_cap_moves = self.find_capture_moves(active_pot_caps)  # sorted list of tuples
 
         capture_moves = [move[0] for move in active_cap_moves]
 
