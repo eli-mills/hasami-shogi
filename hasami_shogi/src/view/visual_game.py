@@ -2,7 +2,7 @@ import sys
 from hasami_shogi.src.controller.hasami_shogi_game import HasamiShogiGame
 from hasami_shogi.src.controller.player import Player
 from hasami_shogi.src.controller.ai_player import AIPlayer
-from hasami_shogi.src.controller.hasami_shogi_utilities import return_valid_moves, get_game_pieces
+from hasami_shogi.src.controller.hasami_shogi_utilities import get_game_pieces
 from hasami_shogi.src.view.visual_constants import *
 import pygame
 
@@ -133,7 +133,7 @@ class VisualGame():
     def draw_possible_moves(self):
         """Draws all possible moves for the selected square."""
         if self._selected_square:
-            possible_moves = return_valid_moves(self._game, self._selected_square)
+            possible_moves = self._game.return_valid_moves(self._selected_square)
             for square in possible_moves:
                 x, y = self.square_string_to_gcoord(square[2:])
                 center = x + square_size//2, y + square_size//2

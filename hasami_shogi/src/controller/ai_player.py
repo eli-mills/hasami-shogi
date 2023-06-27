@@ -46,26 +46,21 @@ class AIPlayer(Player):
 
         return None, None  # Partner square occupied or end of board reached.
 
-    @staticmethod
-    def find_reachable_pieces(game_piece_dict, square_to_reach, color_to_move):
+    def find_reachable_pieces(self, square_to_reach):
         """
         Checks if a given square is reachable with any of the given color's pieces. Returns set of pieces that can
         reach the given square.
 
-        O(N^2)
-
-        Calls: build_square_string O(N)
+        Calls: build_square_string
         """
-        all_pieces = get_all_pieces(game_piece_dict)
-        moving_pieces = game_piece_dict[color_to_move]
+        moving_pieces = self.get_pieces()
+        all_pieces = moving_pieces | self.get_opposing_player().get_pieces()
         output = set()
 
-        for piece_to_move in moving_pieces:  # O(N)
-            path = build_square_string_range(piece_to_move,
-                                             square_to_reach)  # O(N)
+        for piece_to_move in moving_pieces:
+            path = build_square_string_range(piece_to_move, square_to_reach)
             if path:
-                if not any([x in all_pieces for x in
-                            path[1:]]):  # Check clear path. O(N)
+                if not any([x in all_pieces for x in path[1:]]):  # Check clear path.
                     output.add(piece_to_move)
         return output
 
@@ -117,11 +112,8 @@ class AIPlayer(Player):
         """
         output = []
         for square_to_reach in captures_to_check:  # O(N)
-            square_value = captures_to_check[
-                square_to_reach]  # Number of pieces that would be captured.
-            possible_pieces = self.find_reachable_pieces(game_piece_dict,
-                                                         square_to_reach,
-                                                         capturing_color)  # O(N^2)
+            square_value = captures_to_check[square_to_reach]  # Number of pieces that would be captured.
+            possible_pieces = self.find_reachable_pieces(square_to_reach)
             for piece in possible_pieces:  # O(N)
                 output.append((piece + square_to_reach, square_value))
 
@@ -251,9 +243,7 @@ class AIPlayer(Player):
         adjacent_moves = []
 
         for square_to_reach in opp_adj:
-            pieces_to_move = self.find_reachable_pieces(game_piece_dict,
-                                                        square_to_reach,
-                                                        player_turn)
+            pieces_to_move = self.find_reachable_pieces(square_to_reach)
             for piece in pieces_to_move:
                 adjacent_moves.append(piece + square_to_reach)
 
@@ -287,7 +277,7 @@ class AIPlayer(Player):
         leftover_moves = []
 
         for piece in self.get_pieces():
-            available_moves = return_valid_moves(self._game, piece)
+            available_moves = self.get_game().return_valid_moves(piece)
             for move in available_moves:
                 if move not in preferred_moves:
                     if move[2] in "def" and move[3] in "456":

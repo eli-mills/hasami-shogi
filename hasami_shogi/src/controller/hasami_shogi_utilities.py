@@ -114,27 +114,3 @@ def build_square_string_range(square_string_from, square_string_to):
     # 3. Generate list of square strings from ranges. Reverse output if necessary.
     output_range = [index_to_string(row, col) for row in row_range for col in col_range]
     return output_range if row_from <= row_to and col_from <= col_to else output_range[::-1]
-
-
-def return_valid_moves(game, square_string):
-    """Returns all valid moves for the given square. O(1)"""
-    if game.get_square_occupant(square_string) == game.get_active_player():
-        valid_moves = set()
-
-        # Get coords of all adjacent squares
-        adj_squares = get_adjacent_squares(square_string)
-
-        # Check all adjacent squares for vacancy. If vacant, check next in path. If not, check next direction.
-        for square in adj_squares:
-            curr_square = square
-            next_square = get_next_square(square_string, square)
-            while curr_square:
-                if game.get_square_occupant(curr_square) != "NONE":
-                    break
-                else:
-                    valid_moves.add(square_string+curr_square)
-                    curr_square, next_square = next_square, get_next_square(curr_square, next_square)
-
-        return valid_moves
-    else:
-        raise Exception("Given square string is not active player.")
