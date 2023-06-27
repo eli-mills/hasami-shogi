@@ -119,52 +119,26 @@ class AIPlayer(Player):
                   for piece in self.find_reachable_pieces(square_to_reach)]
         return tuple(sorted(output, key=lambda x: x[1], reverse=True))
 
-    @staticmethod
-    def evaluate_cap_moves(active_cap_moves, opp_cap_moves, material_advantage):
-        """
-        Takes game piece dict, active player's capture moves, and opponent's capture moves. Returns score based on
-        best possible scenarios for both players. Score represents net material gain for active player.
-
-        O(1)
-        """
-
-        if active_cap_moves:
-            active_best = active_cap_moves[0][
-                1]  # Assumes sorted best to worst move.
-        else:
-            active_best = 0  # Best move is avoiding capture.
-        if opp_cap_moves:
-            tradeoff = active_best - opp_cap_moves[0][
-                1]  # Both to make best move.
-            if tradeoff == 0:  # If active in lead, go for trade.
-                tradeoff += material_advantage
-            if len(opp_cap_moves) > 1:  # Opp can capture next turn either way.
-                opp_next_best = -1 * opp_cap_moves[1][
-                    1]  # Active avoids max capture.
-            else:
-                opp_next_best = 0  # Active completely avoids capture.
-            score = max(tradeoff, opp_next_best)
-        else:
-            score = active_best  # No opposition, active makes best move.
-
-        return score
-
     def get_capture_heuristic(self):
         """
         Returns static evaluation of game piece dict {'RED': {pieces}, 'BLACK': {pieces}} based on potential capture
         analysis. Score represents potential net gain for active player (always non-negative).
-
-        Calls:  self.find_pot_cap_squares
-                self.find_capture_moves
-                self.evaluate_cap_moves
         """
         material_advantage = len(self.get_pieces()) - len(self.get_opposing_player().get_pieces())
 
-        # Check if any potential capture squares are reachable for both players.
+        # Check if any potential capture squares are reachable for both players, assume sorted best first.
         active_cap_moves = self.find_capture_moves()
+        active_best = active_cap_moves[0][1] if active_cap_moves else 0
         opp_cap_moves = self.get_opposing_player().find_capture_moves()
 
-        return self.evaluate_cap_moves(active_cap_moves, opp_cap_moves, material_advantage)
+        if not opp_cap_moves:           # No opposition, active makes best move.
+            return active_best
+
+        opp_best = opp_cap_moves[0][1]
+        opp_next_best = opp_cap_moves[1][1] if len(opp_cap_moves) > 1 else 0
+        tradeoff = active_best - opp_best + material_advantage      # Play more aggressive/timid based on material
+
+        return max(tradeoff, opp_next_best)
 
     def get_heuristic(self):
         """
