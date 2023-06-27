@@ -71,7 +71,7 @@ class AIPlayer(Player):
 
         for capturing_piece, captured_partners in potential_cap_pairs.items():
             for captured_partner in captured_partners:
-                if not self.get_active() and self.find_cap_partner(captured_partner,capturing_piece):
+                if not self.get_active() and self.find_cap_partner(captured_partner, capturing_piece):
                     continue
                 square, value = self.find_cap_partner(capturing_piece, captured_partner)
                 if square and value:
@@ -114,11 +114,11 @@ class AIPlayer(Player):
 
         return adjacent_moves
 
-    def get_all_valid_moves(self):
+    def get_all_valid_moves(self) -> set[str]:
         """
         Returns set of all valid moves given current game state.
         """
-        return [move for piece in self.get_pieces() for move in self.get_game().return_valid_moves(piece)]
+        return {move for piece in self.get_pieces() for move in self.get_game().return_valid_moves(piece)}
 
     def order_available_moves(self):
         """

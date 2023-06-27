@@ -23,7 +23,9 @@ TWEAKS:
      leaves and how to split the Grouping into two smaller Groupings accordingly
      .
 
-[ ] Add data structure to board to track squares by row and by column.
+[X] Add data structure to board to track squares by row and by column.
+
+[ ] Minimax: memoize on serialized board and current depth
 
 FEATURES:
 [ ] Add difficulty selector
