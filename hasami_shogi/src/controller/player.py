@@ -48,3 +48,7 @@ class Player:
     def undo_move(self):
         """Calls undo_move on HasamiShogiGame."""
         self._game.undo_move()
+
+    def did_win(self):
+        """True if current game state reflects player victory."""
+        return self.get_game().get_game_state()[:-4] == self.get_color()

@@ -8,14 +8,29 @@ class AIPlayer(Player):
     Defines the methods for an AI Hasami Shogi player. Inherits from regular Player class.
     """
 
-    @staticmethod
-    def get_center_heuristic(square_string):
+    H_WIN = 9999                    # Weight for a winning move
+    H_MATERIAL = 200                # Weight for number of pieces on board vs enemy's
+    H_CAPTURE = 100                # Weight for setting up a capture
+    H_CENTER = 1 / 16             # Weight for being in a central position
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.alpha = None
+        self.beta = None
+        self.is_maximizing = self.get_color() == "BLACK"
+        self.initial_best_score = -9999 if self.is_maximizing else 9999
+        self.print_piece_sets = False
+
+    def get_center_heuristic(self):
         """
         Takes a square string and returns a point value based on how close it is to the center of the board.
         O(1).
         """
-        row, col = string_to_index(square_string)
-        return (8 - row) * row * (8 - col) * col
+        output = 0
+        for piece in self.get_pieces():
+            row, col = string_to_index(piece)
+            output += (8 - row) * row * (8 - col) * col
+        return output
 
     def find_cap_partner(self, capturing_piece, captured_piece):
         """
@@ -62,14 +77,6 @@ class AIPlayer(Player):
             if path and not any([x in all_pieces for x in path[1:]]):  # Check clear path.
                 output.add(piece_to_move)
         return output
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.alpha = None
-        self.beta = None
-        self.is_maximizing = self.get_color() == "BLACK"
-        self.initial_best_score = -9999 if self.is_maximizing else 9999
-        self.print_piece_sets = False
 
     def find_pot_cap_squares(self):
         """
@@ -142,75 +149,37 @@ class AIPlayer(Player):
 
         return score
 
-    def get_capture_heuristic(self, game_piece_dict, player_turn):
+    def get_capture_heuristic(self):
         """
         Returns static evaluation of game piece dict {'RED': {pieces}, 'BLACK': {pieces}} based on potential capture
         analysis. Score represents potential net gain for active player (always non-negative).
 
-        Calls:  self.find_pot_cap_squares O(N^2)
-                self.find_capture_moves   O(N^3)
-                self.evaluate_cap_moves   O(1)
+        Calls:  self.find_pot_cap_squares
+                self.find_capture_moves
+                self.evaluate_cap_moves
         """
-        opponent = GameBoard.opposite_color(player_turn)
-        material_advantage = len(game_piece_dict[player_turn]) - len(
-            game_piece_dict[opponent])
+        material_advantage = len(self.get_pieces()) - len(self.get_opposing_player().get_pieces())
 
         # Check if any potential capture squares are reachable for both players.
         active_cap_moves = self.find_capture_moves()
         opp_cap_moves = self.get_opposing_player().find_capture_moves()
 
-        return self.evaluate_cap_moves(active_cap_moves, opp_cap_moves,
-                                       material_advantage)
+        return self.evaluate_cap_moves(active_cap_moves, opp_cap_moves, material_advantage)
 
-    def get_heuristic(self, game=None):
+    def get_heuristic(self):
         """
         Checks a game board and returns a heuristic representing how advantageous it is for the AI. Negative is
         advantageous for RED, positive for BLACK.
         """
-        # Constants:
-        factor_vic = 9999  # Weight for a winning move
-        factor_mat = 200  # Weight for number of pieces on board vs enemy's
-        factor_cap = 100  # Weight for setting up a capture
-        factor_cen = 1 / 16  # Weight for being in a central position
-        factor_color_dict = {"BLACK": {"opp": "RED", "fac": 1},
-                             "RED": {"opp": "BLACK", "fac": -1}}
 
-        if not game:
-            game = self._game
+        material_points = (len(self.get_pieces()) - len(self.get_opposing_player().get_pieces())) * AIPlayer.H_MATERIAL
+        center_points = (self.get_center_heuristic() - self.get_opposing_player().get_center_heuristic()) * \
+                        AIPlayer.H_CENTER
+        pot_cap_points = self.get_capture_heuristic() * AIPlayer.H_CAPTURE
+        victory_points = AIPlayer.H_WIN if self.did_win() else 0
 
-        # Setup O(1)
-        game_pieces = get_game_pieces(game)
-        active_player = game.get_active_player()
-        active_factor = factor_color_dict[active_player][
-            "fac"]  # BLACK = 1, RED = -1
-
-        # Material Heuristic O(1)
-        material_points = game.get_num_captured_pieces(
-            "RED") - game.get_num_captured_pieces("BLACK")
-        material_points *= factor_mat
-
-        center_points = 0
-
-        # Center Heuristic (calls get_center_heuristic, O(1))
-        for player in "RED", "BLACK":
-            factor_color = factor_color_dict[player]["fac"]
-            for piece in game_pieces[player]:
-                center_points += self.get_center_heuristic(
-                    piece) * factor_cen * factor_color
-
-        # Potential Capture Heuristic (calls get_capture_heuristic)
-        pot_cap_points = self.get_capture_heuristic(game_pieces,
-                                                    active_player) * factor_cap * active_factor
-
-        # Victory Heuristic
-        victory_points = 0
-        game_state = game.get_game_state()
-        if game_state == "RED_WON":
-            victory_points += factor_vic * factor_color_dict["RED"]["fac"]
-        elif game_state == "BLACK_WON":
-            victory_points += factor_vic * factor_color_dict["BLACK"]["fac"]
-
-        return material_points + center_points + pot_cap_points + victory_points
+        total = material_points + center_points + pot_cap_points + victory_points
+        return total if self.is_maximizing else -total
 
     def find_adjacent_moves(self):
         """
