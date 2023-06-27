@@ -100,14 +100,15 @@ class AIPlayer(Player):
 
         return pot_caps
 
-    def find_capture_moves(self, captures_to_check):
+    def find_capture_moves(self):
         """
         Given a piece dict and a set of potential capture squares: and their value, returns a tuple of 4-char move,
         capture value tuples sorted by highest to lowest value. Value is positive no matter the color.
 
         Calls: self.find_reachable_pieces
         """
-        output = [(piece + square_to_reach, square_value) for square_to_reach, square_value in captures_to_check.items()
+        squares_to_check = self.find_pot_cap_squares()
+        output = [(piece + square_to_reach, square_value) for square_to_reach, square_value in squares_to_check.items()
                   for piece in self.find_reachable_pieces(square_to_reach)]
         return tuple(sorted(output, key=lambda x: x[1], reverse=True))
 
@@ -154,13 +155,9 @@ class AIPlayer(Player):
         material_advantage = len(game_piece_dict[player_turn]) - len(
             game_piece_dict[opponent])
 
-        # Find all potential captures squares and their values for both players.
-        active_pot_caps = self.find_pot_cap_squares()  # O(N^2)
-        opp_pot_caps = self.get_opposing_player().find_pot_cap_squares()  # O(N^2)
-
         # Check if any potential capture squares are reachable for both players.
-        active_cap_moves = self.find_capture_moves(active_pot_caps)  # O(N^3)
-        opp_cap_moves = self.find_capture_moves(opp_pot_caps)  # O(N^3)
+        active_cap_moves = self.find_capture_moves()
+        opp_cap_moves = self.get_opposing_player().find_capture_moves()
 
         return self.evaluate_cap_moves(active_cap_moves, opp_cap_moves,
                                        material_advantage)
@@ -215,68 +212,44 @@ class AIPlayer(Player):
 
         return material_points + center_points + pot_cap_points + victory_points
 
-    def find_adjacent_moves(self, game_piece_dict, player_turn):
+    def find_adjacent_moves(self):
         """
         Given a piece dict and active player, returns all moves active can make to squares adjacent to opponent.
         """
-        opponent = GameBoard.opposite_color(player_turn)
-        opp_pieces = game_piece_dict[opponent]
-        active_pieces = game_piece_dict[player_turn]
+        opp_pieces = self.get_opposing_player().get_pieces()
+        active_pieces = self.get_pieces()
 
-        opp_adj = set()
-        for opp_piece in opp_pieces:
-            for adj_square in get_adjacent_squares(opp_piece):
-                if adj_square not in active_pieces and adj_square not in opp_pieces:
-                    opp_adj.add(adj_square)
+        opponent_adjacent_squares = {adj_square for opp_piece in opp_pieces
+                                     for adj_square in get_adjacent_squares(opp_piece)
+                                     if adj_square not in opp_pieces | active_pieces}
 
-        adjacent_moves = []
-
-        for square_to_reach in opp_adj:
-            pieces_to_move = self.find_reachable_pieces(square_to_reach)
-            for piece in pieces_to_move:
-                adjacent_moves.append(piece + square_to_reach)
+        adjacent_moves = [piece + square_to_reach for square_to_reach in opponent_adjacent_squares
+                          for piece in self.find_reachable_pieces(square_to_reach)]
 
         return adjacent_moves
 
-    def find_all_available_moves(self):
+    def get_all_valid_moves(self):
+        """
+        Returns set of all valid moves given current game state.
+        """
+        return [move for piece in self.get_pieces() for move in self.get_game().return_valid_moves(piece)]
+
+    def order_available_moves(self):
         """
         Returns a list of all possible moves given the current game state. Orders preferable moves first.
         """
         if not self.get_active():
-            raise Exception("find_all_moves called by inactive Player.")
+            raise Exception("order_available_moves called by inactive Player.")
 
-        game_pieces = {
-            self.get_color(): self.get_pieces(),
-            self.get_opposing_color(): self.get_opposing_player().get_pieces()
-        }
-        active_player = self.get_color()
-
-        active_pot_caps = self.find_pot_cap_squares()
-        active_cap_moves = self.find_capture_moves(active_pot_caps)  # sorted list of tuples
-
-        capture_moves = [move[0] for move in active_cap_moves]
-
-        adjacent_moves = [x for x in
-                          self.find_adjacent_moves(game_pieces, active_player)
-                          if x not in capture_moves]
-
+        capture_moves = [move[0] for move in self.find_capture_moves()]
+        adjacent_moves = [x for x in self.find_adjacent_moves() if x not in capture_moves]
         preferred_moves = capture_moves + adjacent_moves
 
-        center_moves = []
-        leftover_moves = []
+        remaining_moves = [move for move in self.get_all_valid_moves() if move not in preferred_moves]
+        center_moves = [move for move in remaining_moves if move[2] in "def" and move[3] in "456"]  # ends in center
+        leftover_moves = [move for move in remaining_moves if move not in center_moves]
 
-        for piece in self.get_pieces():
-            available_moves = self.get_game().return_valid_moves(piece)
-            for move in available_moves:
-                if move not in preferred_moves:
-                    if move[2] in "def" and move[3] in "456":
-                        center_moves.append(move)
-                    else:
-                        leftover_moves.append(move)
-
-        preferred_moves += center_moves
-
-        return preferred_moves + leftover_moves
+        return preferred_moves + center_moves + leftover_moves
 
     def make_ai_clone(self):
         """
@@ -303,7 +276,7 @@ class AIPlayer(Player):
         best_score = self.initial_best_score
         best_move = None
 
-        possible_move_list = self.find_all_available_moves()
+        possible_move_list = self.order_available_moves()
 
         for index, possible_move in enumerate(possible_move_list):
             self.make_move(possible_move[:2], possible_move[2:])
