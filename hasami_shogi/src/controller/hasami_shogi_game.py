@@ -203,25 +203,9 @@ class HasamiShogiGame:
 
         return None
 
-    def return_valid_moves(self, square_string):
+    def return_valid_moves(self, square_string: str) -> set[str]:
         """Returns all valid moves for the given square. O(1)"""
         if self.get_square_occupant(square_string) != self.get_active_player():
             raise Exception("Given square string is not active player.")
 
-        valid_moves = set()
-
-        # Get coords of all adjacent squares
-        adj_squares = utils.get_adjacent_squares(square_string)
-
-        # Check all adjacent squares for vacancy. If vacant, check next in path. If not, check next direction.
-        for square in adj_squares:
-            curr_square = square
-            next_square = utils.get_next_square(square_string, square)
-            while curr_square:
-                if self.get_square_occupant(curr_square) != "NONE":
-                    break
-                else:
-                    valid_moves.add(square_string + curr_square)
-                    curr_square, next_square = next_square, utils.get_next_square(curr_square, next_square)
-
-        return valid_moves
+        return {f"{square_string}{dest}" for dest in self.get_game_board().get_reachable_squares(square_string)}

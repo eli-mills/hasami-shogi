@@ -78,6 +78,19 @@ class GameBoard:
         occupied_squares = [sq for sq in self.get_occupied_squares_by_axis(axis) if min_square < sq < max_square]
         return len(occupied_squares) == 0
 
+    def get_reachable_squares(self, source_square: str) -> set[str]:
+        """
+        Returns set of free squares reachable by given square.
+        """
+        row, col = source_square
+        row_l_bound = max({sq for sq in self.get_occupied_squares_by_axis(row) if sq < source_square}, default="0")
+        row_u_bound = min({sq for sq in self.get_occupied_squares_by_axis(row) if sq > source_square}, default="z")
+        col_l_bound = max({sq for sq in self.get_occupied_squares_by_axis(col) if sq < source_square}, default="0")
+        col_u_bound = min({sq for sq in self.get_occupied_squares_by_axis(col) if sq > source_square}, default="z")
+        reachable_horiz = {sq for sq in self.get_free_squares_by_axis(row) if row_l_bound < sq < row_u_bound}
+        reachable_vert = {sq for sq in self.get_free_squares_by_axis(col) if col_l_bound < sq < col_u_bound}
+        return reachable_horiz | reachable_vert
+
     def get_all_squares(self):
         """Returns all possible squares of board as a set of square strings."""
         return set(self.square_values.keys())
@@ -114,9 +127,5 @@ if __name__ == '__main__':
     gb = GameBoard()
     gb.set_square("e5", "BLACK")
     gb.set_square("i5", "NONE")
-    print(gb.square_is_reachable("b1", "b2"))        # True
-    print(gb.square_is_reachable("b1", "b1"))        # True
-    print(gb.square_is_reachable("b1", "g1"))        # True
-    print(gb.square_is_reachable("a1", "i1"))        # True
-    print(gb.square_is_reachable("e1", "e9"))        # False
+    print(gb.get_reachable_squares("e5"))
 
