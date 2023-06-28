@@ -1,6 +1,5 @@
 from hasami_shogi.src.controller.hasami_shogi_utilities import *
 from hasami_shogi.src.controller.player import Player
-from hasami_shogi.src.controller.game_board import GameBoard
 
 
 class AIPlayer(Player):
@@ -130,7 +129,7 @@ class AIPlayer(Player):
         center_moves = [move for move in remaining_moves if move[2] in "def" and move[3] in "456"]  # ends in center
         leftover_moves = [move for move in remaining_moves if move not in center_moves]
 
-        return preferred_moves + center_moves + leftover_moves
+        return preferred_moves + center_moves + leftover_moves  # [:-int(len(leftover_moves)//1.2)]
 
     def get_center_heuristic(self):
         """
@@ -241,3 +240,19 @@ class AIPlayer(Player):
         next_move = self.minimax(depth)
         print(next_move)
         self.make_move(next_move[0][:2], next_move[0][2:])
+
+
+if __name__ == '__main__':
+    from hasami_shogi.src.controller.hasami_shogi_game import HasamiShogiGame
+    import cProfile
+    import pstats
+    from pstats import SortKey
+
+    g = HasamiShogiGame()
+    ai1 = AIPlayer(g, "BLACK")
+    ai2 = AIPlayer(g, "RED")
+    ai1.set_opposing_player(ai2)
+    cProfile.run("ai1.minimax(3)", "minimax-stats")
+    p = pstats.Stats("minimax-stats")
+    p.strip_dirs().sort_stats(SortKey.CUMULATIVE).print_stats()
+    p.print_callees()

@@ -46,11 +46,11 @@ class CaptureCluster:
 
     def merge_validation(self, merging_cluster: "CaptureCluster"):
         if self.upper_occ != merging_cluster.lower_border and merging_cluster.upper_occ != self.lower_border:
-            raise ValueError(f"Cannot merge the two clusters: {self} {merging_cluster}")
+            raise ValueError(f"Cannot merge the two clusters")
         if type(self) != type(merging_cluster):
-            raise ValueError(f"Cannot merge two clusters of different type: {self} {merging_cluster}")
+            raise ValueError(f"Cannot merge two clusters of different type")
         if self.color != merging_cluster.color:
-            raise ValueError(f"Cannot merge two clusters of different color: {self} {merging_cluster}")
+            raise ValueError(f"Cannot merge two clusters of different color")
 
     def find_lower_border(self):
         """Set self.lower_border"""

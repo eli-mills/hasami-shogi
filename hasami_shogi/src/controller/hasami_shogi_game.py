@@ -36,6 +36,8 @@ class HasamiShogiGame:
                                                                "BLACK", self._game_board))
         self.clusters["RED"].append(HorizontalCaptureCluster(self._game_board.get_squares_by_color("RED"), "RED",
                                                              self._game_board))
+        self.clusters["BLACK"].sort(key=lambda cl: len(cl), reverse=True)
+        self.clusters["RED"].sort(key=lambda cl: len(cl), reverse=True)
 
     def get_game_board(self) -> GameBoard:
         """Returns the game board object."""
@@ -90,7 +92,6 @@ class HasamiShogiGame:
         piece_moving = self.get_square_occupant(moving_from)
         self.set_square_occupant(moving_from, "NONE")
         self.set_square_occupant(moving_to, piece_moving)
-        # self.update_clusters(moving_from, moving_to)
 
     def update_clusters_at_old_location(self, moving_from, color):
         curr_cluster_list = self.clusters[color]
