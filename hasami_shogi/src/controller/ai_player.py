@@ -54,11 +54,6 @@ class AIPlayer(Player):
         """
         Takes game piece dict, color to capture, and optional whether player is active. Returns square: value dict
         for every square where a capture would result from a capturing color piece moving there.
-
-        O(N^2)
-
-        Calls:  get_adjacent_squares
-                self.find_cap_partner: O(N)
         """
         capturing_pieces = self.get_pieces()
         captured_pieces = self.get_opposing_player().get_pieces()

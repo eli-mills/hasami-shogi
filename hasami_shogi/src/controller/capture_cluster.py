@@ -1,3 +1,6 @@
+from hasami_shogi.src.controller.game_board import GameBoard
+
+
 class CaptureCluster:
     class ClusterOpResult:
         def __init__(self):
@@ -10,15 +13,19 @@ class CaptureCluster:
         def extend_to_add(self, cluster_list: list["CaptureCluster"]):
             self.to_add.extend(cluster_list)
 
-    def __init__(self, squares: set, color: str):
+    def __init__(self, squares: set, color: str, board: GameBoard):
         self.squares: set = squares
         self.color: str = color
         self.lower_occ, self.upper_occ = min(squares), max(squares)
         self.lower_border = self.upper_border = None
+        self.lb_value = self.ub_value = None
+        self.board = board
+        self.risky_border = ""
 
         self.validation()
         self.find_lower_border()
         self.find_upper_border()
+        self.check_if_capturable()
 
     def __len__(self):
         return len(self.squares)
@@ -53,13 +60,24 @@ class CaptureCluster:
         """Set self.upper_border"""
         raise NotImplementedError
 
+    def check_if_capturable(self) -> None:
+        if not self.lower_border or not self.upper_border:
+            self.risky_border = ""
+            return None
+        if self.board.get_square(self.lower_border) == self.board.get_square(self.upper_border) == "NONE":
+            self.risky_border = ""
+            return None
+        self.risky_border = self.lower_border if self.board.get_square(self.lower_border) == "NONE" else \
+            self.upper_border
+        return None
+
     def update_lower_occ(self):
         self.lower_occ = min(self.squares)
 
     def update_upper_occ(self):
         self.upper_occ = max(self.squares)
 
-    def remove(self, square: str) -> ClusterOpResult:
+    def release(self, square: str) -> ClusterOpResult:
         self.raise_if_bad_square(square)
         result = CaptureCluster.ClusterOpResult()
 
@@ -74,18 +92,21 @@ class CaptureCluster:
         if square == self.lower_occ:
             self.lower_border = square
             self.update_lower_occ()
+            self.check_if_capturable()
             return result
 
         # Case: square is max
         if square == self.upper_occ:
             self.upper_border = square
             self.update_upper_occ()
+            self.check_if_capturable()
             return result
 
         # Case: square between min and max
         lower_squares = curr_squares[:curr_squares.index(square)]
         upper_squares = curr_squares[curr_squares.index(square) + 1:]
-        result.extend_to_add([type(self)(set(lower_squares), self.color), type(self)(set(upper_squares), self.color)])
+        result.extend_to_add([type(self)(set(lower_squares), self.color, self.board), type(self)(set(upper_squares),
+                                                                                        self.color, self.board)])
         result.extend_to_remove([self])
         return result
 
@@ -106,6 +127,7 @@ class CaptureCluster:
         self.upper_occ = max(self.upper_occ, merging_cluster.upper_occ)
         self.find_upper_border()
         self.find_lower_border()
+        self.check_if_capturable()
 
         results = CaptureCluster.ClusterOpResult()
         results.extend_to_remove([merging_cluster])
@@ -121,6 +143,18 @@ class CaptureCluster:
             return ""
         border_squares.remove(square)
         return border_squares.pop()
+
+    def is_at_edge(self):
+        return "" in self.get_borders()
+
+    def reveal_capturing_square(self) -> str:
+        """
+        Returns the square that, if an enemy took, would capture this cluster. If none exists, returns empty string.
+        """
+        if "" in self.get_borders():
+            return ""
+        return
+
 
 class VerticalCaptureCluster(CaptureCluster):
     def find_lower_border(self):

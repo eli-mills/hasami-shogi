@@ -27,11 +27,15 @@ class HasamiShogiGame:
         self._captured_pieces = {"RED": 0, "BLACK": 0}
         self.move_log = []
         self.clusters: dict[str][list[CaptureCluster]] = {
-            "BLACK": [VerticalCaptureCluster({sq}, "BLACK") for sq in self._game_board.get_squares_by_color("BLACK")],
-            "RED": [VerticalCaptureCluster({sq}, "RED") for sq in self._game_board.get_squares_by_color("RED")]
+            "BLACK": [VerticalCaptureCluster({sq}, "BLACK", self._game_board) for sq in self._game_board.get_squares_by_color(
+                "BLACK")],
+            "RED": [VerticalCaptureCluster({sq}, "RED", self._game_board) for sq in self._game_board.get_squares_by_color(
+                "RED")]
         }
-        self.clusters["BLACK"].append(HorizontalCaptureCluster(self._game_board.get_squares_by_color("BLACK"), "BLACK"))
-        self.clusters["RED"].append(HorizontalCaptureCluster(self._game_board.get_squares_by_color("RED"), "RED"))
+        self.clusters["BLACK"].append(HorizontalCaptureCluster(self._game_board.get_squares_by_color("BLACK"),
+                                                               "BLACK", self._game_board))
+        self.clusters["RED"].append(HorizontalCaptureCluster(self._game_board.get_squares_by_color("RED"), "RED",
+                                                             self._game_board))
 
     def get_game_board(self) -> GameBoard:
         """Returns the game board object."""
@@ -84,8 +88,8 @@ class HasamiShogiGame:
     def execute_move(self, moving_from, moving_to):
         """(Blindly) moves the piece at the first position to the second position."""
         piece_moving = self.get_square_occupant(moving_from)
-        self.set_square_occupant(moving_to, piece_moving)
         self.set_square_occupant(moving_from, "NONE")
+        self.set_square_occupant(moving_to, piece_moving)
         # self.update_clusters(moving_from, moving_to)
 
     def update_clusters_at_old_location(self, moving_from, color):
@@ -94,7 +98,7 @@ class HasamiShogiGame:
 
         # Update old clusters
         for cluster in broken_clusters:
-            results = cluster.remove(moving_from)
+            results = cluster.release(moving_from)
             for cluster_to_remove in results.to_remove:
                 curr_cluster_list.remove(cluster_to_remove)
             curr_cluster_list.extend(results.to_add)
@@ -102,8 +106,8 @@ class HasamiShogiGame:
     def update_clusters_at_new_location(self, moving_to, color):
         curr_cluster_list = self.clusters[color]
         # Create new ones
-        new_h_cluster = HorizontalCaptureCluster({moving_to}, color)
-        new_v_cluster = VerticalCaptureCluster({moving_to}, color)
+        new_h_cluster = HorizontalCaptureCluster({moving_to}, color, self._game_board)
+        new_v_cluster = VerticalCaptureCluster({moving_to}, color, self._game_board)
         curr_cluster_list.extend([new_h_cluster, new_v_cluster])
 
         # Connect
