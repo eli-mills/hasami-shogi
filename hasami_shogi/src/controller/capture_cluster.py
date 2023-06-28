@@ -1,8 +1,18 @@
 class CaptureCluster:
+    class ClusterOpResult:
+        def __init__(self):
+            self.to_remove = []
+            self.to_add = []
 
-    def __init__(self, squares: dict):
-        self.squares: dict = squares
-        self.color: str = squares.values()[0]
+        def extend_to_remove(self, cluster_list: list["CaptureCluster"]):
+            self.to_remove.extend(cluster_list)
+
+        def extend_to_add(self, cluster_list: list["CaptureCluster"]):
+            self.to_add.extend(cluster_list)
+
+    def __init__(self, squares: set, color: str):
+        self.squares: set = squares
+        self.color: str = color
         self.lower_occ, self.upper_occ = min(squares), max(squares)
         self.lower_border = self.upper_border = None
 
@@ -14,11 +24,12 @@ class CaptureCluster:
         return len(self.squares)
 
     def __repr__(self):
-        return set(self.squares)
+        return type(self).__name__ + repr(self.squares)
+
+    def __contains__(self, item):
+        return item in self.squares
 
     def validation(self):
-        if [val for val in self.squares.values() if val != self.color]:
-            raise ValueError(f"Squares must be all same color: {self.squares}")
         if [sq for sq in self.squares if sq[0] != self.lower_occ[0]] and [sq for sq in self.squares if sq[1] != self.lower_occ[1]]:
             raise ValueError(f"Squares must be all in one line: {self.squares}")
 
@@ -27,7 +38,7 @@ class CaptureCluster:
             raise ValueError(f"{square} not in self.squares {self.squares}")
 
     def merge_validation(self, merging_cluster: "CaptureCluster"):
-        if self.upper_occ != merging_cluster.lower_border and self.upper_occ != merging_cluster.lower_border:
+        if self.upper_occ != merging_cluster.lower_border and merging_cluster.upper_occ != self.lower_border:
             raise ValueError(f"Cannot merge the two clusters: {self} {merging_cluster}")
         if type(self) != type(merging_cluster):
             raise ValueError(f"Cannot merge two clusters of different type: {self} {merging_cluster}")
@@ -48,38 +59,58 @@ class CaptureCluster:
     def update_upper_occ(self):
         self.upper_occ = max(self.squares)
 
-    def remove(self, square: str) -> None:
+    def remove(self, square: str) -> ClusterOpResult:
         self.raise_if_bad_square(square)
-        if len(self.squares) == 1:
-            return []
+        result = CaptureCluster.ClusterOpResult()
 
-        curr_squares = list(self.squares.keys())
-        del self.squares[square]
+        if len(self.squares) == 1:
+            result.extend_to_remove([self])
+            return result
+
+        curr_squares = sorted(list(self.squares))
+        self.squares.remove(square)
 
         # Case: square is min
         if square == self.lower_occ:
             self.lower_border = square
             self.update_lower_occ()
-            return [self]
+            return result
 
         # Case: square is max
         if square == self.upper_occ:
             self.upper_border = square
             self.update_upper_occ()
-            return [self]
+            return result
 
         # Case: square between min and max
         lower_squares = curr_squares[:curr_squares.index(square)]
         upper_squares = curr_squares[curr_squares.index(square) + 1:]
-        return [type(self)(lower_squares), type(self)(upper_squares)]
+        result.extend_to_add([type(self)(set(lower_squares), self.color), type(self)(set(upper_squares), self.color)])
+        result.extend_to_remove([self])
+        return result
 
-    def merge(self, merging_cluster: "CaptureCluster") -> "CaptureCluster":
+    def can_merge_with(self, merging_cluster: "CaptureCluster") -> bool:
+        try:
+            self.merge_validation(merging_cluster)
+        except ValueError:
+            return False
+        return True
+
+    def merge(self, merging_cluster: "CaptureCluster") -> ClusterOpResult:
+        """
+        Raise ValueError if merge not possible.
+        """
+        self.merge_validation(merging_cluster)
         self.squares |= merging_cluster.squares
         self.lower_occ = min(self.lower_occ, merging_cluster.lower_occ)
         self.upper_occ = max(self.upper_occ, merging_cluster.upper_occ)
         self.find_upper_border()
         self.find_lower_border()
-        return self
+
+        results = CaptureCluster.ClusterOpResult()
+        results.extend_to_remove([merging_cluster])
+
+        return results
 
     def get_border_squares(self) -> set[str]:
         return {sq for sq in {self.lower_border, self.upper_border} if sq}

@@ -1,4 +1,5 @@
 from hasami_shogi.src.controller.game_board import GameBoard
+from hasami_shogi.src.controller.capture_cluster import CaptureCluster, VerticalCaptureCluster, HorizontalCaptureCluster
 import hasami_shogi.src.controller.hasami_shogi_utilities as utils
 
 
@@ -25,8 +26,14 @@ class HasamiShogiGame:
         self._inactive_player = "RED"  # BLACK, RED
         self._captured_pieces = {"RED": 0, "BLACK": 0}
         self.move_log = []
+        self.clusters: dict[str][list[CaptureCluster]] = {
+            "BLACK": [VerticalCaptureCluster({sq}, "BLACK") for sq in self._game_board.get_squares_by_color("BLACK")],
+            "RED": [VerticalCaptureCluster({sq}, "RED") for sq in self._game_board.get_squares_by_color("RED")]
+        }
+        self.clusters["BLACK"].append(HorizontalCaptureCluster(self._game_board.get_squares_by_color("BLACK"), "BLACK"))
+        self.clusters["RED"].append(HorizontalCaptureCluster(self._game_board.get_squares_by_color("RED"), "RED"))
 
-    def get_game_board(self):
+    def get_game_board(self) -> GameBoard:
         """Returns the game board object."""
         return self._game_board
 
@@ -74,6 +81,38 @@ class HasamiShogiGame:
         piece_moving = self.get_square_occupant(moving_from)
         self.set_square_occupant(moving_to, piece_moving)
         self.set_square_occupant(moving_from, "NONE")
+        self.update_clusters(moving_from, moving_to)
+
+    def update_clusters(self, moving_from: str, moving_to: str) -> None:
+        curr_cluster_list = self.clusters[self._active_player]
+        broken_clusters = [cluster for cluster in curr_cluster_list if moving_from in cluster]
+
+        # Update old clusters
+        for cluster in broken_clusters:
+            results = cluster.remove(moving_from)
+            for cluster_to_remove in results.to_remove:
+                curr_cluster_list.remove(cluster_to_remove)
+            curr_cluster_list.extend(results.to_add)
+
+        # Create new ones
+        new_h_cluster = HorizontalCaptureCluster({moving_to}, self._active_player)
+        new_v_cluster = VerticalCaptureCluster({moving_to}, self._active_player)
+        curr_cluster_list.extend([new_h_cluster, new_v_cluster])
+
+        # Connect
+        h_merges = [cluster for cluster in curr_cluster_list if new_h_cluster.can_merge_with(cluster)]
+        v_merges = [cluster for cluster in curr_cluster_list if new_v_cluster.can_merge_with(cluster)]
+
+        for cluster in h_merges:
+            results = new_h_cluster.merge(cluster)
+            for cluster_to_remove in results.to_remove:
+                curr_cluster_list.remove(cluster_to_remove)
+
+        for cluster in v_merges:
+            results = new_v_cluster.merge(cluster)
+            for cluster_to_remove in results.to_remove:
+                curr_cluster_list.remove(cluster_to_remove)
+            curr_cluster_list.extend(results.to_add)
 
     def path_is_clear(self, moving_from, moving_to):
         move_path = utils.build_square_string_range(moving_from, moving_to)
@@ -196,10 +235,10 @@ class HasamiShogiGame:
 
         prev_move = self.move_log.pop()
         self._game_state = "UNFINISHED"  # Safe to assume game state was unfinished if move was made
+        self.toggle_active_player()  # Assume undo occurs after player switch
         self.execute_move(prev_move.move[2:], prev_move.move[:2])
         self.set_square_occupants(prev_move.cap_squares, prev_move.cap_color)
         prev_move.cap_color and self.add_num_captured_pieces(prev_move.cap_color, -len(prev_move.cap_squares))
-        self.toggle_active_player()  # Assume undo occurs after player switch
 
         return None
 
@@ -209,3 +248,15 @@ class HasamiShogiGame:
             raise Exception("Given square string is not active player.")
 
         return {f"{square_string}{dest}" for dest in self.get_game_board().get_reachable_squares(square_string)}
+
+
+if __name__ == '__main__':
+    g = HasamiShogiGame()
+    g.make_move("i5", "e5")
+    g.make_move("a5", "d5")
+    g.make_move("i4", "e4")
+    g.undo_move()
+    g.undo_move()
+    g.undo_move()
+    g.get_game_board().print_board()
+    pass
