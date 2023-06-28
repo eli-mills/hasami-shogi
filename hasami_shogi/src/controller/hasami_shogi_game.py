@@ -67,7 +67,12 @@ class HasamiShogiGame:
 
     def set_square_occupant(self, square_string, value):
         """Sets the occupant at the given square to the given value."""
+        old_value = self.get_square_occupant(square_string)
         self.get_game_board().set_square(square_string, value)
+        if old_value != "NONE":
+            self.update_clusters_at_old_location(square_string, old_value)
+        if value != "NONE":
+            self.update_clusters_at_new_location(square_string, value)
 
     def set_square_occupants(self, list_of_squares, value):
         """
@@ -81,10 +86,10 @@ class HasamiShogiGame:
         piece_moving = self.get_square_occupant(moving_from)
         self.set_square_occupant(moving_to, piece_moving)
         self.set_square_occupant(moving_from, "NONE")
-        self.update_clusters(moving_from, moving_to)
+        # self.update_clusters(moving_from, moving_to)
 
-    def update_clusters(self, moving_from: str, moving_to: str) -> None:
-        curr_cluster_list = self.clusters[self._active_player]
+    def update_clusters_at_old_location(self, moving_from, color):
+        curr_cluster_list = self.clusters[color]
         broken_clusters = [cluster for cluster in curr_cluster_list if moving_from in cluster]
 
         # Update old clusters
@@ -94,9 +99,11 @@ class HasamiShogiGame:
                 curr_cluster_list.remove(cluster_to_remove)
             curr_cluster_list.extend(results.to_add)
 
+    def update_clusters_at_new_location(self, moving_to, color):
+        curr_cluster_list = self.clusters[color]
         # Create new ones
-        new_h_cluster = HorizontalCaptureCluster({moving_to}, self._active_player)
-        new_v_cluster = VerticalCaptureCluster({moving_to}, self._active_player)
+        new_h_cluster = HorizontalCaptureCluster({moving_to}, color)
+        new_v_cluster = VerticalCaptureCluster({moving_to}, color)
         curr_cluster_list.extend([new_h_cluster, new_v_cluster])
 
         # Connect
@@ -147,15 +154,25 @@ class HasamiShogiGame:
         if type(moved_to) != str and len(moved_to) != 2:
             raise ValueError(f"check_linear_captures needs a 2-character square string. moved_to = {moved_to}")
 
-        # Determine 4 limits to the edges of the board.
-        row, col = moved_to
-        search_limits = [f"{row}1", f"{row}9", f"a{col}", f"i{col}"]
+        # # Determine 4 limits to the edges of the board.
+        # row, col = moved_to
+        # search_limits = [f"{row}1", f"{row}9", f"a{col}", f"i{col}"]
+        #
+        # # Check each direction for captures up to the edges of the board.
+        # captured_lists = [self.find_captured_squares(moved_to, limit) for limit in search_limits]
+        # captured_squares = [square for sublist in captured_lists if sublist for square in sublist]
+        # return captured_squares
 
-        # Check each direction for captures up to the edges of the board.
-        captured_lists = [self.find_captured_squares(moved_to, limit) for limit in search_limits]
-        captured_squares = [square for sublist in captured_lists if sublist for square in sublist]
+        pot_cap_clusters = [cluster for cluster in self.clusters[self._inactive_player] if cluster.get_other_border(
+            moved_to)]
+        captured_clusters = [cluster for cluster in pot_cap_clusters if self.get_square_occupant(
+            cluster.get_other_border(moved_to)) == self._active_player]
+        capture_squares = []
+        for cluster in captured_clusters:
+            capture_squares += list(cluster.squares)
+            self.clusters[self._inactive_player].remove(cluster)
 
-        return captured_squares
+        return capture_squares
 
     def check_corner_capture(self, moved_to):
         """Checks for a capture in the corner. Removes enemy piece in corner. Must occur after linear check for

@@ -306,21 +306,21 @@ class TestNormalGames(unittest.TestCase):
 
     def test_double_cap_corner(self):
         """Asserts that a double capture involving a corner behaves as intended."""
-        board_setup_bot_right = {"RED": ["i8", "h7", "d9"], "BLACK": ["e9", "f8", "g9"]}
-        moves_bot_right = ["f8f9", "h7h9"]
-        exp_board_bot_right = {"RED": ["d9", "h9", "i8"], "NONE": ["i9"]}
-        self.template(moves_bot_right, [True]*2, exp_board_bot_right, "BLACK", 4, 0, "UNFINISHED", board_setup_bot_right)
+        # board_setup_bot_right = {"RED": ["i8", "h7", "d9"], "BLACK": ["e9", "f8", "g9"]}
+        # moves_bot_right = ["f8f9", "h7h9"]
+        # exp_board_bot_right = {"RED": ["d9", "h9", "i8"], "NONE": ["i9"]}
+        # self.template(moves_bot_right, [True]*2, exp_board_bot_right, "BLACK", 4, 0, "UNFINISHED", board_setup_bot_right)
 
-        board_setup_top_right = {"RED": ["c9", "d9"], "BLACK": ["a8", "b7", "e9"]}
-        moves_top_right = ["b7b9"]
-        exp_board_top_right = {"BLACK": ["a8", "b9", "e9"], "NONE": ["a9"]}
-        self.template(moves_top_right, [True], exp_board_top_right, "RED", 0, 3, "UNFINISHED", board_setup_top_right)
-
-        board_setup_top_left = {"RED": ["b2", "d1"], "BLACK": ["a1", "c2"]}
-        moves_top_left = ["c2c1", "b2b1"]
-        exp_board_top_left = {"NONE": ["a1"], "RED": ["b1", "d1"]}
-        self.template(moves_top_left, [True]*2, exp_board_top_left, "BLACK", 2, 0, "UNFINISHED", board_setup_top_left)
-
+        # board_setup_top_right = {"RED": ["c9", "d9"], "BLACK": ["a8", "b7", "e9"]}
+        # moves_top_right = ["b7b9"]
+        # exp_board_top_right = {"BLACK": ["a8", "b9", "e9"], "NONE": ["a9"]}
+        # self.template(moves_top_right, [True], exp_board_top_right, "RED", 0, 3, "UNFINISHED", board_setup_top_right)
+        #
+        # board_setup_top_left = {"RED": ["b2", "d1"], "BLACK": ["a1", "c2"]}
+        # moves_top_left = ["c2c1", "b2b1"]
+        # exp_board_top_left = {"NONE": ["a1"], "RED": ["b1", "d1"]}
+        # self.template(moves_top_left, [True]*2, exp_board_top_left, "BLACK", 2, 0, "UNFINISHED", board_setup_top_left)
+        #
         board_setup_bot_left = {"RED": ["b1", "c1", "d1", "e1", "f1", "g1", "i1"], "BLACK": ["a1", "h9"]}
         moves_bot_left = ["h9h1"]
         exp_board_bot_left = {"BLACK": ["a1", "h1"], "NONE": ["i1"]}

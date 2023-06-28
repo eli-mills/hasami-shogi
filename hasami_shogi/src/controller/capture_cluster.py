@@ -112,9 +112,15 @@ class CaptureCluster:
 
         return results
 
-    def get_border_squares(self) -> set[str]:
-        return {sq for sq in {self.lower_border, self.upper_border} if sq}
+    def get_borders(self) -> set[str]:
+        return {self.lower_border, self.upper_border}
 
+    def get_other_border(self, square: str) -> str:
+        border_squares = self.get_borders()
+        if square not in border_squares:
+            return ""
+        border_squares.remove(square)
+        return border_squares.pop()
 
 class VerticalCaptureCluster(CaptureCluster):
     def find_lower_border(self):
