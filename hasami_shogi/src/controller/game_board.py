@@ -75,7 +75,7 @@ class GameBoard:
             return False
         axis = square1[0] if square1[0] in square2 else square1[1]
         min_square, max_square = sorted([square1, square2])
-        occupied_squares = [sq for sq in self.get_occupied_squares_by_axis(axis) if min_square < sq < max_square]
+        occupied_squares = [sq for sq in self.get_occupied_squares_by_axis(axis) if min_square < sq <= max_square]
         return len(occupied_squares) == 0
 
     def get_reachable_squares(self, source_square: str) -> set[str]:

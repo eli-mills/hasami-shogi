@@ -44,7 +44,7 @@ class CaptureCluster:
         return len(self.squares)
 
     def __repr__(self):
-        return type(self).__name__ + repr(self.squares)
+        return type(self).__name__ + self.color + repr(self.squares)
 
     def __contains__(self, item):
         return item in self.squares
@@ -82,10 +82,11 @@ class CaptureCluster:
             return None
         if self.board.get_square(self.lower_border) == "NONE":
             self.risky_border = self.lower_border
-            return None
-        if self.board.get_square(self.upper_border) == "NONE":
+        elif self.board.get_square(self.upper_border) == "NONE":
             self.risky_border = self.upper_border
-            return None
+        else:
+            self.risky_border = ""
+        return None
 
 
     def update_lower_occ(self):

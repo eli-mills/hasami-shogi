@@ -14,7 +14,10 @@ class ShogiMove:
             None
         self.cap_squares = []
 
-
+    def __repr__(self):
+        output = self.move
+        output += f" CAPTURED {self.cap_squares}, color {self.cap_color}" if self.cap_squares else ""
+        return output
 class HasamiShogiGame:
     """Defines the methods for a game of Hasami Shogi."""
 

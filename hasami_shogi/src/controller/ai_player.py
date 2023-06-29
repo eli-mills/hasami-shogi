@@ -21,6 +21,9 @@ class AIPlayer(Player):
         self.initial_best_score = -9999 if self.is_maximizing else 9999
         self.print_piece_sets = False
 
+    def __repr__(self):
+        return type(self).__name__ + self._color
+
     def find_cap_partner(self, capturing_piece, captured_piece):
         """
         Takes a game dict {'RED': {pieces}, 'BLACK': {pieces}}, and a capturing, captured pair.
@@ -73,6 +76,11 @@ class AIPlayer(Player):
         #             pot_caps[square] = pot_caps.get(square, 0) + value
         #
         # return pot_caps
+        for cluster in self.get_game().clusters.vulnerable_clusters[self.get_opposing_color()]:
+            risky_border_val = self.get_game().get_square_occupant(cluster.risky_border)
+            if risky_border_val != "NONE":
+                raise ValueError(f"Opponent cluster risky border is out of sync with board state: {cluster} risky "
+                                 f"border at {cluster.risky_border} has board value {risky_border_val}")
         vulnerable_clusters = self.get_game().clusters.vulnerable_clusters[self.get_opposing_color()]
         return {cluster.risky_border: len(cluster) for cluster in vulnerable_clusters}
 
@@ -125,10 +133,16 @@ class AIPlayer(Player):
             raise Exception("order_available_moves called by inactive Player.")
 
         capture_moves = [move[0] for move in self.find_capture_moves()]
+        if any([move[:2]==move[2:] for move in capture_moves]):
+            raise(ValueError(f"Illegal move proposed by capture_moves: {capture_moves}"))
         adjacent_moves = [x for x in self.find_adjacent_moves() if x not in capture_moves]
+        if any([move[:2]==move[2:] for move in adjacent_moves]):
+            raise(ValueError(f"Illegal move proposed by adjacent_moves: {adjacent_moves}"))
         preferred_moves = capture_moves + adjacent_moves
 
         remaining_moves = [move for move in self.get_all_valid_moves() if move not in preferred_moves]
+        if any([move[:2]==move[2:] for move in remaining_moves]):
+            raise(ValueError(f"Illegal move proposed by remaining_moves: {remaining_moves}"))
         center_moves = [move for move in remaining_moves if move[2] in "def" and move[3] in "456"]  # ends in center
         leftover_moves = [move for move in remaining_moves if move not in center_moves]
 
@@ -222,9 +236,20 @@ class AIPlayer(Player):
         possible_move_list = self.order_available_moves()
 
         for index, possible_move in enumerate(possible_move_list):
-            self.make_move(possible_move[:2], possible_move[2:])
+            init_move_log_length = len(self.get_game().move_log)
+            if not self.make_move(possible_move[:2], possible_move[2:]):
+                raise ValueError(f"AI {self} made illegal move {possible_move} with pieces {self.get_pieces()}")
+            if self.get_active():
+                raise ValueError(f"Game failed to update active after valid move {possible_move} by {self}.")
+            if len(self.get_game().move_log) != init_move_log_length + 1:
+                raise ValueError(f"Move log failed to update for valid move {possible_move} by {self} with.")
+
             sub_move, sub_score = self.get_opposing_player().minimax_helper(depth - 1, alpha, beta)
+
             self.undo_move()
+
+            if len(self.get_game().move_log) != init_move_log_length:
+                raise ValueError(f"Undo move failed for {self}")
 
             # Evaluation
             if self.evaluate_better_score(sub_score, best_score):
