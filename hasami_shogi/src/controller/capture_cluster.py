@@ -7,11 +7,24 @@ class CaptureCluster:
             self.to_remove = []
             self.to_add = []
 
+        def __bool__(self):
+            return self.to_add or self.to_remove
+
+        def __add__(self, other):
+            output = CaptureCluster.ClusterOpResult()
+            output.to_remove = self.to_remove + other.to_remove
+            output.to_add = self.to_add + other.to_add
+            return output
+
         def extend_to_remove(self, cluster_list: list["CaptureCluster"]):
             self.to_remove.extend(cluster_list)
 
         def extend_to_add(self, cluster_list: list["CaptureCluster"]):
             self.to_add.extend(cluster_list)
+
+        def combine_another_result(self, result: "CaptureCluster.ClusterOpResult"):
+            self.to_remove.extend(result.to_remove)
+            self.to_add.extend(result.to_add)
 
     def __init__(self, squares: set, color: str, board: GameBoard):
         self.squares: set = squares
@@ -86,20 +99,17 @@ class CaptureCluster:
             return result
 
         curr_squares = sorted(list(self.squares))
-        self.squares.remove(square)
 
         # Case: square is min
         if square == self.lower_occ:
-            self.lower_border = square
-            self.update_lower_occ()
-            self.check_if_capturable()
+            result.extend_to_remove([self])
+            result.extend_to_add([type(self)(set(curr_squares[1:]), self.color, self.board)])
             return result
 
         # Case: square is max
         if square == self.upper_occ:
-            self.upper_border = square
-            self.update_upper_occ()
-            self.check_if_capturable()
+            result.extend_to_remove([self])
+            result.extend_to_add([type(self)(set(curr_squares[:-1]), self.color, self.board)])
             return result
 
         # Case: square between min and max
@@ -132,6 +142,15 @@ class CaptureCluster:
         results = CaptureCluster.ClusterOpResult()
         results.extend_to_remove([merging_cluster])
 
+        return results
+
+    def merge_with_multiple(self, cluster_list: list["CaptureCluster"]) -> ClusterOpResult:
+        """
+        Merges with every cluster in list, becoming only remaining cluster. Every cluster on list will be set to remove.
+        """
+        results = CaptureCluster.ClusterOpResult()
+        for cluster in cluster_list:
+            results += self.merge(cluster)
         return results
 
     def get_borders(self) -> set[str]:

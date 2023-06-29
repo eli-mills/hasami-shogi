@@ -54,24 +54,26 @@ class AIPlayer(Player):
         Takes game piece dict, color to capture, and optional whether player is active. Returns square: value dict
         for every square where a capture would result from a capturing color piece moving there.
         """
-        capturing_pieces = self.get_pieces()
-        captured_pieces = self.get_opposing_player().get_pieces()
-        potential_cap_pairs = {
-            capturing_piece: {adj_square for adj_square in get_adjacent_squares(capturing_piece)}
-            .intersection(captured_pieces) for capturing_piece in capturing_pieces
-        }
-
-        pot_caps = {}
-
-        for capturing_piece, captured_partners in potential_cap_pairs.items():
-            for captured_partner in captured_partners:
-                if not self.get_active() and self.find_cap_partner(captured_partner, capturing_piece):
-                    continue
-                square, value = self.find_cap_partner(capturing_piece, captured_partner)
-                if square and value:
-                    pot_caps[square] = pot_caps.get(square, 0) + value
-
-        return pot_caps
+        # capturing_pieces = self.get_pieces()
+        # captured_pieces = self.get_opposing_player().get_pieces()
+        # potential_cap_pairs = {
+        #     capturing_piece: {adj_square for adj_square in get_adjacent_squares(capturing_piece)}
+        #     .intersection(captured_pieces) for capturing_piece in capturing_pieces
+        # }
+        #
+        # pot_caps = {}
+        #
+        # for capturing_piece, captured_partners in potential_cap_pairs.items():
+        #     for captured_partner in captured_partners:
+        #         if not self.get_active() and self.find_cap_partner(captured_partner, capturing_piece):
+        #             continue
+        #         square, value = self.find_cap_partner(capturing_piece, captured_partner)
+        #         if square and value:
+        #             pot_caps[square] = pot_caps.get(square, 0) + value
+        #
+        # return pot_caps
+        opp_clusters = self.get_game().clusters[self.get_opposing_color()]
+        return {cluster.risky_border: len(cluster) for cluster in opp_clusters if cluster.risky_border}
 
     def find_reachable_pieces(self, square_to_reach):
         """

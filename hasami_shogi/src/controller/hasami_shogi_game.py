@@ -1,5 +1,6 @@
 from hasami_shogi.src.controller.game_board import GameBoard
 from hasami_shogi.src.controller.capture_cluster import CaptureCluster, VerticalCaptureCluster, HorizontalCaptureCluster
+from hasami_shogi.src.controller.cluster_collection import ClusterCollection
 import hasami_shogi.src.controller.hasami_shogi_utilities as utils
 
 
@@ -26,18 +27,22 @@ class HasamiShogiGame:
         self._inactive_player = "RED"  # BLACK, RED
         self._captured_pieces = {"RED": 0, "BLACK": 0}
         self.move_log = []
-        self.clusters: dict[str][list[CaptureCluster]] = {
-            "BLACK": [VerticalCaptureCluster({sq}, "BLACK", self._game_board) for sq in self._game_board.get_squares_by_color(
-                "BLACK")],
-            "RED": [VerticalCaptureCluster({sq}, "RED", self._game_board) for sq in self._game_board.get_squares_by_color(
-                "RED")]
-        }
-        self.clusters["BLACK"].append(HorizontalCaptureCluster(self._game_board.get_squares_by_color("BLACK"),
-                                                               "BLACK", self._game_board))
-        self.clusters["RED"].append(HorizontalCaptureCluster(self._game_board.get_squares_by_color("RED"), "RED",
-                                                             self._game_board))
-        self.clusters["BLACK"].sort(key=lambda cl: len(cl), reverse=True)
-        self.clusters["RED"].sort(key=lambda cl: len(cl), reverse=True)
+
+        black_squares = self._game_board.get_squares_by_color("BLACK")
+        red_squares = self._game_board.get_squares_by_color("RED")
+        self.clusters = ClusterCollection(black_squares=black_squares, red_squares=red_squares, board=self._game_board)
+        # self.clusters: dict[str][list[CaptureCluster]] = {
+        #     "BLACK": [VerticalCaptureCluster({sq}, "BLACK", self._game_board) for sq in self._game_board.get_squares_by_color(
+        #         "BLACK")],
+        #     "RED": [VerticalCaptureCluster({sq}, "RED", self._game_board) for sq in self._game_board.get_squares_by_color(
+        #         "RED")]
+        # }
+        # self.clusters["BLACK"].append(HorizontalCaptureCluster(self._game_board.get_squares_by_color("BLACK"),
+        #                                                        "BLACK", self._game_board))
+        # self.clusters["RED"].append(HorizontalCaptureCluster(self._game_board.get_squares_by_color("RED"), "RED",
+        #                                                      self._game_board))
+        # self.clusters["BLACK"].sort(key=lambda cl: len(cl), reverse=True)
+        # self.clusters["RED"].sort(key=lambda cl: len(cl), reverse=True)
 
     def get_game_board(self) -> GameBoard:
         """Returns the game board object."""
@@ -76,9 +81,9 @@ class HasamiShogiGame:
         old_value = self.get_square_occupant(square_string)
         self.get_game_board().set_square(square_string, value)
         if old_value != "NONE":
-            self.update_clusters_at_old_location(square_string, old_value)
+            self.clusters.update_clusters_departing(square_string)
         if value != "NONE":
-            self.update_clusters_at_new_location(square_string, value)
+            self.clusters.update_clusters_arriving(square_string)
 
     def set_square_occupants(self, list_of_squares, value):
         """
@@ -93,38 +98,39 @@ class HasamiShogiGame:
         self.set_square_occupant(moving_from, "NONE")
         self.set_square_occupant(moving_to, piece_moving)
 
-    def update_clusters_at_old_location(self, moving_from, color):
-        curr_cluster_list = self.clusters[color]
-        broken_clusters = [cluster for cluster in curr_cluster_list if moving_from in cluster]
-
-        # Update old clusters
-        for cluster in broken_clusters:
-            results = cluster.release(moving_from)
-            for cluster_to_remove in results.to_remove:
-                curr_cluster_list.remove(cluster_to_remove)
-            curr_cluster_list.extend(results.to_add)
-
-    def update_clusters_at_new_location(self, moving_to, color):
-        curr_cluster_list = self.clusters[color]
-        # Create new ones
-        new_h_cluster = HorizontalCaptureCluster({moving_to}, color, self._game_board)
-        new_v_cluster = VerticalCaptureCluster({moving_to}, color, self._game_board)
-        curr_cluster_list.extend([new_h_cluster, new_v_cluster])
-
-        # Connect
-        h_merges = [cluster for cluster in curr_cluster_list if new_h_cluster.can_merge_with(cluster)]
-        v_merges = [cluster for cluster in curr_cluster_list if new_v_cluster.can_merge_with(cluster)]
-
-        for cluster in h_merges:
-            results = new_h_cluster.merge(cluster)
-            for cluster_to_remove in results.to_remove:
-                curr_cluster_list.remove(cluster_to_remove)
-
-        for cluster in v_merges:
-            results = new_v_cluster.merge(cluster)
-            for cluster_to_remove in results.to_remove:
-                curr_cluster_list.remove(cluster_to_remove)
-            curr_cluster_list.extend(results.to_add)
+    # def update_clusters_at_old_location(self, moving_from, color):
+    #     curr_cluster_list = self.clusters[color]
+    #     broken_clusters = [cluster for cluster in curr_cluster_list if moving_from in cluster]
+    #
+    #     # Update old clusters
+    #     for cluster in broken_clusters:
+    #         results = cluster.release(moving_from)
+    #         for cluster_to_remove in results.to_remove:
+    #             curr_cluster_list.remove(cluster_to_remove)
+    #         curr_cluster_list.extend(results.to_add)
+    #
+    # def update_clusters_at_new_location(self, moving_to, color):
+    #     curr_cluster_list = self.clusters[color]
+    #     # Create new ones
+    #     new_h_cluster = HorizontalCaptureCluster({moving_to}, color, self._game_board)
+    #     new_v_cluster = VerticalCaptureCluster({moving_to}, color, self._game_board)
+    #     curr_cluster_list.extend([new_h_cluster, new_v_cluster])
+    #
+    #     # Connect
+    #     clusters_to_merge = [cluster for cluster in curr_cluster_list if moving_to in cluster.get_borders()]
+    #     h_merges = [cluster for cluster in clusters_to_merge if new_h_cluster.can_merge_with(cluster)]
+    #     v_merges = [cluster for cluster in clusters_to_merge if new_v_cluster.can_merge_with(cluster)]
+    #
+    #     for cluster in h_merges:
+    #         results = new_h_cluster.merge(cluster)
+    #         for cluster_to_remove in results.to_remove:
+    #             curr_cluster_list.remove(cluster_to_remove)
+    #
+    #     for cluster in v_merges:
+    #         results = new_v_cluster.merge(cluster)
+    #         for cluster_to_remove in results.to_remove:
+    #             curr_cluster_list.remove(cluster_to_remove)
+    #         curr_cluster_list.extend(results.to_add)
 
     def path_is_clear(self, moving_from, moving_to):
         move_path = utils.build_square_string_range(moving_from, moving_to)
@@ -168,16 +174,20 @@ class HasamiShogiGame:
         # captured_squares = [square for sublist in captured_lists if sublist for square in sublist]
         # return captured_squares
 
-        pot_cap_clusters = [cluster for cluster in self.clusters[self._inactive_player] if cluster.get_other_border(
-            moved_to)]
-        captured_clusters = [cluster for cluster in pot_cap_clusters if self.get_square_occupant(
-            cluster.get_other_border(moved_to)) == self._active_player]
-        capture_squares = []
-        for cluster in captured_clusters:
-            capture_squares += list(cluster.squares)
-            self.clusters[self._inactive_player].remove(cluster)
+        # pot_cap_clusters = [cluster for cluster in self.clusters[self._inactive_player] if cluster.get_other_border(
+        #     moved_to)]
+        # captured_clusters = [cluster for cluster in pot_cap_clusters if self.get_square_occupant(
+        #     cluster.get_other_border(moved_to)) == self._active_player]
+        # capture_squares = []
+        # for cluster in captured_clusters:
+        #     capture_squares += list(cluster.squares)
+        #     self.clusters[self._inactive_player].remove(cluster)
 
-        return capture_squares
+        captured_square_groups = [cluster.squares for cluster in self.clusters.vulnerable_clusters[
+            self._inactive_player] if
+                             cluster.risky_border == moved_to]
+        captured_squares = set().union(*captured_square_groups)
+        return list(captured_squares)
 
     def check_corner_capture(self, moved_to):
         """Checks for a capture in the corner. Removes enemy piece in corner. Must occur after linear check for
