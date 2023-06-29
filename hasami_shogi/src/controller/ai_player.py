@@ -20,7 +20,6 @@ class AIPlayer(Player):
         self.is_maximizing = self.get_color() == "BLACK"
         self.initial_best_score = -9999 if self.is_maximizing else 9999
         self.print_piece_sets = False
-        self.positional_score = 0
 
     def find_cap_partner(self, capturing_piece, captured_piece):
         """
@@ -140,12 +139,11 @@ class AIPlayer(Player):
         Takes a square string and returns a point value based on how close it is to the center of the board.
         O(1).
         """
-        # output = 0
-        # for piece in self.get_pieces():
-        #     row, col = string_to_index(piece)
-        #     output += (8 - row) * row * (8 - col) * col
-        # return output
-        return self.positional_score
+        output = 0
+        for piece in self.get_pieces():
+            row, col = string_to_index(piece)
+            output += (8 - row) * row * (8 - col) * col
+        return output
 
     def get_capture_heuristic(self):
         """
@@ -258,24 +256,6 @@ class AIPlayer(Player):
         next_move = self.minimax(depth)
         print(next_move)
         self.make_move(next_move[0][:2], next_move[0][2:])
-
-    @staticmethod
-    def score_position(square):
-        row_index, col_index = string_to_index(square)
-        return (8 - row_index) * row_index * (8-col_index) * col_index
-
-    def make_move(self, start, destination):
-        if super().make_move(start, destination):
-            old_position = self.score_position(start)
-            new_position = self.score_position(destination)
-            self.positional_score += new_position - old_position
-    
-    def undo_move(self):
-        latest_move = self.get_game().move_log[-1]
-        start = latest_move.move[2:]
-        dest = latest_move.move[:2]
-        self.positional_score += self.score_position(dest) - self.score_position(start)
-        super().undo_move()
 
 
 if __name__ == '__main__':
