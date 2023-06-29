@@ -10,6 +10,7 @@ class AIPlayer(Player):
     H_WIN = 9999                    # Weight for a winning move
     H_MATERIAL = 200                # Weight for number of pieces on board vs enemy's
     H_CAPTURE = 100                # Weight for setting up a capture
+    H_POT_CAP = 20
     H_CENTER = 1 / 16             # Weight for being in a central position
 
     def __init__(self, *args, **kwargs):
@@ -19,6 +20,7 @@ class AIPlayer(Player):
         self.is_maximizing = self.get_color() == "BLACK"
         self.initial_best_score = -9999 if self.is_maximizing else 9999
         self.print_piece_sets = False
+        self.positional_score = 16
 
     def find_cap_partner(self, capturing_piece, captured_piece):
         """
@@ -72,8 +74,8 @@ class AIPlayer(Player):
         #             pot_caps[square] = pot_caps.get(square, 0) + value
         #
         # return pot_caps
-        opp_clusters = self.get_game().clusters[self.get_opposing_color()]
-        return {cluster.risky_border: len(cluster) for cluster in opp_clusters if cluster.risky_border}
+        vulnerable_clusters = self.get_game().clusters.vulnerable_clusters[self.get_opposing_color()]
+        return {cluster.risky_border: len(cluster) for cluster in vulnerable_clusters}
 
     def find_reachable_pieces(self, square_to_reach):
         """
@@ -138,32 +140,47 @@ class AIPlayer(Player):
         Takes a square string and returns a point value based on how close it is to the center of the board.
         O(1).
         """
-        output = 0
-        for piece in self.get_pieces():
-            row, col = string_to_index(piece)
-            output += (8 - row) * row * (8 - col) * col
-        return output
+        # output = 0
+        # for piece in self.get_pieces():
+        #     row, col = string_to_index(piece)
+        #     output += (8 - row) * row * (8 - col) * col
+        # return output
+        return self.positional_score
 
     def get_capture_heuristic(self):
         """
         Returns static evaluation of game piece dict {'RED': {pieces}, 'BLACK': {pieces}} based on potential capture
         analysis. Score represents potential net gain for active player (always non-negative).
         """
-        material_advantage = len(self.get_pieces()) - len(self.get_opposing_player().get_pieces())
+        # material_advantage = len(self.get_pieces()) - len(self.get_opposing_player().get_pieces())
+        #
+        # # Check if any potential capture squares are reachable for both players, assume sorted best first.
+        # active_cap_moves = self.find_capture_moves()
+        # active_best = active_cap_moves[0][1] if active_cap_moves else 0
+        # opp_cap_moves = self.get_opposing_player().find_capture_moves()
+        #
+        # if not opp_cap_moves:           # No opposition, active makes best move.
+        #     return active_best
+        #
+        # opp_best = opp_cap_moves[0][1]
+        # opp_next_best = opp_cap_moves[1][1] if len(opp_cap_moves) > 1 else 0
+        # tradeoff = active_best - opp_best + material_advantage      # Play more aggressive/timid based on material
+        #
+        # return max(tradeoff, opp_next_best)
 
-        # Check if any potential capture squares are reachable for both players, assume sorted best first.
-        active_cap_moves = self.find_capture_moves()
-        active_best = active_cap_moves[0][1] if active_cap_moves else 0
-        opp_cap_moves = self.get_opposing_player().find_capture_moves()
+        pass
 
-        if not opp_cap_moves:           # No opposition, active makes best move.
-            return active_best
-
-        opp_best = opp_cap_moves[0][1]
-        opp_next_best = opp_cap_moves[1][1] if len(opp_cap_moves) > 1 else 0
-        tradeoff = active_best - opp_best + material_advantage      # Play more aggressive/timid based on material
-
-        return max(tradeoff, opp_next_best)
+    def get_potential_capture_heuristic(self):
+        """
+        Find all risky clusters and compare.
+        """
+        active_potential_captures = [cluster.squares for cluster in self.get_game().clusters.vulnerable_clusters[
+                                         self.get_opposing_color()]]
+        opp_potential_captures = [cluster.squares for cluster in self.get_game().clusters.vulnerable_clusters[
+            self.get_color()]]
+        num_active = len(set().union(*active_potential_captures))
+        num_opp = len(set().union(*opp_potential_captures))
+        return num_active - num_opp
 
     def get_heuristic(self):
         """
@@ -174,7 +191,8 @@ class AIPlayer(Player):
         material_points = (len(self.get_pieces()) - len(self.get_opposing_player().get_pieces())) * AIPlayer.H_MATERIAL
         center_points = (self.get_center_heuristic() - self.get_opposing_player().get_center_heuristic()) * \
                         AIPlayer.H_CENTER
-        pot_cap_points = self.get_capture_heuristic() * AIPlayer.H_CAPTURE
+        # cap_points = self.get_capture_heuristic() * AIPlayer.H_CAPTURE
+        pot_cap_points = self.get_potential_capture_heuristic() * AIPlayer.H_POT_CAP
         victory_points = AIPlayer.H_WIN if self.did_win() else 0
 
         total = material_points + center_points + pot_cap_points + victory_points
@@ -243,6 +261,24 @@ class AIPlayer(Player):
         print(next_move)
         self.make_move(next_move[0][:2], next_move[0][2:])
 
+    @staticmethod
+    def score_position(square):
+        row_index, col_index = string_to_index(square)
+        return 8 - abs(4 - row_index) - abs(4 - col_index)
+
+    def make_move(self, start, destination):
+        if super().make_move(start, destination):
+            old_position = self.score_position(start)
+            new_position = self.score_position(destination)
+            self.positional_score += new_position - old_position
+    
+    def undo_move(self):
+        latest_move = self.get_game().move_log[-1]
+        start = latest_move.move[2:]
+        dest = latest_move.move[:2]
+        self.positional_score += self.score_position(dest) - self.score_position(start)
+        super().undo_move()
+
 
 if __name__ == '__main__':
     from hasami_shogi.src.controller.hasami_shogi_game import HasamiShogiGame
@@ -254,6 +290,17 @@ if __name__ == '__main__':
     ai1 = AIPlayer(g, "BLACK")
     ai2 = AIPlayer(g, "RED")
     ai1.set_opposing_player(ai2)
+    # ai1.make_move("i5", "e5")
+    # print(ai1.positional_score)
+    # ai2.make_move("a5", "d5")
+    # print(ai2.positional_score)
+    # ai1.make_move("i1", "b1")
+    # print(ai1.positional_score)
+    # ai1.undo_move()
+    # ai2.undo_move()
+    # ai1.undo_move()
+    # print(ai1.positional_score)
+    # print(ai2.positional_score)
     cProfile.run("ai1.minimax(3)", "minimax-stats")
     p = pstats.Stats("minimax-stats")
     p.strip_dirs().sort_stats(SortKey.CUMULATIVE).print_stats()

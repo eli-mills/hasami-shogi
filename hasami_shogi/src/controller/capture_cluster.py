@@ -35,7 +35,7 @@ class CaptureCluster:
         self.board = board
         self.risky_border = ""
 
-        self.validation()
+        # self.validation()
         self.find_lower_border()
         self.find_upper_border()
         self.check_if_capturable()

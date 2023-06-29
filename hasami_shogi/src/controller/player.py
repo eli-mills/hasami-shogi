@@ -1,3 +1,6 @@
+from hasami_shogi.src.controller.hasami_shogi_game import HasamiShogiGame
+
+
 class Player:
     """Defines the methods for a player of Hasami Shogi."""
     def __init__(self, game, color):
@@ -11,7 +14,7 @@ class Player:
         """Returns True if current player is active."""
         return self._game.get_active_player() == self._color
 
-    def get_game(self):
+    def get_game(self) -> HasamiShogiGame:
         """Returns the current game."""
         return self._game
 
