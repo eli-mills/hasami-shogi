@@ -96,7 +96,8 @@ class ClusterCollection:
         self.update_vulnerable_clusters(square)
 
     def add_vulnerable_cluster(self, cluster):
-        self.vulnerable_clusters[cluster.color].append(cluster)
+        if cluster not in self.vulnerable_clusters[cluster.color]:
+            self.vulnerable_clusters[cluster.color].append(cluster)
 
     def remove_vulnerable_cluster(self, cluster):
         if cluster in self.vulnerable_clusters[cluster.color]:
@@ -106,7 +107,7 @@ class ClusterCollection:
         """
         Given a square where a piece either left or arrived, updates currently vulnerable clusters.
         """
-        for cluster in self.clusters_by_border[square]:
+        for cluster in self.clusters_by_border[square] + self.clusters_by_member[square]:
             cluster.check_if_capturable()
             if cluster.risky_border:
                 self.add_vulnerable_cluster(cluster)

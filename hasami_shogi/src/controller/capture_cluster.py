@@ -80,9 +80,13 @@ class CaptureCluster:
         if self.board.get_square(self.lower_border) == self.board.get_square(self.upper_border) == "NONE":
             self.risky_border = ""
             return None
-        self.risky_border = self.lower_border if self.board.get_square(self.lower_border) == "NONE" else \
-            self.upper_border
-        return None
+        if self.board.get_square(self.lower_border) == "NONE":
+            self.risky_border = self.lower_border
+            return None
+        if self.board.get_square(self.upper_border) == "NONE":
+            self.risky_border = self.upper_border
+            return None
+
 
     def update_lower_occ(self):
         self.lower_occ = min(self.squares)
