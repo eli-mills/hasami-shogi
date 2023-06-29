@@ -20,7 +20,7 @@ class AIPlayer(Player):
         self.is_maximizing = self.get_color() == "BLACK"
         self.initial_best_score = -9999 if self.is_maximizing else 9999
         self.print_piece_sets = False
-        self.positional_score = 16
+        self.positional_score = 0
 
     def find_cap_partner(self, capturing_piece, captured_piece):
         """
@@ -152,35 +152,33 @@ class AIPlayer(Player):
         Returns static evaluation of game piece dict {'RED': {pieces}, 'BLACK': {pieces}} based on potential capture
         analysis. Score represents potential net gain for active player (always non-negative).
         """
-        # material_advantage = len(self.get_pieces()) - len(self.get_opposing_player().get_pieces())
-        #
-        # # Check if any potential capture squares are reachable for both players, assume sorted best first.
-        # active_cap_moves = self.find_capture_moves()
-        # active_best = active_cap_moves[0][1] if active_cap_moves else 0
-        # opp_cap_moves = self.get_opposing_player().find_capture_moves()
-        #
-        # if not opp_cap_moves:           # No opposition, active makes best move.
-        #     return active_best
-        #
-        # opp_best = opp_cap_moves[0][1]
-        # opp_next_best = opp_cap_moves[1][1] if len(opp_cap_moves) > 1 else 0
-        # tradeoff = active_best - opp_best + material_advantage      # Play more aggressive/timid based on material
-        #
-        # return max(tradeoff, opp_next_best)
+        material_advantage = len(self.get_pieces()) - len(self.get_opposing_player().get_pieces())
 
-        pass
+        # Check if any potential capture squares are reachable for both players, assume sorted best first.
+        active_cap_moves = self.find_capture_moves()
+        active_best = active_cap_moves[0][1] if active_cap_moves else 0
+        opp_cap_moves = self.get_opposing_player().find_capture_moves()
 
-    def get_potential_capture_heuristic(self):
-        """
-        Find all risky clusters and compare.
-        """
-        active_potential_captures = [cluster.squares for cluster in self.get_game().clusters.vulnerable_clusters[
-                                         self.get_opposing_color()]]
-        opp_potential_captures = [cluster.squares for cluster in self.get_game().clusters.vulnerable_clusters[
-            self.get_color()]]
-        num_active = len(set().union(*active_potential_captures))
-        num_opp = len(set().union(*opp_potential_captures))
-        return num_active - num_opp
+        if not opp_cap_moves:           # No opposition, active makes best move.
+            return active_best
+
+        opp_best = opp_cap_moves[0][1]
+        opp_next_best = opp_cap_moves[1][1] if len(opp_cap_moves) > 1 else 0
+        tradeoff = active_best - opp_best + material_advantage      # Play more aggressive/timid based on material
+
+        return max(tradeoff, opp_next_best)
+
+    # def get_potential_capture_heuristic(self):
+    #     """
+    #     Find all risky clusters and compare.
+    #     """
+    #     active_potential_captures = [cluster.squares for cluster in self.get_game().clusters.vulnerable_clusters[
+    #                                      self.get_opposing_color()]]
+    #     opp_potential_captures = [cluster.squares for cluster in self.get_game().clusters.vulnerable_clusters[
+    #         self.get_color()]]
+    #     num_active = len(set().union(*active_potential_captures))
+    #     num_opp = len(set().union(*opp_potential_captures))
+    #     return num_active - num_opp
 
     def get_heuristic(self):
         """
@@ -191,11 +189,11 @@ class AIPlayer(Player):
         material_points = (len(self.get_pieces()) - len(self.get_opposing_player().get_pieces())) * AIPlayer.H_MATERIAL
         center_points = (self.get_center_heuristic() - self.get_opposing_player().get_center_heuristic()) * \
                         AIPlayer.H_CENTER
-        # cap_points = self.get_capture_heuristic() * AIPlayer.H_CAPTURE
-        pot_cap_points = self.get_potential_capture_heuristic() * AIPlayer.H_POT_CAP
+        cap_points = self.get_capture_heuristic() * AIPlayer.H_CAPTURE
+        # pot_cap_points = self.get_potential_capture_heuristic() * AIPlayer.H_POT_CAP
         victory_points = AIPlayer.H_WIN if self.did_win() else 0
 
-        total = material_points + center_points + pot_cap_points + victory_points
+        total = material_points + center_points + cap_points + victory_points
         return total if self.is_maximizing else -total
 
     def make_ai_clone(self):
@@ -264,7 +262,7 @@ class AIPlayer(Player):
     @staticmethod
     def score_position(square):
         row_index, col_index = string_to_index(square)
-        return 8 - abs(4 - row_index) - abs(4 - col_index)
+        return (8 - row_index) * row_index * (8-col_index) * col_index
 
     def make_move(self, start, destination):
         if super().make_move(start, destination):
