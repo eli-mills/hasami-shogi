@@ -1,52 +1,51 @@
 from hasami_shogi.src.controller.game_board import GameBoard
 
 
-class CaptureCluster:
-    class ClusterOpResult:
-        def __init__(self):
-            self.to_remove = []
-            self.to_add = []
+class ClusterOpResult:
+    def __init__(self):
+        self.to_remove = []
+        self.to_add = []
 
-        def __bool__(self):
-            return self.to_add or self.to_remove
+    def __bool__(self):
+        return self.to_add or self.to_remove
 
-        def __add__(self, other):
-            output = CaptureCluster.ClusterOpResult()
-            output.to_remove = self.to_remove + other.to_remove
-            output.to_add = self.to_add + other.to_add
-            return output
+    def __add__(self, other):
+        output = ClusterOpResult()
+        output.to_remove = self.to_remove + other.to_remove
+        output.to_add = self.to_add + other.to_add
+        return output
 
-        def extend_to_remove(self, cluster_list: list["CaptureCluster"]):
-            self.to_remove.extend(cluster_list)
+    def __repr__(self):
+        return f"Add {self.to_add}; Remove {self.to_remove}"
 
-        def extend_to_add(self, cluster_list: list["CaptureCluster"]):
-            self.to_add.extend(cluster_list)
+    def extend_to_remove(self, cluster_list: list["Cluster"]):
+        self.to_remove.extend(cluster_list)
 
-        def combine_another_result(self, result: "CaptureCluster.ClusterOpResult"):
-            self.to_remove.extend(result.to_remove)
-            self.to_add.extend(result.to_add)
+    def extend_to_add(self, cluster_list: list["Cluster"]):
+        self.to_add.extend(cluster_list)
 
+    def combine_another_result(self, result: "ClusterOpResult"):
+        self.to_remove.extend(result.to_remove)
+        self.to_add.extend(result.to_add)
+
+
+class Cluster:
     def __init__(self, squares: set, color: str, board: GameBoard):
         self.board: GameBoard = board
         self.squares: set = squares
         self.color: str = color
-        self.opp_color = self.board.opposite_color(self.color)
         self.lower_occ, self.upper_occ = min(squares), max(squares)
         self.lower_border = self.upper_border = None
-        self.lb_value = self.ub_value = None
-        self.risky_border = ""
-        self.is_captured = False
 
         # self.validation()
         self.find_lower_border()
         self.find_upper_border()
-        self.check_if_capturable()
 
     def __len__(self):
         return len(self.squares)
 
     def __repr__(self):
-        return type(self).__name__ + self.color + repr(self.squares)
+        return type(self).__name__ + repr(self.squares)
 
     def __contains__(self, item):
         return item in self.squares
@@ -62,7 +61,7 @@ class CaptureCluster:
         if square not in self.squares:
             raise ValueError(f"{square} not in self.squares {self.squares}")
 
-    def merge_validation(self, merging_cluster: "CaptureCluster"):
+    def merge_validation(self, merging_cluster: "Cluster"):
         if self.upper_occ != merging_cluster.lower_border and merging_cluster.upper_occ != self.lower_border:
             raise ValueError(f"Cannot merge the two clusters")
         if type(self) != type(merging_cluster):
@@ -78,27 +77,6 @@ class CaptureCluster:
         """Set self.upper_border"""
         raise NotImplementedError
 
-    def check_if_capturable(self) -> None:
-        if self.risky_border and self.board.get_square(self.risky_border) == self.opp_color:
-            self.is_captured = True
-            self.risky_border = ""
-            return None
-        if not self.lower_border or not self.upper_border:
-            self.risky_border = ""
-            return None
-        lb_val = self.board.get_square(self.lower_border)
-        ub_val = self.board.get_square(self.upper_border)
-        if lb_val == ub_val == "NONE":
-            self.risky_border = ""
-            return None
-        if lb_val == "NONE":
-            self.risky_border = self.lower_border
-        elif ub_val == "NONE":
-            self.risky_border = self.upper_border
-        else:
-            self.risky_border = ""
-        return None
-
     def update_lower_occ(self):
         self.lower_occ = min(self.squares)
 
@@ -107,7 +85,7 @@ class CaptureCluster:
 
     def release(self, square: str) -> ClusterOpResult:
         self.raise_if_bad_square(square)
-        result = CaptureCluster.ClusterOpResult()
+        result = ClusterOpResult()
 
         if len(self.squares) == 1:
             result.extend_to_remove([self])
@@ -135,14 +113,14 @@ class CaptureCluster:
         result.extend_to_remove([self])
         return result
 
-    def can_merge_with(self, merging_cluster: "CaptureCluster") -> bool:
+    def can_merge_with(self, merging_cluster: "Cluster") -> bool:
         try:
             self.merge_validation(merging_cluster)
         except ValueError:
             return False
         return True
 
-    def merge(self, merging_cluster: "CaptureCluster") -> ClusterOpResult:
+    def merge(self, merging_cluster: "Cluster") -> ClusterOpResult:
         """
         Raise ValueError if merge not possible.
         """
@@ -152,18 +130,17 @@ class CaptureCluster:
         self.upper_occ = max(self.upper_occ, merging_cluster.upper_occ)
         self.find_upper_border()
         self.find_lower_border()
-        self.check_if_capturable()
 
-        results = CaptureCluster.ClusterOpResult()
+        results = ClusterOpResult()
         results.extend_to_remove([merging_cluster])
 
         return results
 
-    def merge_with_multiple(self, cluster_list: list["CaptureCluster"]) -> ClusterOpResult:
+    def merge_with_multiple(self, cluster_list: list["Cluster"]) -> ClusterOpResult:
         """
         Merges with every cluster in list, becoming only remaining cluster. Every cluster on list will be set to remove.
         """
-        results = CaptureCluster.ClusterOpResult()
+        results = ClusterOpResult()
         for cluster in cluster_list:
             results += self.merge(cluster)
         return results
@@ -172,7 +149,7 @@ class CaptureCluster:
         return {self.lower_border, self.upper_border}
 
     def get_other_border(self, square: str) -> str:
-        border_squares = self.get_borders()
+        border_squares: set = self.get_borders()
         if square not in border_squares:
             return ""
         border_squares.remove(square)
@@ -180,6 +157,45 @@ class CaptureCluster:
 
     def is_at_edge(self):
         return "" in self.get_borders()
+
+
+class CaptureCluster(Cluster):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.opp_color: str = self.board.opposite_color(self.color)
+        self.risky_border = ""
+        self.is_captured = False
+        self.check_if_capturable()
+
+    def check_if_capturable(self) -> None:
+        if self.risky_border and self.board.get_square(self.risky_border) == self.opp_color:
+            self.is_captured = True
+            self.risky_border = ""
+            return None
+        if not self.lower_border or not self.upper_border:
+            self.risky_border = ""
+            return None
+
+        lb_val = self.board.get_square(self.lower_border)
+        ub_val = self.board.get_square(self.upper_border)
+        if lb_val == ub_val == "NONE":
+            self.risky_border = ""
+            return None
+        if lb_val == "NONE":
+            self.risky_border = self.lower_border
+        elif ub_val == "NONE":
+            self.risky_border = self.upper_border
+        else:
+            self.risky_border = ""
+        return None
+
+    def merge(self, *args, **kwargs) -> ClusterOpResult:
+        """
+        Raise ValueError if merge not possible.
+        """
+        results = super().merge(*args, **kwargs)
+        self.check_if_capturable()
+        return results
 
 
 class VerticalCaptureCluster(CaptureCluster):

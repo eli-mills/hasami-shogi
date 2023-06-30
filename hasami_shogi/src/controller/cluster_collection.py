@@ -1,4 +1,5 @@
-from hasami_shogi.src.controller.capture_cluster import CaptureCluster, VerticalCaptureCluster, HorizontalCaptureCluster
+from hasami_shogi.src.controller.capture_cluster import ClusterOpResult, CaptureCluster, VerticalCaptureCluster, \
+    HorizontalCaptureCluster
 from hasami_shogi.src.controller.game_board import GameBoard
 
 
@@ -61,7 +62,7 @@ class ClusterCollection:
         Releases square from existing clusters. Uses results of release operation to update internal state.
         """
         # Update same-color clusters
-        results = CaptureCluster.ClusterOpResult()
+        results = ClusterOpResult()
 
         for cluster in list(self.clusters_by_member[square]):
             results += cluster.release(square)
