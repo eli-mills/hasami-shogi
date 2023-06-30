@@ -74,8 +74,12 @@ class HasamiShogiGame:
         self.get_game_board().set_square(square_string, value)
         if old_value != "NONE":
             self.clusters.update_clusters_departing(square_string)
+        else:
+            self.tubes.update_clusters_departing(square_string)
         if value != "NONE":
             self.clusters.update_clusters_arriving(square_string)
+        else:
+            self.tubes.update_clusters_arriving(square_string)
 
     def set_square_occupants(self, list_of_squares, value):
         """
@@ -91,8 +95,7 @@ class HasamiShogiGame:
         self.set_square_occupant(moving_to, piece_moving)
 
     def path_is_clear(self, moving_from, moving_to):
-        move_path = utils.build_square_string_range(moving_from, moving_to)
-        return False not in {self.get_square_occupant(x) == "NONE" for x in move_path[1:]}
+        return bool([tube for tube in self.tubes.clusters_by_border[moving_from] if moving_to in tube])
 
     def is_move_legal(self, moving_from, moving_to):
         """Checks if move from first square to second is legal. Returns True if so, False if not."""
@@ -104,42 +107,10 @@ class HasamiShogiGame:
             and moving_from != moving_to\
             and self.path_is_clear(moving_from, moving_to)
 
-    def find_captured_squares(self, from_square, to_square):
-        """
-        Return list of captured squares between from_ and to_square (exclusive), or False if from_ and to_ do not
-        form a valid capture.
-        """
-        capturing_color = self.get_square_occupant(from_square)
-        range_to_check = utils.build_square_string_range(from_square, to_square)[1:]
-        square_value_list = [self.get_square_occupant(x) for x in range_to_check]
-
-        end_cap = square_value_list.index(capturing_color) if capturing_color in square_value_list else -1
-        first_empty = square_value_list.index("NONE") if "NONE" in square_value_list else -1
-
-        return False if end_cap <= 0 or 0 <= first_empty < end_cap else range_to_check[:end_cap]
-
     def check_linear_captures(self, moved_to):
         """Searches four directions around latest move, captures pieces, and updates capture counts."""
         if type(moved_to) != str and len(moved_to) != 2:
             raise ValueError(f"check_linear_captures needs a 2-character square string. moved_to = {moved_to}")
-
-        # # Determine 4 limits to the edges of the board.
-        # row, col = moved_to
-        # search_limits = [f"{row}1", f"{row}9", f"a{col}", f"i{col}"]
-        #
-        # # Check each direction for captures up to the edges of the board.
-        # captured_lists = [self.find_captured_squares(moved_to, limit) for limit in search_limits]
-        # captured_squares = [square for sublist in captured_lists if sublist for square in sublist]
-        # return captured_squares
-
-        # pot_cap_clusters = [cluster for cluster in self.clusters[self._inactive_player] if cluster.get_other_border(
-        #     moved_to)]
-        # captured_clusters = [cluster for cluster in pot_cap_clusters if self.get_square_occupant(
-        #     cluster.get_other_border(moved_to)) == self._active_player]
-        # capture_squares = []
-        # for cluster in captured_clusters:
-        #     capture_squares += list(cluster.squares)
-        #     self.clusters[self._inactive_player].remove(cluster)
 
         capture_list = list(self.clusters.captured_squares)
         self.clusters.clear_captures()
