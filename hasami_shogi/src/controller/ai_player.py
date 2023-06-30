@@ -89,7 +89,7 @@ class AIPlayer(Player):
         Checks if a given square is reachable with any of the given color's pieces. Returns set of pieces that can
         reach the given square.
         """
-        return {piece for piece in self.get_pieces() if self.get_board().square_is_reachable(piece, square_to_reach)}
+        return {piece for piece in self.get_pieces() if self.get_game().path_is_clear(piece, square_to_reach)}
 
     def find_capture_moves(self):
         """
