@@ -81,6 +81,7 @@ class CaptureCluster:
     def check_if_capturable(self) -> None:
         if self.risky_border and self.board.get_square(self.risky_border) == self.opp_color:
             self.is_captured = True
+            self.risky_border = ""
             return None
         if not self.lower_border or not self.upper_border:
             self.risky_border = ""

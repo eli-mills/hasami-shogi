@@ -113,7 +113,7 @@ class ClusterCollection:
             cluster.check_if_capturable()
             if cluster.is_captured:
                 self.report_captured(cluster)
-            elif cluster.risky_border:
+            if cluster.risky_border:
                 self.add_vulnerable_cluster(cluster)
             else:
                 self.remove_vulnerable_cluster(cluster)
