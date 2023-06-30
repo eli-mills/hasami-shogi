@@ -1,6 +1,6 @@
 from hasami_shogi.src.controller.game_board import GameBoard
 from hasami_shogi.src.controller.capture_cluster import CaptureCluster, VertCapCluster, HorCapCluster
-from hasami_shogi.src.controller.cluster_collection import CapClusterCollection
+from hasami_shogi.src.controller.cluster_collection import CapClusterCollection, TubeCollection
 import hasami_shogi.src.controller.hasami_shogi_utilities as utils
 
 
@@ -34,6 +34,7 @@ class HasamiShogiGame:
         self.move_log = []
 
         self.clusters = CapClusterCollection(board=self._game_board)
+        self.tubes = TubeCollection(board=self._game_board)
 
     def get_game_board(self) -> GameBoard:
         """Returns the game board object."""

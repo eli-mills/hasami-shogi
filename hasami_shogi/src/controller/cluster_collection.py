@@ -1,5 +1,5 @@
 from hasami_shogi.src.controller.capture_cluster import ClusterOpResult, Cluster, VertCapCluster, \
-    HorCapCluster, VerticalCluster, HorizontalCluster, CaptureCluster
+    HorCapCluster, VerticalCluster, HorizontalCluster, CaptureCluster, VertTube, HorTube, Tube
 from hasami_shogi.src.controller.game_board import GameBoard
 
 
@@ -16,10 +16,22 @@ class ClusterCollection:
         self.all_clusters = []
         self.clusters_by_member = {}
         self.clusters_by_border = {}
-        self.initialize_clusters()
+        self.initialize_all_clusters()
 
-    def initialize_clusters(self):
+    def initialize_all_clusters(self):
         raise NotImplementedError
+
+    def initialize_clusters_by_member(self):
+        self.clusters_by_member = {
+            square: [cluster for cluster in self.all_clusters if square in cluster]
+            for square in self.board.get_all_squares()
+        }
+
+    def initialize_clusters_by_border(self):
+        self.clusters_by_border = {
+            border: [cluster for cluster in self.all_clusters if border in cluster.get_borders()]
+            for border in self.board.get_all_squares()
+        }
 
     def remove_cluster(self, cluster: Cluster) -> None:
         self.all_clusters and self.all_clusters.remove(cluster)
@@ -84,7 +96,7 @@ class CapClusterCollection(ClusterCollection):
 
         super().__init__(*args, **kwargs)
 
-    def initialize_clusters(self):
+    def initialize_all_clusters(self):
         black_squares = self.board.get_squares_by_color("BLACK")
         red_squares = self.board.get_squares_by_color("RED")
         black_v_clusters = [self.V_TYPE({sq}, self.board) for sq in black_squares]
@@ -93,20 +105,12 @@ class CapClusterCollection(ClusterCollection):
         red_h_cluster = self.H_TYPE(red_squares, self.board)
 
         self.all_clusters = [black_h_cluster] + [red_h_cluster] + black_v_clusters + red_v_clusters
+        self.initialize_clusters_by_member()
+        self.initialize_clusters_by_border()
 
         self.clusters_by_color = {
             "BLACK": [black_h_cluster] + black_v_clusters,
             "RED": [red_h_cluster] + red_v_clusters
-        }
-
-        self.clusters_by_member = {
-            square: [cluster for cluster in self.all_clusters if square in cluster]
-            for square in self.board.get_all_squares()
-        }
-
-        self.clusters_by_border = {
-            border: [cluster for cluster in self.all_clusters if border in cluster.get_borders()]
-            for border in self.board.get_all_squares()
         }
 
         self.vulnerable_clusters = {
@@ -170,3 +174,25 @@ class CapClusterCollection(ClusterCollection):
 
     def clear_captures(self):
         self.captured_squares = set()
+
+
+class TubeCollection(ClusterCollection):
+    H_TYPE = HorTube
+    V_TYPE = VertTube
+
+    def initialize_all_clusters(self):
+        v_tubes = []
+        h_tubes = []
+
+        for col in [str(col_num) for col_num in range(1, 10)]:
+            col_squares = self.board.get_squares_by_axis(col)[1:-1]
+            v_tubes.append(self.V_TYPE(set(col_squares), self.board))
+
+        for row in [chr(row_num) for row_num in range(98, 105)]:
+            row_squares = self.board.get_squares_by_axis(row)
+            h_tubes.append(self.H_TYPE(set(row_squares), self.board))
+
+        self.all_clusters = h_tubes + v_tubes
+        self.initialize_clusters_by_member()
+        self.initialize_clusters_by_border()
+
