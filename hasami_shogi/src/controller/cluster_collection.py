@@ -1,19 +1,96 @@
-from hasami_shogi.src.controller.capture_cluster import ClusterOpResult, CaptureCluster, VerticalCaptureCluster, \
-    HorizontalCaptureCluster
+from hasami_shogi.src.controller.capture_cluster import ClusterOpResult, Cluster, VertCapCluster, \
+    HorCapCluster, VerticalCluster, HorizontalCluster, CaptureCluster
 from hasami_shogi.src.controller.game_board import GameBoard
 
 
 class ClusterCollection:
-    def __init__(self, *ign, black_squares=None, red_squares=None, board=None):
+    H_TYPE = HorizontalCluster
+    V_TYPE = VerticalCluster
+
+    def __init__(self, *ign, board=None):
         if ign:
-            raise ValueError("ClusterCollection only takes 2 kwargs: red_squares and black_squares.")
+            raise ValueError("ClusterCollection only takes 1 kwargs: board.")
 
         self.board: GameBoard = board
 
-        black_v_clusters = [VerticalCaptureCluster({sq}, board) for sq in black_squares]
-        black_h_cluster = HorizontalCaptureCluster(black_squares, board)
-        red_v_clusters = [VerticalCaptureCluster({sq}, board) for sq in red_squares]
-        red_h_cluster = HorizontalCaptureCluster(red_squares, board)
+        self.all_clusters = []
+        self.clusters_by_member = {}
+        self.clusters_by_border = {}
+        self.initialize_clusters()
+
+    def initialize_clusters(self):
+        raise NotImplementedError
+
+    def remove_cluster(self, cluster: Cluster) -> None:
+        self.all_clusters and self.all_clusters.remove(cluster)
+        for member in cluster.squares:
+            if cluster in self.clusters_by_member[member]:
+                self.clusters_by_member[member].remove(cluster)
+        for border in cluster.get_borders():
+            border and self.clusters_by_border[border].remove(cluster)
+
+    def add_cluster(self, cluster: Cluster) -> None:
+        self.all_clusters.append(cluster)
+        for member in cluster.squares:
+            self.clusters_by_member[member].append(cluster)
+        for border in cluster.get_borders():
+            border and self.clusters_by_border[border].append(cluster)
+
+    def update_clusters_departing(self, square: str) -> None:
+        """
+        Releases square from existing clusters. Uses results of release operation to update internal state.
+        """
+        results = ClusterOpResult()
+
+        for cluster in list(self.clusters_by_member[square]):
+            results += cluster.release(square)
+
+        for cluster in results.to_remove:
+            self.remove_cluster(cluster)
+
+        for cluster in results.to_add:
+            self.add_cluster(cluster)
+
+    def update_clusters_arriving(self, square: str) -> None:
+        """
+        Creates new clusters for square and merges with existing clusters. Uses results of release operation to
+        update internal state.
+        """
+        new_h_cluster = self.H_TYPE({square}, self.board)
+        new_v_cluster = self.V_TYPE({square}, self.board)
+
+        h_merges = [cluster for cluster in self.clusters_by_border[square] if cluster.can_merge_with(new_h_cluster)]
+        v_merges = [cluster for cluster in self.clusters_by_border[square] if cluster.can_merge_with(new_v_cluster)]
+
+        results = new_h_cluster.merge_with_multiple(h_merges)
+        results += new_v_cluster.merge_with_multiple(v_merges)
+
+        for cluster_to_remove in results.to_remove:
+            self.remove_cluster(cluster_to_remove)
+
+        self.add_cluster(new_h_cluster)
+        self.add_cluster(new_v_cluster)
+
+
+class CapClusterCollection(ClusterCollection):
+    H_TYPE = HorCapCluster
+    V_TYPE = VertCapCluster
+
+    def __init__(self, *args, **kwargs):
+
+        self.clusters_by_color = {}
+        self.vulnerable_clusters = {}
+        self.captured_squares = set()
+
+        super().__init__(*args, **kwargs)
+
+    def initialize_clusters(self):
+        black_squares = self.board.get_squares_by_color("BLACK")
+        red_squares = self.board.get_squares_by_color("RED")
+        black_v_clusters = [self.V_TYPE({sq}, self.board) for sq in black_squares]
+        black_h_cluster = self.H_TYPE(black_squares, self.board)
+        red_v_clusters = [self.V_TYPE({sq}, self.board) for sq in red_squares]
+        red_h_cluster = self.H_TYPE(red_squares, self.board)
 
         self.all_clusters = [black_h_cluster] + [red_h_cluster] + black_v_clusters + red_v_clusters
 
@@ -40,62 +117,20 @@ class ClusterCollection:
         self.captured_squares = set()
 
     def remove_cluster(self, cluster: CaptureCluster) -> None:
-        self.all_clusters and self.all_clusters.remove(cluster)
+        super().remove_cluster(cluster)
         self.clusters_by_color[cluster.color].remove(cluster)
-        for member in cluster.squares:
-            if cluster in self.clusters_by_member[member]:
-                self.clusters_by_member[member].remove(cluster)
-        for border in cluster.get_borders():
-            border and self.clusters_by_border[border].remove(cluster)
         self.remove_vulnerable_cluster(cluster)
 
     def add_cluster(self, cluster: CaptureCluster) -> None:
-        self.all_clusters.append(cluster)
+        super().add_cluster(cluster)
         self.clusters_by_color[cluster.color].append(cluster)
-        for member in cluster.squares:
-            self.clusters_by_member[member].append(cluster)
-        for border in cluster.get_borders():
-            border and self.clusters_by_border[border].append(cluster)
 
     def update_clusters_departing(self, square: str) -> None:
-        """
-        Releases square from existing clusters. Uses results of release operation to update internal state.
-        """
-        # Update same-color clusters
-        results = ClusterOpResult()
-
-        for cluster in list(self.clusters_by_member[square]):
-            results += cluster.release(square)
-
-        for cluster in results.to_remove:
-            self.remove_cluster(cluster)
-
-        for cluster in results.to_add:
-            self.add_cluster(cluster)
-
+        super().update_clusters_departing(square)
         self.update_vulnerable_clusters(square)
 
     def update_clusters_arriving(self, square: str) -> None:
-        """
-        Creates new clusters for square and merges with existing clusters. Uses results of release operation to
-        update internal state.
-        """
-        color = self.board.get_square(square)
-        new_h_cluster = HorizontalCaptureCluster({square}, self.board)
-        new_v_cluster = VerticalCaptureCluster({square}, self.board)
-
-        h_merges = [cluster for cluster in self.clusters_by_border[square] if cluster.can_merge_with(new_h_cluster)]
-        v_merges = [cluster for cluster in self.clusters_by_border[square] if cluster.can_merge_with(new_v_cluster)]
-
-        results = new_h_cluster.merge_with_multiple(h_merges)
-        results += new_v_cluster.merge_with_multiple(v_merges)
-
-        for cluster_to_remove in results.to_remove:
-            self.remove_cluster(cluster_to_remove)
-
-        self.add_cluster(new_h_cluster)
-        self.add_cluster(new_v_cluster)
-
+        super().update_clusters_arriving(square)
         self.update_vulnerable_clusters(square)
 
     def add_vulnerable_cluster(self, cluster):
@@ -135,5 +170,3 @@ class ClusterCollection:
 
     def clear_captures(self):
         self.captured_squares = set()
-
-

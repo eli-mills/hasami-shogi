@@ -1,6 +1,6 @@
 from hasami_shogi.src.controller.game_board import GameBoard
-from hasami_shogi.src.controller.capture_cluster import CaptureCluster, VerticalCaptureCluster, HorizontalCaptureCluster
-from hasami_shogi.src.controller.cluster_collection import ClusterCollection
+from hasami_shogi.src.controller.capture_cluster import CaptureCluster, VertCapCluster, HorCapCluster
+from hasami_shogi.src.controller.cluster_collection import CapClusterCollection
 import hasami_shogi.src.controller.hasami_shogi_utilities as utils
 
 
@@ -33,9 +33,7 @@ class HasamiShogiGame:
         self._captured_pieces = {"RED": 0, "BLACK": 0}
         self.move_log = []
 
-        black_squares = self._game_board.get_squares_by_color("BLACK")
-        red_squares = self._game_board.get_squares_by_color("RED")
-        self.clusters = ClusterCollection(black_squares=black_squares, red_squares=red_squares, board=self._game_board)
+        self.clusters = CapClusterCollection(board=self._game_board)
 
     def get_game_board(self) -> GameBoard:
         """Returns the game board object."""

@@ -230,12 +230,22 @@ class CaptureCluster(Cluster):
 
 class Tube(Cluster):
     def __init__(self, *args, **kwargs):
-        pass
+        super().__init__(*args, **kwargs)
+        if self.color != "NONE":
+            raise ValueError(f"Tube initialized with occupied squares: {self}")
 
 
-class VerticalCaptureCluster(CaptureCluster, VerticalCluster):
+class VertCapCluster(CaptureCluster, VerticalCluster):
     pass
 
 
-class HorizontalCaptureCluster(CaptureCluster, HorizontalCluster):
+class HorCapCluster(CaptureCluster, HorizontalCluster):
+    pass
+
+
+class VertTube(Tube, VerticalCluster):
+    pass
+
+
+class HorTube(Tube, HorizontalCluster):
     pass
