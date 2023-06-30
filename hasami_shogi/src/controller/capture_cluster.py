@@ -27,13 +27,15 @@ class CaptureCluster:
             self.to_add.extend(result.to_add)
 
     def __init__(self, squares: set, color: str, board: GameBoard):
+        self.board: GameBoard = board
         self.squares: set = squares
         self.color: str = color
+        self.opp_color = self.board.opposite_color(self.color)
         self.lower_occ, self.upper_occ = min(squares), max(squares)
         self.lower_border = self.upper_border = None
         self.lb_value = self.ub_value = None
-        self.board = board
         self.risky_border = ""
+        self.is_captured = False
 
         # self.validation()
         self.find_lower_border()
@@ -48,6 +50,9 @@ class CaptureCluster:
 
     def __contains__(self, item):
         return item in self.squares
+
+    def __or__(self, other):
+        return self.squares | other.squares
 
     def validation(self):
         if [sq for sq in self.squares if sq[0] != self.lower_occ[0]] and [sq for sq in self.squares if sq[1] != self.lower_occ[1]]:
@@ -74,20 +79,24 @@ class CaptureCluster:
         raise NotImplementedError
 
     def check_if_capturable(self) -> None:
+        if self.risky_border and self.board.get_square(self.risky_border) == self.opp_color:
+            self.is_captured = True
+            return None
         if not self.lower_border or not self.upper_border:
             self.risky_border = ""
             return None
-        if self.board.get_square(self.lower_border) == self.board.get_square(self.upper_border) == "NONE":
+        lb_val = self.board.get_square(self.lower_border)
+        ub_val = self.board.get_square(self.upper_border)
+        if lb_val == ub_val == "NONE":
             self.risky_border = ""
             return None
-        if self.board.get_square(self.lower_border) == "NONE":
+        if lb_val == "NONE":
             self.risky_border = self.lower_border
-        elif self.board.get_square(self.upper_border) == "NONE":
+        elif ub_val == "NONE":
             self.risky_border = self.upper_border
         else:
             self.risky_border = ""
         return None
-
 
     def update_lower_occ(self):
         self.lower_occ = min(self.squares)
@@ -170,14 +179,6 @@ class CaptureCluster:
 
     def is_at_edge(self):
         return "" in self.get_borders()
-
-    def reveal_capturing_square(self) -> str:
-        """
-        Returns the square that, if an enemy took, would capture this cluster. If none exists, returns empty string.
-        """
-        if "" in self.get_borders():
-            return ""
-        return
 
 
 class VerticalCaptureCluster(CaptureCluster):

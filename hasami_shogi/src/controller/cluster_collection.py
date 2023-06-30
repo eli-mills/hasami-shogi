@@ -36,6 +36,8 @@ class ClusterCollection:
             "RED": []
         }
 
+        self.captured_squares = set()
+
     def remove_cluster(self, cluster: CaptureCluster) -> None:
         self.all_clusters and self.all_clusters.remove(cluster)
         self.clusters_by_color[cluster.color].remove(cluster)
@@ -109,7 +111,9 @@ class ClusterCollection:
         """
         for cluster in self.clusters_by_border[square] + self.clusters_by_member[square]:
             cluster.check_if_capturable()
-            if cluster.risky_border:
+            if cluster.is_captured:
+                self.report_captured(cluster)
+            elif cluster.risky_border:
                 self.add_vulnerable_cluster(cluster)
             else:
                 self.remove_vulnerable_cluster(cluster)
@@ -125,5 +129,10 @@ class ClusterCollection:
             captured_squares)][0]
         self.remove_cluster(large_cluster)
 
+    def report_captured(self, cluster: CaptureCluster):
+        self.captured_squares |= cluster.squares
+
+    def clear_captures(self):
+        self.captured_squares = set()
 
 
