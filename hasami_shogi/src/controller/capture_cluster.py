@@ -198,7 +198,7 @@ class CaptureCluster(Cluster):
         return results
 
 
-class VerticalCaptureCluster(CaptureCluster):
+class VerticalCluster(Cluster):
     def find_lower_border(self):
         if self.lower_border == "":
             return
@@ -214,7 +214,7 @@ class VerticalCaptureCluster(CaptureCluster):
         self.upper_border = next_row + col if "a" <= next_row <= "i" else ""
 
 
-class HorizontalCaptureCluster(CaptureCluster):
+class HorizontalCluster(Cluster):
     def find_lower_border(self):
         if self.lower_border == "":
             return
@@ -228,3 +228,11 @@ class HorizontalCaptureCluster(CaptureCluster):
         row, col = self.upper_occ
         next_col = chr(ord(col) + 1)
         self.upper_border = row + next_col if "1" <= next_col <= "9" else ""
+
+
+class VerticalCaptureCluster(CaptureCluster, VerticalCluster):
+    pass
+
+
+class HorizontalCaptureCluster(CaptureCluster, HorizontalCluster):
+    pass
