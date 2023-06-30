@@ -30,14 +30,13 @@ class ClusterOpResult:
 
 
 class Cluster:
-    def __init__(self, squares: set, color: str, board: GameBoard):
+    def __init__(self, squares: set, board: GameBoard):
         self.board: GameBoard = board
         self.squares: set = squares
-        self.color: str = color
         self.lower_occ, self.upper_occ = min(squares), max(squares)
-        self.lower_border = self.upper_border = None
+        self.color: str = self.board.get_square(self.lower_occ)
 
-        # self.validation()
+        self.lower_border = self.upper_border = None
         self.find_lower_border()
         self.find_upper_border()
 
@@ -96,20 +95,19 @@ class Cluster:
         # Case: square is min
         if square == self.lower_occ:
             result.extend_to_remove([self])
-            result.extend_to_add([type(self)(set(curr_squares[1:]), self.color, self.board)])
+            result.extend_to_add([type(self)(set(curr_squares[1:]), self.board)])
             return result
 
         # Case: square is max
         if square == self.upper_occ:
             result.extend_to_remove([self])
-            result.extend_to_add([type(self)(set(curr_squares[:-1]), self.color, self.board)])
+            result.extend_to_add([type(self)(set(curr_squares[:-1]), self.board)])
             return result
 
         # Case: square between min and max
         lower_squares = curr_squares[:curr_squares.index(square)]
         upper_squares = curr_squares[curr_squares.index(square) + 1:]
-        result.extend_to_add([type(self)(set(lower_squares), self.color, self.board), type(self)(set(upper_squares),
-                                                                                        self.color, self.board)])
+        result.extend_to_add([type(self)(set(lower_squares), self.board), type(self)(set(upper_squares), self.board)])
         result.extend_to_remove([self])
         return result
 
@@ -159,6 +157,38 @@ class Cluster:
         return "" in self.get_borders()
 
 
+class VerticalCluster(Cluster):
+    def find_lower_border(self):
+        if self.lower_border == "":
+            return
+        row, col = self.lower_occ
+        prev_row = chr(ord(row) - 1)
+        self.lower_border = prev_row + col if "a" <= prev_row <= "i" else ""
+
+    def find_upper_border(self):
+        if self.upper_border == "":
+            return
+        row, col = self.upper_occ
+        next_row = chr(ord(row) + 1)
+        self.upper_border = next_row + col if "a" <= next_row <= "i" else ""
+
+
+class HorizontalCluster(Cluster):
+    def find_lower_border(self):
+        if self.lower_border == "":
+            return
+        row, col = self.lower_occ
+        prev_col = chr(ord(col) - 1)
+        self.lower_border = row + prev_col if "1" <= prev_col <= "9" else ""
+
+    def find_upper_border(self):
+        if self.upper_border == "":
+            return
+        row, col = self.upper_occ
+        next_col = chr(ord(col) + 1)
+        self.upper_border = row + next_col if "1" <= next_col <= "9" else ""
+
+
 class CaptureCluster(Cluster):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -198,36 +228,9 @@ class CaptureCluster(Cluster):
         return results
 
 
-class VerticalCluster(Cluster):
-    def find_lower_border(self):
-        if self.lower_border == "":
-            return
-        row, col = self.lower_occ
-        prev_row = chr(ord(row) - 1)
-        self.lower_border = prev_row + col if "a" <= prev_row <= "i" else ""
-
-    def find_upper_border(self):
-        if self.upper_border == "":
-            return
-        row, col = self.upper_occ
-        next_row = chr(ord(row) + 1)
-        self.upper_border = next_row + col if "a" <= next_row <= "i" else ""
-
-
-class HorizontalCluster(Cluster):
-    def find_lower_border(self):
-        if self.lower_border == "":
-            return
-        row, col = self.lower_occ
-        prev_col = chr(ord(col) - 1)
-        self.lower_border = row + prev_col if "1" <= prev_col <= "9" else ""
-
-    def find_upper_border(self):
-        if self.upper_border == "":
-            return
-        row, col = self.upper_occ
-        next_col = chr(ord(col) + 1)
-        self.upper_border = row + next_col if "1" <= next_col <= "9" else ""
+class Tube(Cluster):
+    def __init__(self, *args, **kwargs):
+        pass
 
 
 class VerticalCaptureCluster(CaptureCluster, VerticalCluster):

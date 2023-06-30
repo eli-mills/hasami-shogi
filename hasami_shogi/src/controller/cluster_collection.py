@@ -10,10 +10,10 @@ class ClusterCollection:
 
         self.board: GameBoard = board
 
-        black_v_clusters = [VerticalCaptureCluster({sq}, "BLACK", board) for sq in black_squares]
-        black_h_cluster = HorizontalCaptureCluster(black_squares, "BLACK", board)
-        red_v_clusters = [VerticalCaptureCluster({sq}, "RED", board) for sq in red_squares]
-        red_h_cluster = HorizontalCaptureCluster(red_squares, "RED", board)
+        black_v_clusters = [VerticalCaptureCluster({sq}, board) for sq in black_squares]
+        black_h_cluster = HorizontalCaptureCluster(black_squares, board)
+        red_v_clusters = [VerticalCaptureCluster({sq}, board) for sq in red_squares]
+        red_h_cluster = HorizontalCaptureCluster(red_squares, board)
 
         self.all_clusters = [black_h_cluster] + [red_h_cluster] + black_v_clusters + red_v_clusters
 
@@ -81,8 +81,8 @@ class ClusterCollection:
         update internal state.
         """
         color = self.board.get_square(square)
-        new_h_cluster = HorizontalCaptureCluster({square}, color, self.board)
-        new_v_cluster = VerticalCaptureCluster({square}, color, self.board)
+        new_h_cluster = HorizontalCaptureCluster({square}, self.board)
+        new_v_cluster = VerticalCaptureCluster({square}, self.board)
 
         h_merges = [cluster for cluster in self.clusters_by_border[square] if cluster.can_merge_with(new_h_cluster)]
         v_merges = [cluster for cluster in self.clusters_by_border[square] if cluster.can_merge_with(new_v_cluster)]
