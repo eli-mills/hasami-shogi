@@ -33,6 +33,18 @@ class ClusterCollection:
             for border in self.board.get_all_squares()
         }
 
+    def get_squares_by_member(self, square: str) -> set[str]:
+        output = set()
+        for cluster in self.clusters_by_member[square]:
+            output |= cluster.squares
+        return output
+
+    def get_squares_by_border(self, square: str) -> set[str]:
+        output = set()
+        for cluster in self.clusters_by_border[square]:
+            output |= cluster.squares
+        return output
+
     def remove_cluster(self, cluster: Cluster) -> None:
         self.all_clusters and self.all_clusters.remove(cluster)
         for member in cluster.squares:

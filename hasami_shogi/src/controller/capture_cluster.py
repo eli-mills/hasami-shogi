@@ -49,8 +49,11 @@ class Cluster:
     def __contains__(self, item):
         return item in self.squares
 
-    def __or__(self, other):
-        return self.squares | other.squares
+    # def __or__(self, other):
+    #     return self.squares | other.squares
+
+    # def __ror__(self, other):
+    #     return other | self.squares
 
     def validation(self):
         if [sq for sq in self.squares if sq[0] != self.lower_occ[0]] and [sq for sq in self.squares if sq[1] != self.lower_occ[1]]:

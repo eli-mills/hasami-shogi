@@ -202,12 +202,15 @@ class HasamiShogiGame:
 
         return None
 
+    def get_reachable_squares(self, square: str) -> set[str]:
+        return self.tubes.get_squares_by_border(square)
+
     def return_valid_moves(self, square_string: str) -> set[str]:
         """Returns all valid moves for the given square. O(1)"""
         if self.get_square_occupant(square_string) != self.get_active_player():
             raise Exception("Given square string is not active player.")
 
-        return {f"{square_string}{dest}" for dest in self.get_game_board().get_reachable_squares(square_string)}
+        return {f"{square_string}{dest}" for dest in self.get_reachable_squares(square_string)}
 
 
 if __name__ == '__main__':
