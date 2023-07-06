@@ -51,7 +51,7 @@ class GameBoard:
         """
         return {square for square, color in self.square_values.items() if color == seeking_color}
 
-    def get_squares_by_axis(self, axis: str) -> list:
+    def get_squares_by_axis(self, axis: str) -> list[str]:
         # return {"".join(sorted([axis, other], reverse=True)): value for other, value in self.squares_by_axis[
         #     axis].items()}
         return [square for square in self.square_values.keys() if axis in square]

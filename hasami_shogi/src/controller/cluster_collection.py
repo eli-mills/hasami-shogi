@@ -65,8 +65,9 @@ class ClusterCollection:
         Releases square from existing clusters. Uses results of release operation to update internal state.
         """
         results = ClusterOpResult()
-
-        for cluster in list(self.clusters_by_member[square]):
+        # TODO: delete clusters at square every time. Cluster to modify own squares, so no other updates needed,
+        #  unless new clusters created due to split.
+        for cluster in self.clusters_by_member[square]:
             results += cluster.release(square)
 
         for cluster in results.to_remove:
@@ -80,8 +81,8 @@ class ClusterCollection:
         Creates new clusters for square and merges with existing clusters. Uses results of release operation to
         update internal state.
         """
-        new_h_cluster = self.H_TYPE({square}, self.board)
-        new_v_cluster = self.V_TYPE({square}, self.board)
+        new_h_cluster = self.H_TYPE([square], self.board)
+        new_v_cluster = self.V_TYPE([square], self.board)
 
         h_merges = [cluster for cluster in self.clusters_by_border[square] if cluster.can_merge_with(new_h_cluster)]
         v_merges = [cluster for cluster in self.clusters_by_border[square] if cluster.can_merge_with(new_v_cluster)]
@@ -111,10 +112,10 @@ class CapClusterCollection(ClusterCollection):
     def initialize_all_clusters(self):
         black_squares = self.board.get_squares_by_color("BLACK")
         red_squares = self.board.get_squares_by_color("RED")
-        black_v_clusters = [self.V_TYPE({sq}, self.board) for sq in black_squares]
-        black_h_cluster = self.H_TYPE(black_squares, self.board)
-        red_v_clusters = [self.V_TYPE({sq}, self.board) for sq in red_squares]
-        red_h_cluster = self.H_TYPE(red_squares, self.board)
+        black_v_clusters = [self.V_TYPE([sq], self.board) for sq in black_squares]
+        black_h_cluster = self.H_TYPE(sorted(list(black_squares)), self.board)
+        red_v_clusters = [self.V_TYPE([sq], self.board) for sq in red_squares]
+        red_h_cluster = self.H_TYPE(sorted(list(red_squares)), self.board)
 
         self.all_clusters = [black_h_cluster] + [red_h_cluster] + black_v_clusters + red_v_clusters
         self.initialize_clusters_by_member()
@@ -197,12 +198,12 @@ class TubeCollection(ClusterCollection):
         h_tubes = []
 
         for col in [str(col_num) for col_num in range(1, 10)]:
-            col_squares = self.board.get_squares_by_axis(col)[1:-1]
-            v_tubes.append(self.V_TYPE(set(col_squares), self.board))
+            col_squares = sorted(self.board.get_squares_by_axis(col)[1:-1])
+            v_tubes.append(self.V_TYPE(col_squares, self.board))
 
         for row in [chr(row_num) for row_num in range(98, 105)]:
-            row_squares = self.board.get_squares_by_axis(row)
-            h_tubes.append(self.H_TYPE(set(row_squares), self.board))
+            row_squares = sorted(self.board.get_squares_by_axis(row))
+            h_tubes.append(self.H_TYPE(row_squares, self.board))
 
         self.all_clusters = h_tubes + v_tubes
         self.initialize_clusters_by_member()

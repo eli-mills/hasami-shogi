@@ -94,8 +94,8 @@ class HasamiShogiGame:
         self.set_square_occupant(moving_from, "NONE")
         self.set_square_occupant(moving_to, piece_moving)
 
-    def path_is_clear(self, moving_from, moving_to):
-        return bool([tube for tube in self.tubes.clusters_by_border[moving_from] if moving_to in tube])
+    def path_is_clear(self, moving_from: str, moving_to: str) -> bool:
+        return any(moving_to in tube for tube in self.tubes.clusters_by_border[moving_from])
 
     def is_move_legal(self, moving_from, moving_to):
         """Checks if move from first square to second is legal. Returns True if so, False if not."""
