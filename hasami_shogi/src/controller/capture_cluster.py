@@ -1,10 +1,28 @@
 from hasami_shogi.src.controller.game_board import GameBoard
 
 
+class ClusterUpdates:
+    def __init__(self, cluster: "Cluster", borders: set[str] = None, members: set[str] = None):
+        self.cluster: Cluster = cluster
+        self.borders: set[str] = borders if borders else set()
+        self.members: set[str] = members if members else set()
+        self.remove_from_all = False
+        self.add_to_all = False
+
+    def __repr__(self):
+        return f"Cluster: {self.cluster}, Borders: {self.borders}, Members: {self.members}"
+
+    def add_to_members(self, members: set[str]):
+        self.members |= members
+
+    def add_to_borders(self, borders: set[str]):
+        self.borders |= borders
+
+
 class ClusterOpResult:
     def __init__(self):
-        self.to_remove = []
-        self.to_add = []
+        self.to_remove: list[ClusterUpdates] = []
+        self.to_add: list[ClusterUpdates] = []
 
     def __bool__(self):
         return self.to_add or self.to_remove
@@ -18,15 +36,11 @@ class ClusterOpResult:
     def __repr__(self):
         return f"Add {self.to_add}; Remove {self.to_remove}"
 
-    def extend_to_remove(self, cluster_list: list["Cluster"]):
-        self.to_remove.extend(cluster_list)
+    def extend_to_remove(self, cluster_updates: list["ClusterUpdates"]):
+        self.to_remove.extend(cluster_updates)
 
-    def extend_to_add(self, cluster_list: list["Cluster"]):
-        self.to_add.extend(cluster_list)
-
-    def combine_another_result(self, result: "ClusterOpResult"):
-        self.to_remove.extend(result.to_remove)
-        self.to_add.extend(result.to_add)
+    def extend_to_add(self, cluster_updates: list["ClusterUpdates"]):
+        self.to_add.extend(cluster_updates)
 
 
 class Cluster:
@@ -40,14 +54,13 @@ class Cluster:
         self.squares_sorted: list[str] = squares
         self.lower_occ, self.upper_occ = self.squares_sorted[0], self.squares_sorted[-1]
         self.color: str = self.board.get_square(self.lower_occ)
-        self.size = len(self.squares)
 
         self.lower_border = self.upper_border = None
         self.find_lower_border()
         self.find_upper_border()
 
     def __len__(self):
-        return self.size
+        return len(self.squares)
 
     def __repr__(self):
         return type(self).__name__ + repr(self.squares)
@@ -87,35 +100,55 @@ class Cluster:
 
     def release(self, square: str) -> ClusterOpResult:
         self.raise_if_bad_square(square)
+        self_update_removal = ClusterUpdates(self, members={square})
         result = ClusterOpResult()
+        result.extend_to_remove([self_update_removal])
 
         if len(self) == 1:
-            result.extend_to_remove([self])
+            self_update_removal.remove_from_all = True
             return result
 
         curr_squares = self.squares_sorted
 
         # Case: square is min
         if square == self.lower_occ:
-            result.extend_to_remove([self])
-            result.extend_to_add([type(self)(curr_squares[1:], self.board)])
-            # TODO: modify self instead of instantiating new cluster, result removes AND adds self
+            self_update_removal.add_to_borders({self.lower_border})
+            self.squares_sorted = self.squares_sorted[1:]
+            self.squares.remove(square)
+            self.lower_border = square
+            self.lower_occ = self.squares_sorted[0]
+            self_update_add = ClusterUpdates(self, borders={self.lower_border})
+            result.extend_to_add([self_update_add])
             return result
 
         # Case: square is max
         if square == self.upper_occ:
-            result.extend_to_remove([self])
-            result.extend_to_add([type(self)(curr_squares[:-1], self.board)])
+            self_update_removal.add_to_borders({self.upper_border})
+            self.squares_sorted = self.squares_sorted[:-1]
+            self.squares.remove(square)
+            self.upper_border = square
+            self.upper_occ = self.squares_sorted[-1]
+            self_update_add = ClusterUpdates(self, borders={self.upper_border})
+            result.extend_to_add([self_update_add])
             return result
 
         # Case: square between min and max
         lower_squares = curr_squares[:curr_squares.index(square)]
         upper_squares = curr_squares[curr_squares.index(square) + 1:]
-        result.extend_to_add([
-            type(self)(lower_squares, self.board),
-            type(self)(upper_squares, self.board)
-        ])
-        result.extend_to_remove([self])
+
+        self.squares_sorted = lower_squares
+        self.squares = set(lower_squares)
+        self.upper_border = square
+        self.upper_occ = self.squares_sorted[-1]
+
+        self_update_removal.add_to_members(set(upper_squares))
+        self_update_add = ClusterUpdates(self, borders={self.upper_border})
+
+        upper_cluster = type(self)(upper_squares, self.board)
+        new_cluster_add = ClusterUpdates(upper_cluster)
+        new_cluster_add.add_to_all = True
+
+        result.extend_to_add([new_cluster_add, self_update_add])
         return result
 
     def can_merge_with(self, merging_cluster: "Cluster") -> bool:
@@ -127,11 +160,10 @@ class Cluster:
 
     def merge(self, merging_cluster: "Cluster") -> ClusterOpResult:
         """
-        Raise ValueError if merge not possible.
+        Merge merging_cluster into self. Raise ValueError if merge not possible.
         """
         self.merge_validation(merging_cluster)
         self.squares |= merging_cluster.squares
-        self.size += merging_cluster.size
 
         lower_cluster = self if self.upper_occ <= merging_cluster.lower_occ else merging_cluster
         upper_cluster = merging_cluster if self == lower_cluster else self
@@ -139,11 +171,17 @@ class Cluster:
         self.squares_sorted = lower_cluster.squares_sorted + upper_cluster.squares_sorted
         self.lower_occ = lower_cluster.lower_occ
         self.upper_occ = upper_cluster.upper_occ
-        self.find_upper_border()
-        self.find_lower_border()
+        self.lower_border = lower_cluster.lower_border
+        self.upper_border = upper_cluster.upper_border
+
+        remove_merging = ClusterUpdates(merging_cluster)
+        remove_merging.remove_from_all = True
+        add_self_to_merging_squares = ClusterUpdates(self, members=merging_cluster.squares)
+        add_self_to_merging_squares.add_to_borders({self.lower_border if self == upper_cluster else self.upper_border})
 
         results = ClusterOpResult()
-        results.extend_to_remove([merging_cluster])
+        results.extend_to_remove([remove_merging])
+        results.extend_to_add([add_self_to_merging_squares])
 
         return results
 
@@ -259,6 +297,9 @@ class CaptureCluster(Cluster):
         self.risky_border = ""
         self.is_captured = False
         self.check_if_capturable()
+
+    def __repr__(self):
+        return self.color + super().__repr__()
 
     def check_if_capturable(self) -> None:
         if self.risky_border and self.board.get_square(self.risky_border) == self.opp_color:

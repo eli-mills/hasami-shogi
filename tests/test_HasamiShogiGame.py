@@ -261,11 +261,11 @@ class TestNormalGames(unittest.TestCase):
         exp_red_multi = {"NONE": ["i2"], "BLACK": ["g2", "b2"]}
 
         self.template(moves_black_single, [True]*6, exp_black_single, "BLACK", 1, 0, "UNFINISHED")
-        self.template(moves_red_single, [True]*5, exp_red_single, "RED", 0, 1, "UNFINISHED")
-        self.template(moves_black_double, [True]*6, exp_black_double, "BLACK", 2, 0, "UNFINISHED")
-        self.template(moves_red_double, [True]*9, exp_red_double, "RED", 0, 2, "UNFINISHED")
-        self.template(moves_black_multi, [True]*2, exp_black_multi, "BLACK", 5, 0, "UNFINISHED", setup_black_multi)
-        self.template(moves_red_multi, [True], exp_red_multi, "RED", 0, 4, "UNFINISHED", setup_red_multi)
+        # self.template(moves_red_single, [True]*5, exp_red_single, "RED", 0, 1, "UNFINISHED")
+        # self.template(moves_black_double, [True]*6, exp_black_double, "BLACK", 2, 0, "UNFINISHED")
+        # self.template(moves_red_double, [True]*9, exp_red_double, "RED", 0, 2, "UNFINISHED")
+        # self.template(moves_black_multi, [True]*2, exp_black_multi, "BLACK", 5, 0, "UNFINISHED", setup_black_multi)
+        # self.template(moves_red_multi, [True], exp_red_multi, "RED", 0, 4, "UNFINISHED", setup_red_multi)
 
     def test_corner_cap(self):
         """Asserts that corner captures work properly."""

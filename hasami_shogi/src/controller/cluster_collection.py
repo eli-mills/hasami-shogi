@@ -1,5 +1,5 @@
 from hasami_shogi.src.controller.capture_cluster import ClusterOpResult, Cluster, VertCapCluster, \
-    HorCapCluster, VerticalCluster, HorizontalCluster, CaptureCluster, VertTube, HorTube, Tube
+    HorCapCluster, VerticalCluster, HorizontalCluster, CaptureCluster, VertTube, HorTube, ClusterUpdates
 from hasami_shogi.src.controller.game_board import GameBoard
 
 
@@ -45,20 +45,37 @@ class ClusterCollection:
             output |= cluster.squares
         return output
 
-    def remove_cluster(self, cluster: Cluster) -> None:
+    def remove_from_all(self, cluster: Cluster) -> None:
         self.all_clusters and self.all_clusters.remove(cluster)
-        for member in cluster.squares:
-            if cluster in self.clusters_by_member[member]:
-                self.clusters_by_member[member].remove(cluster)
+        for member in cluster.squares_sorted:
+            self.clusters_by_member[member].remove(cluster)
         for border in cluster.get_borders():
             border and self.clusters_by_border[border].remove(cluster)
 
-    def add_cluster(self, cluster: Cluster) -> None:
+    def add_to_all(self, cluster: Cluster) -> None:
         self.all_clusters.append(cluster)
         for member in cluster.squares:
             self.clusters_by_member[member].append(cluster)
         for border in cluster.get_borders():
             border and self.clusters_by_border[border].append(cluster)
+
+    def execute_removal(self, cluster_update: ClusterUpdates) -> None:
+        if cluster_update.remove_from_all:
+            self.remove_from_all(cluster_update.cluster)
+        else:
+            for member in cluster_update.members:
+                self.clusters_by_member[member].remove(cluster_update.cluster)
+            for border in cluster_update.borders:
+                border and self.clusters_by_border[border].remove(cluster_update.cluster)
+
+    def execute_add(self, cluster_update: ClusterUpdates) -> None:
+        if cluster_update.add_to_all:
+            self.add_to_all(cluster_update.cluster)
+        else:
+            for member in cluster_update.members:
+                self.clusters_by_member[member].append(cluster_update.cluster)
+            for border in cluster_update.borders:
+                border and self.clusters_by_border[border].append(cluster_update.cluster)
 
     def update_clusters_departing(self, square: str) -> None:
         """
@@ -70,11 +87,11 @@ class ClusterCollection:
         for cluster in self.clusters_by_member[square]:
             results += cluster.release(square)
 
-        for cluster in results.to_remove:
-            self.remove_cluster(cluster)
+        for cluster_update in results.to_remove:
+            self.execute_removal(cluster_update)
 
-        for cluster in results.to_add:
-            self.add_cluster(cluster)
+        for cluster_update in results.to_add:
+            self.execute_add(cluster_update)
 
     def update_clusters_arriving(self, square: str) -> None:
         """
@@ -91,10 +108,10 @@ class ClusterCollection:
         results += new_v_cluster.merge_with_multiple(v_merges)
 
         for cluster_to_remove in results.to_remove:
-            self.remove_cluster(cluster_to_remove)
+            self.execute_removal(cluster_to_remove)
 
-        self.add_cluster(new_h_cluster)
-        self.add_cluster(new_v_cluster)
+        self.add_to_all(new_h_cluster)
+        self.add_to_all(new_v_cluster)
 
 
 class CapClusterCollection(ClusterCollection):
@@ -133,13 +150,13 @@ class CapClusterCollection(ClusterCollection):
 
         self.captured_squares = set()
 
-    def remove_cluster(self, cluster: CaptureCluster) -> None:
-        super().remove_cluster(cluster)
+    def remove_from_all(self, cluster: CaptureCluster) -> None:
+        super().remove_from_all(cluster)
         self.clusters_by_color[cluster.color].remove(cluster)
         self.remove_vulnerable_cluster(cluster)
 
-    def add_cluster(self, cluster: CaptureCluster) -> None:
-        super().add_cluster(cluster)
+    def add_to_all(self, cluster: CaptureCluster) -> None:
+        super().add_to_all(cluster)
         self.clusters_by_color[cluster.color].append(cluster)
 
     def update_clusters_departing(self, square: str) -> None:
@@ -180,7 +197,7 @@ class CapClusterCollection(ClusterCollection):
             return
         large_cluster = [cluster for cluster in self.clusters_by_member[captured_squares[0]] if len(cluster) == len(
             captured_squares)][0]
-        self.remove_cluster(large_cluster)
+        self.execute_removal(large_cluster)
 
     def report_captured(self, cluster: CaptureCluster):
         self.captured_squares |= cluster.squares
