@@ -89,7 +89,10 @@ class AIPlayer(Player):
         Checks if a given square is reachable with any of the given color's pieces. Returns set of pieces that can
         reach the given square.
         """
-        return {piece for piece in self.get_pieces() if self.get_game().path_is_clear(piece, square_to_reach)}
+        reachable_squares = self.get_game().tubes.get_squares_by_border(square_to_reach)
+        reachable_squares |= self.get_game().tubes.get_squares_by_member(square_to_reach)
+
+        return self.get_pieces() & reachable_squares
 
     def find_capture_moves(self):
         """
@@ -234,13 +237,13 @@ class AIPlayer(Player):
         best_move = None
 
         possible_move_list = self.order_available_moves()
-        if any(move[:2] not in self.get_pieces() for move in possible_move_list):
-            raise ValueError(f"AI {self} proposed illegal move with pieces {self.get_pieces()} and move list {possible_move_list}")
+        # if any(move[:2] not in self.get_pieces() for move in possible_move_list):
+        #     raise ValueError(f"AI {self} proposed illegal move with pieces {self.get_pieces()} and move list {possible_move_list}")
 
         for index, possible_move in enumerate(possible_move_list):
-            if any(move[:2] not in self.get_pieces() for move in possible_move_list):
-                raise ValueError(
-                    f"AI {self} proposed illegal move with pieces {self.get_pieces()} and move list {possible_move_list}")
+            # if any(move[:2] not in self.get_pieces() for move in possible_move_list):
+            #     raise ValueError(
+            #         f"AI {self} proposed illegal move with pieces {self.get_pieces()} and move list {possible_move_list}")
             init_move_log_length = len(self.get_game().move_log)
             if not self.make_move(possible_move[:2], possible_move[2:]):
                 raise ValueError(f"AI {self} made illegal move {possible_move} with pieces {self.get_pieces()}")
@@ -280,6 +283,7 @@ class AIPlayer(Player):
         next_move, heuristic = self.minimax_helper(depth, -9999, 9999)
 
         self.set_opposing_player(old_opp)
+        print(next_move, heuristic)
         return next_move, heuristic
 
     def ai_make_move(self, depth):
