@@ -82,8 +82,7 @@ class ClusterCollection:
         Releases square from existing clusters. Uses results of release operation to update internal state.
         """
         results = ClusterOpResult()
-        # TODO: delete clusters at square every time. Cluster to modify own squares, so no other updates needed,
-        #  unless new clusters created due to split.
+
         for cluster in self.clusters_by_member[square]:
             results += cluster.release(square)
 

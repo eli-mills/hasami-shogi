@@ -132,12 +132,13 @@ class Cluster:
             result.extend_to_add([self_update_add])
             return result
 
-        # Case: square between min and max
+        # Case: square between min and max - self becomes lower, create new upper
         lower_squares = curr_squares[:curr_squares.index(square)]
         upper_squares = curr_squares[curr_squares.index(square) + 1:]
 
         self.squares_sorted = lower_squares
         self.squares = set(lower_squares)
+        self_update_removal.add_to_borders({self.upper_border})
         self.upper_border = square
         self.upper_occ = self.squares_sorted[-1]
 

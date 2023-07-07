@@ -133,15 +133,15 @@ class AIPlayer(Player):
             raise Exception("order_available_moves called by inactive Player.")
 
         capture_moves = [move[0] for move in self.find_capture_moves()]
-        if any([move[:2]==move[2:] for move in capture_moves]):
+        if any(move[:2] not in self.get_pieces() for move in capture_moves):
             raise(ValueError(f"Illegal move proposed by capture_moves: {capture_moves}"))
         adjacent_moves = [x for x in self.find_adjacent_moves() if x not in capture_moves]
-        if any([move[:2]==move[2:] for move in adjacent_moves]):
+        if any(move[:2] not in self.get_pieces() for move in capture_moves):
             raise(ValueError(f"Illegal move proposed by adjacent_moves: {adjacent_moves}"))
         preferred_moves = capture_moves + adjacent_moves
 
         remaining_moves = [move for move in self.get_all_valid_moves() if move not in preferred_moves]
-        if any([move[:2]==move[2:] for move in remaining_moves]):
+        if any(move[:2] not in self.get_pieces() for move in capture_moves):
             raise(ValueError(f"Illegal move proposed by remaining_moves: {remaining_moves}"))
         center_moves = [move for move in remaining_moves if move[2] in "def" and move[3] in "456"]  # ends in center
         leftover_moves = [move for move in remaining_moves if move not in center_moves]
@@ -234,8 +234,13 @@ class AIPlayer(Player):
         best_move = None
 
         possible_move_list = self.order_available_moves()
+        if any(move[:2] not in self.get_pieces() for move in possible_move_list):
+            raise ValueError(f"AI {self} proposed illegal move with pieces {self.get_pieces()} and move list {possible_move_list}")
 
         for index, possible_move in enumerate(possible_move_list):
+            if any(move[:2] not in self.get_pieces() for move in possible_move_list):
+                raise ValueError(
+                    f"AI {self} proposed illegal move with pieces {self.get_pieces()} and move list {possible_move_list}")
             init_move_log_length = len(self.get_game().move_log)
             if not self.make_move(possible_move[:2], possible_move[2:]):
                 raise ValueError(f"AI {self} made illegal move {possible_move} with pieces {self.get_pieces()}")
