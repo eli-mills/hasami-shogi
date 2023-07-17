@@ -47,13 +47,16 @@ class Player:
         """Returns true if square is in player's list."""
         return square in self.get_pieces()
 
-    def make_move(self, start, destination):
+    def make_move(self, start: str, destination: str) -> bool:
         """Makes the given move in the game and updates piece locations in log and opponent's log."""
         return self._game.make_move(start, destination)
 
     def undo_move(self):
         """Calls undo_move on HasamiShogiGame."""
+        init_move_log_length = len(self.get_game().move_log)
         self._game.undo_move()
+        if len(self.get_game().move_log) != init_move_log_length - 1:
+            raise ValueError(f"Undo move failed for {self}")
 
     def did_win(self):
         """True if current game state reflects player victory."""

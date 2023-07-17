@@ -17,7 +17,7 @@ TWEAKS:
 
 [X] Move tracking pieces by color to GameBoard, away from Player.
 
-[ ] Idea: "Grouping" class, owned by HasamiShogiGame or GameBoard, that keeps
+[X] Idea: "Grouping" class, owned by HasamiShogiGame or GameBoard, that keeps
     track of adjacent blocks of similar colored squares. Knows the two ends that
      will capture it, including case of corner square. Knows when a member
      leaves and how to split the Grouping into two smaller Groupings accordingly
@@ -29,6 +29,11 @@ TWEAKS:
 
 [ ] Minimax: turn move ordering into a generator so don't have to generate every
     possible move all the time
+
+[ ] Minimax: only consider center moves, don't try edge moves (unless in capture
+    or adjacent)
+
+[ ] Add @property decorator to getters/setters
 
 FEATURES:
 [ ] Add difficulty selector
