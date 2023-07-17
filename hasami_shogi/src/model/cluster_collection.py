@@ -1,6 +1,6 @@
-from hasami_shogi.src.controller.capture_cluster import ClusterOpResult, Cluster, VertCapCluster, \
+from hasami_shogi.src.model.capture_cluster import ClusterOpResult, Cluster, VertCapCluster, \
     HorCapCluster, VerticalCluster, HorizontalCluster, CaptureCluster, VertTube, HorTube, ClusterUpdates
-from hasami_shogi.src.controller.game_board import GameBoard
+from hasami_shogi.src.model.game_board import GameBoard
 
 
 class ClusterCollection:

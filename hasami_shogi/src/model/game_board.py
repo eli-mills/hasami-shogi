@@ -1,4 +1,4 @@
-import hasami_shogi.src.controller.hasami_shogi_utilities as utils
+import hasami_shogi.src.model.hasami_shogi_utilities as utils
 
 
 class GameBoard:

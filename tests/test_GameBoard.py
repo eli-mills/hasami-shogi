@@ -1,6 +1,6 @@
 import unittest
-from hasami_shogi.src.controller.game_board import GameBoard
-import hasami_shogi.src.controller.hasami_shogi_utilities as utils
+from hasami_shogi.src.model.game_board import GameBoard
+import hasami_shogi.src.model.hasami_shogi_utilities as utils
 
 
 class TestInit(unittest.TestCase):

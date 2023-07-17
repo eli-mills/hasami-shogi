@@ -1,4 +1,4 @@
-from hasami_shogi import play_shogi_visual as visual
+from hasami_shogi.src.controller import play_shogi_visual as visual
 import time
 
 USER_PROMPT = "Type a number and press enter: "

@@ -1,4 +1,4 @@
-from hasami_shogi.src.controller.game_board import GameBoard
+from hasami_shogi.src.model.game_board import GameBoard
 
 
 class ClusterUpdates:

@@ -1,6 +1,6 @@
-from hasami_shogi.src.controller.hasami_shogi_game import HasamiShogiGame
-from hasami_shogi.src.controller.ai_player import AIPlayer
-from hasami_shogi.src.controller.player import Player
+from hasami_shogi.src.model.hasami_shogi_game import HasamiShogiGame
+from hasami_shogi.src.model.ai_player import AIPlayer
+from hasami_shogi.src.model.player import Player
 
 
 def terminal_ai():

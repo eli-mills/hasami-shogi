@@ -1,5 +1,5 @@
 import pygame
-from hasami_shogi.src.controller.hasami_shogi_utilities import ROW_LABELS, COL_LABELS
+from hasami_shogi.src.model.hasami_shogi_utilities import ROW_LABELS, COL_LABELS
 pygame.font.init()
 
 # SIZES

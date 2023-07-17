@@ -1,7 +1,6 @@
-from hasami_shogi.src.controller.game_board import GameBoard
-from hasami_shogi.src.controller.capture_cluster import CaptureCluster, VertCapCluster, HorCapCluster
-from hasami_shogi.src.controller.cluster_collection import CapClusterCollection, TubeCollection
-import hasami_shogi.src.controller.hasami_shogi_utilities as utils
+from hasami_shogi.src.model.game_board import GameBoard
+from hasami_shogi.src.model.cluster_collection import CapClusterCollection, TubeCollection
+import hasami_shogi.src.model.hasami_shogi_utilities as utils
 
 
 class ShogiMove:

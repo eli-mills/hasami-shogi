@@ -1,5 +1,5 @@
-from hasami_shogi.src.controller.hasami_shogi_utilities import *
-from hasami_shogi.src.controller.player import Player
+from hasami_shogi.src.model.hasami_shogi_utilities import *
+from hasami_shogi.src.model.player import Player
 
 
 class AIPlayer(Player):
@@ -230,7 +230,7 @@ class AIPlayer(Player):
 
 
 if __name__ == '__main__':
-    from hasami_shogi.src.controller.hasami_shogi_game import HasamiShogiGame
+    from hasami_shogi.src.model.hasami_shogi_game import HasamiShogiGame
     import cProfile
     import pstats
     from pstats import SortKey
@@ -242,7 +242,7 @@ if __name__ == '__main__':
     # ai1.make_move("i5", "e5")
     # ai2.make_move("a5", "d5")
     # ai1.make_move("i1", "b1")
-    cProfile.run("ai1.minimax(3)", "minimax.profile")
+    cProfile.run("ai1.minimax(3)", "../controller/minimax.profile")
     p = pstats.Stats("minimax.profile")
     p.strip_dirs().sort_stats(SortKey.CUMULATIVE).print_stats()
     p.print_callees()
