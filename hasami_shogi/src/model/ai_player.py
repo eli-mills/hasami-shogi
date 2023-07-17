@@ -23,7 +23,7 @@ class AIPlayer(Player):
         self.is_maximizing = self.get_color() == "BLACK"
         self.initial_best_score = -9999 if self.is_maximizing else 9999
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         """
         Defines how self should be printed.
         """
