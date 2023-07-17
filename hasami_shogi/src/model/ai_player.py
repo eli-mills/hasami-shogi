@@ -29,7 +29,7 @@ class AIPlayer(Player):
         """
         return type(self).__name__ + self._color
 
-    def make_move(self, start: str, dest: str):
+    def make_move(self, start: str, dest: str) -> bool:
         """
         Overrides parent method to add extra validation, in case proposed moves are invalid.
         """
@@ -41,6 +41,7 @@ class AIPlayer(Player):
             raise ValueError(f"Game failed to update active after valid move {start}{dest} by {self}.")
         if len(self.get_game().move_log) != init_move_log_length + 1:
             raise ValueError(f"Move log failed to update for valid move {start}{dest} by {self} with.")
+        return True
 
     def find_pot_cap_squares(self) -> dict[str, int]:
         """
@@ -168,7 +169,7 @@ class AIPlayer(Player):
         total = material_points + center_points + cap_points + victory_points
         return total if self.is_maximizing else -total
 
-    def make_ai_clone(self):
+    def make_ai_clone(self) -> None:
         """
         Makes an AI to pilot a Player object while calculating next move. Uses given Player's pieces but returns
         them to initial state when done.
@@ -224,7 +225,7 @@ class AIPlayer(Player):
         print(next_move, heuristic)
         return next_move, heuristic
 
-    def ai_make_move(self, depth: int):
+    def ai_make_move(self, depth: int) -> None:
         next_move = self.minimax(depth)
         self.make_move(next_move[0][:2], next_move[0][2:])
 

@@ -35,72 +35,49 @@ class GameBoard:
             | {square: "RED" for square in GameBoard.RED_START} \
             | {square: "BLACK" for square in GameBoard.BLACK_START}
 
-    def get_square(self, square_string):
+    def get_square(self, square: str) -> str:
         """Given a square string, returns the value at that square."""
-        return self.square_values[square_string]
+        return self.square_values[square]
 
-    def set_square(self, square_string, square_value):
+    def set_square(self, square: str, square_value: str) -> None:
         """Sets the value of the given square to the given value."""
-        if square_string not in self.square_values or square_value not in {"RED", "BLACK", "NONE"}:
+        if square not in self.square_values or square_value not in {"RED", "BLACK", "NONE"}:
             return None
-        self.square_values[square_string] = square_value
+        self.square_values[square] = square_value
 
-    def get_squares_by_color(self, seeking_color: str) -> set:
+    def get_squares_by_color(self, seeking_color: str) -> set[str]:
         """
         Returns set of squares belonging to the given color.
         """
         return {square for square, color in self.square_values.items() if color == seeking_color}
 
     def get_squares_by_axis(self, axis: str) -> list[str]:
-        # return {"".join(sorted([axis, other], reverse=True)): value for other, value in self.squares_by_axis[
-        #     axis].items()}
+        """
+        Returns list of all squares in the given row or column.
+        """
         return [square for square in self.square_values.keys() if axis in square]
 
-    def get_occupied_squares_by_axis(self, axis: str) -> list:
+    def get_occupied_squares_by_axis(self, axis: str) -> list[str]:
         """
         Returns sorted list of all squares that are occupied in the given row or column.
         """
         return [square for square, value in self.square_values.items() if axis in square and value != "NONE"]
 
-    def get_free_squares_by_axis(self, axis: str) -> list:
+    def get_free_squares_by_axis(self, axis: str) -> list[str]:
         """
         Returns sorted list of all squares that are free in the given row or column.
         """
         return [square for square, value in self.square_values.items() if axis in square and value == "NONE"]
 
-    def square_is_reachable(self, square1: str, square2: str) -> bool:
-        """
-        Returns true if square2 is reachable from square1. Does not mean move is valid.
-        """
-        if square1[0] != square2[0] and square1[1] != square2[1]:
-            return False
-        axis = square1[0] if square1[0] in square2 else square1[1]
-        min_square, max_square = sorted([square1, square2])
-        occupied_squares = [sq for sq in self.get_occupied_squares_by_axis(axis) if min_square < sq <= max_square]
-        return len(occupied_squares) == 0
-
-    def get_reachable_squares(self, source_square: str) -> set[str]:
-        """
-        Returns set of free squares reachable by given square.
-        """
-        row, col = source_square
-        row_l_bound = max({sq for sq in self.get_occupied_squares_by_axis(row) if sq < source_square}, default="0")
-        row_u_bound = min({sq for sq in self.get_occupied_squares_by_axis(row) if sq > source_square}, default="z")
-        col_l_bound = max({sq for sq in self.get_occupied_squares_by_axis(col) if sq < source_square}, default="0")
-        col_u_bound = min({sq for sq in self.get_occupied_squares_by_axis(col) if sq > source_square}, default="z")
-        reachable_horiz = {sq for sq in self.get_free_squares_by_axis(row) if row_l_bound < sq < row_u_bound}
-        reachable_vert = {sq for sq in self.get_free_squares_by_axis(col) if col_l_bound < sq < col_u_bound}
-        return reachable_horiz | reachable_vert
-
-    def get_all_squares(self):
+    def get_all_squares(self) -> set[str]:
         """Returns all possible squares of board as a set of square strings."""
         return set(self.square_values.keys())
 
-    def get_board_list(self):
-        """Returns the board as a list of lists."""
+    def get_board_list(self) -> list[list[str]]:
+        """Returns the board as a list of lists of square values."""
         return [[self.get_square(square) for square in row] for row in utils.BOARD]
 
-    def print_board(self):
+    def print_board(self) -> None:
         """Prints the current board with row/column labels. Abbreviates RED and BLACK and replaces NONE with '.'. """
         print("  " + " ".join(utils.COL_LABELS))
         for row in range(9):
@@ -112,7 +89,7 @@ class GameBoard:
                     output_string += square[0] + " "
             print(output_string[:-1])
 
-    def serialize_board(self):
+    def serialize_board(self) -> str:
         """
         Returns the current RED and BLACK squares as a string.
         """
@@ -122,11 +99,4 @@ class GameBoard:
         black_list.insert(0, "b")
         red_list.extend(black_list)
         return "".join(red_list)
-
-
-if __name__ == '__main__':
-    gb = GameBoard()
-    gb.set_square("e5", "BLACK")
-    gb.set_square("i5", "NONE")
-    print(gb.get_reachable_squares("e5"))
 
