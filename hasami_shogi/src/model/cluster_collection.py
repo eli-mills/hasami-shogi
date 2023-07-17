@@ -4,48 +4,71 @@ from hasami_shogi.src.model.game_board import GameBoard
 
 
 class ClusterCollection:
+    """
+    Defines methods for maintaining a collection of clusters, including sub-collections indexed on member and border.
+    """
     H_TYPE = HorizontalCluster
     V_TYPE = VerticalCluster
 
-    def __init__(self, *ign, board=None):
+    def __init__(self, *ign, board: GameBoard = None):
         if ign:
             raise ValueError("ClusterCollection only takes 1 kwargs: board.")
 
         self.board: GameBoard = board
 
-        self.all_clusters = []
-        self.clusters_by_member = {}
-        self.clusters_by_border = {}
+        self.all_clusters: list[Cluster] = []
+        self.clusters_by_member: dict[str, list[Cluster]] = {}
+        self.clusters_by_border: dict[str, list[Cluster]] = {}
         self.initialize_all_clusters()
 
-    def initialize_all_clusters(self):
+    def initialize_all_clusters(self) -> None:
+        """
+        Sets the collection of all clusters as they are at the beginning of a game.
+        """
         raise NotImplementedError
 
-    def initialize_clusters_by_member(self):
+    def initialize_clusters_by_member(self) -> None:
+        """
+        Creates a dictionary keyed on each square of the board, containing a list of clusters in which that square is a
+        member.
+        """
         self.clusters_by_member = {
             square: [cluster for cluster in self.all_clusters if square in cluster]
             for square in self.board.get_all_squares()
         }
 
-    def initialize_clusters_by_border(self):
+    def initialize_clusters_by_border(self) -> None:
+        """
+        Creates a dictionary keyed on each square of the board, containing a list of clusters in which that square is a
+        border.
+        """
         self.clusters_by_border = {
             border: [cluster for cluster in self.all_clusters if border in cluster.get_borders()]
             for border in self.board.get_all_squares()
         }
 
     def get_squares_by_member(self, square: str) -> set[str]:
+        """
+        Returns set of all squares that share a cluster with the given square.
+        """
         output = set()
         for cluster in self.clusters_by_member[square]:
             output |= cluster.squares
         return output
 
     def get_squares_by_border(self, square: str) -> set[str]:
+        """
+        Returns set of all squares within any cluster that has given square as a border.
+        """
         output = set()
         for cluster in self.clusters_by_border[square]:
             output |= cluster.squares
         return output
 
     def remove_from_all(self, cluster: Cluster) -> None:
+        """
+        Removes references of the given cluster from all collections.
+        """
         self.all_clusters and self.all_clusters.remove(cluster)
         for member in cluster.squares_sorted:
             self.clusters_by_member[member].remove(cluster)
@@ -53,6 +76,9 @@ class ClusterCollection:
             border and self.clusters_by_border[border].remove(cluster)
 
     def add_to_all(self, cluster: Cluster) -> None:
+        """
+        Adds references of given cluster to all collections.
+        """
         self.all_clusters.append(cluster)
         for member in cluster.squares:
             self.clusters_by_member[member].append(cluster)
@@ -60,6 +86,9 @@ class ClusterCollection:
             border and self.clusters_by_border[border].append(cluster)
 
     def execute_removal(self, cluster_update: ClusterUpdates) -> None:
+        """
+        Based on information encoded in given ClusterUpdate, executes appropriate removals.
+        """
         if cluster_update.remove_from_all:
             self.remove_from_all(cluster_update.cluster)
         else:
@@ -69,6 +98,9 @@ class ClusterCollection:
                 border and self.clusters_by_border[border].remove(cluster_update.cluster)
 
     def execute_add(self, cluster_update: ClusterUpdates) -> None:
+        """
+        Based on information encoded in given ClusterUpdate, executes appropriate adds.
+        """
         if cluster_update.add_to_all:
             self.add_to_all(cluster_update.cluster)
         else:
@@ -94,7 +126,7 @@ class ClusterCollection:
 
     def update_clusters_arriving(self, square: str) -> None:
         """
-        Creates new clusters for square and merges with existing clusters. Uses results of release operation to
+        Creates new clusters for square and merges with existing clusters. Uses results of merge operations to
         update internal state.
         """
         new_h_cluster = self.H_TYPE([square], self.board)
@@ -114,18 +146,22 @@ class ClusterCollection:
 
 
 class CapClusterCollection(ClusterCollection):
+    """
+    Implements Clustercollection for CaptureClusters. Defines additional collections based on color and capture-related
+    properties.
+    """
     H_TYPE = HorCapCluster
     V_TYPE = VertCapCluster
 
     def __init__(self, *args, **kwargs):
 
-        self.clusters_by_color = {}
-        self.vulnerable_clusters = {}
-        self.captured_squares = set()
+        self.clusters_by_color: dict[str, list[CaptureCluster]] = {}
+        self.vulnerable_clusters: dict[str, list[CaptureCluster]] = {}
+        self.captured_squares: set[str] = set()
 
         super().__init__(*args, **kwargs)
 
-    def initialize_all_clusters(self):
+    def initialize_all_clusters(self) -> None:
         black_squares = self.board.get_squares_by_color("BLACK")
         red_squares = self.board.get_squares_by_color("RED")
         black_v_clusters = [self.V_TYPE([sq], self.board) for sq in black_squares]
@@ -166,11 +202,11 @@ class CapClusterCollection(ClusterCollection):
         super().update_clusters_arriving(square)
         self.update_vulnerable_clusters(square)
 
-    def add_vulnerable_cluster(self, cluster):
+    def add_vulnerable_cluster(self, cluster: CaptureCluster) -> None:
         if cluster not in self.vulnerable_clusters[cluster.color]:
             self.vulnerable_clusters[cluster.color].append(cluster)
 
-    def remove_vulnerable_cluster(self, cluster):
+    def remove_vulnerable_cluster(self, cluster: CaptureCluster) -> None:
         if cluster in self.vulnerable_clusters[cluster.color]:
             self.vulnerable_clusters[cluster.color].remove(cluster)
 
@@ -187,25 +223,31 @@ class CapClusterCollection(ClusterCollection):
             else:
                 self.remove_vulnerable_cluster(cluster)
 
-    def handle_captured_squares(self, captured_squares: list):
+    def handle_captured_squares(self, captured_squares: list) -> None:
         """
         Find the cluster containing all the provided squares and remove, rather than splitting and remerging as each
         piece is deleted.
         """
         if len(captured_squares) <= 1:
-            return
+            return None
         large_cluster = [cluster for cluster in self.clusters_by_member[captured_squares[0]] if len(cluster) == len(
             captured_squares)][0]
         self.execute_removal(large_cluster)
 
-    def report_captured(self, cluster: CaptureCluster):
+    def report_captured(self, cluster: CaptureCluster) -> None:
+        """
+        Use to add a just-captured Cluster's squares to self.captured_squares.
+        """
         self.captured_squares |= cluster.squares
 
-    def clear_captures(self):
+    def clear_captures(self) -> None:
         self.captured_squares = set()
 
 
 class TubeCollection(ClusterCollection):
+    """
+    Implements ClusterCollection for a collection of Tubes (Clusters of color "NONE").
+    """
     H_TYPE = HorTube
     V_TYPE = VertTube
 

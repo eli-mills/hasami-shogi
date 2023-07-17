@@ -35,6 +35,9 @@ TWEAKS:
 
 [ ] Add @property decorator to getters/setters
 
+[ ] Add ID property to Clusters so it can be stored in a hash table for quicker
+removal and lookup.
+
 FEATURES:
 [ ] Add difficulty selector
 [ ] Add rules screen
